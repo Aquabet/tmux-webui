@@ -114,6 +114,124 @@ describe('GET /api/sessions', () => {
   })
 })
 
+describe('POST /api/sessions', () => {
+  it('未认证返回 401', async () => {
+    const app = await makeApp()
+    await request(app).post('/api/sessions').send({ name: 'dev' }).expect(401)
+  })
+
+  it('创建成功返回 201 并调用 new-session', async () => {
+    const calls: string[][] = []
+    const app = await makeApp({
+      exec: async (args) => {
+        calls.push(args)
+        return ''
+      },
+    })
+    const agent = await loginAgent(app)
+    const res = await agent.post('/api/sessions').send({ name: 'dev' })
+    expect(res.status).toBe(201)
+    expect(res.body).toEqual({ success: true })
+    expect(calls).toContainEqual(['new-session', '-d', '-s', 'dev'])
+  })
+
+  it('名称含冒号或 webui- 前缀返回 400', async () => {
+    const app = await makeApp()
+    const agent = await loginAgent(app)
+    await agent.post('/api/sessions').send({ name: 'a:b' }).expect(400)
+    await agent.post('/api/sessions').send({ name: 'webui-x' }).expect(400)
+    await agent.post('/api/sessions').send({}).expect(400)
+  })
+
+  it('同名会话已存在返回 409', async () => {
+    const app = await makeApp({
+      exec: async () => {
+        throw new TmuxError('FAILED', 'duplicate session: dev')
+      },
+    })
+    const agent = await loginAgent(app)
+    const res = await agent.post('/api/sessions').send({ name: 'dev' })
+    expect(res.status).toBe(409)
+    expect(res.body.success).toBe(false)
+  })
+})
+
+describe('DELETE /api/sessions/:name', () => {
+  it('未认证返回 401', async () => {
+    const app = await makeApp()
+    await request(app).delete('/api/sessions/dev').expect(401)
+  })
+
+  it('删除成功并用精确匹配目标', async () => {
+    const calls: string[][] = []
+    const app = await makeApp({
+      exec: async (args) => {
+        calls.push(args)
+        return ''
+      },
+    })
+    const agent = await loginAgent(app)
+    const res = await agent.delete('/api/sessions/dev')
+    expect(res.status).toBe(200)
+    expect(calls).toContainEqual(['kill-session', '-t', '=dev'])
+  })
+
+  it('会话不存在返回 404', async () => {
+    const app = await makeApp({
+      exec: async () => {
+        throw new TmuxError('FAILED', "can't find session: nope")
+      },
+    })
+    const agent = await loginAgent(app)
+    await agent.delete('/api/sessions/nope').expect(404)
+  })
+
+  it('删除 webui- 内部视图返回 400', async () => {
+    const app = await makeApp()
+    const agent = await loginAgent(app)
+    await agent.delete('/api/sessions/webui-abc12345').expect(400)
+  })
+})
+
+describe('PATCH /api/sessions/:name', () => {
+  it('未认证返回 401', async () => {
+    const app = await makeApp()
+    await request(app).patch('/api/sessions/dev').send({ name: 'work' }).expect(401)
+  })
+
+  it('改名成功并用精确匹配旧名称', async () => {
+    const calls: string[][] = []
+    const app = await makeApp({
+      exec: async (args) => {
+        calls.push(args)
+        return ''
+      },
+    })
+    const agent = await loginAgent(app)
+    const res = await agent.patch('/api/sessions/dev').send({ name: 'work' })
+    expect(res.status).toBe(200)
+    expect(calls).toContainEqual(['rename-session', '-t', '=dev', 'work'])
+  })
+
+  it('新名称非法返回 400', async () => {
+    const app = await makeApp()
+    const agent = await loginAgent(app)
+    await agent.patch('/api/sessions/dev').send({ name: 'a.b' }).expect(400)
+    await agent.patch('/api/sessions/dev').send({ name: 'webui-x' }).expect(400)
+    await agent.patch('/api/sessions/dev').send({}).expect(400)
+  })
+
+  it('会话不存在返回 404', async () => {
+    const app = await makeApp({
+      exec: async () => {
+        throw new TmuxError('FAILED', "can't find session: nope")
+      },
+    })
+    const agent = await loginAgent(app)
+    await agent.patch('/api/sessions/nope').send({ name: 'work' }).expect(404)
+  })
+})
+
 describe('POST /api/logout', () => {
   it('登出后原 cookie 失效', async () => {
     const app = await makeApp()
