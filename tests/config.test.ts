@@ -33,4 +33,16 @@ describe('loadConfig', () => {
     expect(c.sessionTtlMs).toBe(1000)
     expect(c.cookieSecure).toBe(true)
   })
+
+  it('PORT 非数字时抛错', () => {
+    expect(() =>
+      loadConfig({ TMUX_WEBUI_PASSWORD_HASH: 'h', TMUX_WEBUI_PORT: 'abc' }),
+    ).toThrow(/TMUX_WEBUI_PORT/)
+  })
+
+  it('SESSION_TTL_MS 非正数时抛错', () => {
+    expect(() =>
+      loadConfig({ TMUX_WEBUI_PASSWORD_HASH: 'h', TMUX_WEBUI_SESSION_TTL_MS: '-1' }),
+    ).toThrow(/TMUX_WEBUI_SESSION_TTL_MS/)
+  })
 })
