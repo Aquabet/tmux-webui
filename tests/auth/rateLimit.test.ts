@@ -24,4 +24,14 @@ describe('createRateLimiter', () => {
     t = 1001
     expect(limiter.allow('a')).toBe(true)
   })
+
+  it('窗口滑过后的 key 会被清理（不无界增长）', () => {
+    let t = 0
+    const limiter = createRateLimiter(1, 1000, () => t)
+    limiter.allow('a')
+    limiter.allow('b')
+    t = 2000
+    limiter.allow('c') // 触发机会式清扫
+    expect(limiter.size()).toBe(1) // 只剩 c
+  })
 })
