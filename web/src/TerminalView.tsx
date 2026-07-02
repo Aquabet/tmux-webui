@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 
+const FATAL_CLOSE_CODES = new Set([4400, 4403, 4404, 4500])
+
 interface Props {
   session: string
   windowIndex: number
@@ -55,6 +57,10 @@ export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
           onAuthLostRef.current?.()
           return
         }
+        if (FATAL_CLOSE_CODES.has(ev.code)) {
+          setStatus('closed')
+          return
+        }
         setStatus('reconnecting')
         setTimeout(() => {
           if (!disposed) connect(winIndexRef.current)
@@ -102,7 +108,7 @@ export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
         <div className="terminal-status">
           {status === 'connecting' && '连接中…'}
           {status === 'reconnecting' && '连接断开，正在重连…'}
-          {status === 'closed' && '连接已关闭，请刷新页面'}
+          {status === 'closed' && '连接已关闭（无法建立此终端），请刷新或换一个 session'}
         </div>
       )}
       <div className="terminal" ref={containerRef} />
