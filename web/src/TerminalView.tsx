@@ -111,7 +111,7 @@ export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
           {status === 'closed' && '连接已关闭（无法建立此终端），请刷新或换一个 session'}
         </div>
       )}
-      <div className="terminal" ref={containerRef} />
+      <div className="term-mount" ref={containerRef} />
     </div>
   )
 }
