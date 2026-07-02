@@ -82,6 +82,10 @@ export async function handleTerminalConnection(
     return
   }
   const windowParam = url.searchParams.get('window')
+  if (windowParam !== null && (!Number.isInteger(Number(windowParam)) || Number(windowParam) < 0)) {
+    ws.close(4400, 'invalid window')
+    return
+  }
   const windowIndex = windowParam === null ? undefined : Number(windowParam)
 
   let view: View
@@ -94,7 +98,15 @@ export async function handleTerminalConnection(
   }
 
   const socketArgs = deps.socketName ? ['-L', deps.socketName] : []
-  const pty = deps.spawnPty('tmux', [...socketArgs, 'attach-session', '-t', view.viewName], 80, 24)
+  let pty: PtyLike
+  try {
+    pty = deps.spawnPty('tmux', [...socketArgs, 'attach-session', '-t', view.viewName], 80, 24)
+  } catch (error) {
+    console.error('spawnPty 失败:', error)
+    void destroyView(deps.exec, view.viewName)
+    ws.close(4500, 'pty spawn failed')
+    return
+  }
 
   pty.onData((data) => {
     if (ws.readyState === ws.OPEN) ws.send(data)

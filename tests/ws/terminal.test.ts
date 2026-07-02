@@ -209,4 +209,25 @@ describe('handleTerminalConnection', () => {
     })
     ws.close()
   })
+
+  it('window 参数非法时以 4400 关闭且不创建视图', async () => {
+    const pty = makeFakePty()
+    const { deps, token, execCalls } = makeDeps(pty)
+    const port = await startServer(deps)
+    const code = await waitClose(connect(port, token, 'session=demo&window=abc'))
+    expect(code).toBe(4400)
+    expect(execCalls.filter((c) => c[0] === 'new-session')).toHaveLength(0)
+  })
+
+  it('spawnPty 抛错时以 4500 关闭并销毁已创建的视图', async () => {
+    const { deps, token, execCalls } = makeDeps(makeFakePty())
+    deps.spawnPty = () => {
+      throw new Error('pty spawn failed')
+    }
+    const port = await startServer(deps)
+    const code = await waitClose(connect(port, token, 'session=demo'))
+    expect(code).toBe(4500)
+    await flush()
+    expect(execCalls.some((c) => c[0] === 'kill-session')).toBe(true)
+  })
 })
