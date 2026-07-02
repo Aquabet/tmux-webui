@@ -231,6 +231,27 @@ describe('handleTerminalConnection', () => {
     expect(execCalls.some((c) => c[0] === 'kill-session')).toBe(true)
   })
 
+  it('连接建立后立即发送的帧不丢失（视图创建期间需缓冲）', async () => {
+    const pty = makeFakePty()
+    const { deps, token } = makeDeps(pty)
+    const innerExec = deps.exec
+    // 拖慢 createView，模拟真实 tmux exec 耗时，凸显消息早于 handler 注册到达的窗口
+    deps.exec = async (args) => {
+      await new Promise((r) => setTimeout(r, 100))
+      return innerExec(args)
+    }
+    const port = await startServer(deps)
+    const ws = connect(port, token, 'session=demo')
+    await waitOpen(ws)
+    ws.send('r{"cols":95,"rows":35}')
+    ws.send('iecho early\r')
+    await new Promise((r) => setTimeout(r, 400))
+    expect(pty.resizes).toEqual([[95, 35]])
+    expect(pty.written).toEqual(['echo early\r'])
+    ws.close()
+    await flush()
+  })
+
   it('ws error 事件不会抛出未捕获异常', async () => {
     const pty = makeFakePty()
     const { deps, token } = makeDeps(pty)

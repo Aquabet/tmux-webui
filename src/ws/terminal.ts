@@ -54,6 +54,17 @@ export async function handleTerminalConnection(
   req: IncomingMessage,
   deps: TerminalDeps,
 ): Promise<void> {
+  // 必须在任何 await 之前同步注册 message 监听：ws 是 EventEmitter 语义，
+  // emit 时没有监听器的消息会被直接丢弃。视图创建期间到达的帧先缓冲，
+  // pty 就绪后按序回放（否则连接后立即发送的 resize/输入帧会丢）。
+  let deliver: ((msg: string) => void) | undefined
+  const pending: string[] = []
+  ws.on('message', (raw) => {
+    const msg = raw.toString()
+    if (deliver) deliver(msg)
+    else pending.push(msg)
+  })
+
   const origin = req.headers.origin
   if (origin) {
     let originHost: string | undefined
@@ -116,8 +127,7 @@ export async function handleTerminalConnection(
     void destroyView(deps.exec, view.viewName)
   })
 
-  ws.on('message', (raw) => {
-    const msg = raw.toString()
+  deliver = (msg) => {
     const kind = msg[0]
     const rest = msg.slice(1)
     if (kind === 'i') {
@@ -139,7 +149,8 @@ export async function handleTerminalConnection(
         )
       }
     }
-  })
+  }
+  for (const msg of pending.splice(0)) deliver(msg)
 
   ws.on('close', () => {
     pty.kill()

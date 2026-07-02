@@ -32,7 +32,19 @@ export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
     const fit = new FitAddon()
     term.loadAddon(fit)
     term.open(container)
+
+    const sendSize = () => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(`r${JSON.stringify({ cols: term.cols, rows: term.rows })}`)
+      }
+    }
+    // 尺寸变化统一从 onResize 事件同步给服务端，fit 的调用方不再各自发帧
+    const resizeSub = term.onResize(sendSize)
+
+    // open() 后渲染器要到首帧才完成字符测量，同步 fit 可能是 no-op，
+    // 所以在下一帧再 fit 一次，保证初始尺寸不停留在默认 80x24
     fit.fit()
+    const initialFitFrame = requestAnimationFrame(() => fit.fit())
 
     let disposed = false
     let retryDelay = 500
@@ -47,6 +59,8 @@ export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
       ws.onopen = () => {
         retryDelay = 500
         setStatus('connected')
+        // 连接建立时补发当前尺寸（onResize 只在尺寸变化时触发，覆盖不到这里）
+        fit.fit()
         ws.send(`r${JSON.stringify({ cols: term.cols, rows: term.rows })}`)
       }
       ws.onmessage = (ev) => term.write(typeof ev.data === 'string' ? ev.data : '')
@@ -75,17 +89,14 @@ export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
       if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.send(`i${d}`)
     })
 
-    const observer = new ResizeObserver(() => {
-      fit.fit()
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(`r${JSON.stringify({ cols: term.cols, rows: term.rows })}`)
-      }
-    })
+    const observer = new ResizeObserver(() => fit.fit())
     observer.observe(container)
 
     return () => {
       disposed = true
+      cancelAnimationFrame(initialFitFrame)
       observer.disconnect()
+      resizeSub.dispose()
       dataSub.dispose()
       wsRef.current?.close()
       term.dispose()
