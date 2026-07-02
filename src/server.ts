@@ -29,8 +29,24 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
 
   const staticDir = path.resolve(__dirname, '../web/dist')
   if (existsSync(staticDir)) {
-    app.use(express.static(staticDir))
-    app.get('*', (_req, res) => res.sendFile(path.join(staticDir, 'index.html')))
+    // index.html 必须每次向服务器校验（no-cache），否则重新构建部署后浏览器
+    // 会继续用启发式缓存的旧页面；带 hash 的 assets 内容不可变，可永久缓存
+    app.use(
+      express.static(staticDir, {
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('.html')) {
+            res.setHeader('cache-control', 'no-cache')
+          } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+            res.setHeader('cache-control', 'public, max-age=31536000, immutable')
+          }
+        },
+      }),
+    )
+    app.get('*', (_req, res) =>
+      res.sendFile(path.join(staticDir, 'index.html'), {
+        headers: { 'cache-control': 'no-cache' },
+      }),
+    )
   }
 
   const server = http.createServer(app)
