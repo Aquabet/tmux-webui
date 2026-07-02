@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { Unicode11Addon } from '@xterm/addon-unicode11'
+import { InputBar } from './InputBar'
 
 const FATAL_CLOSE_CODES = new Set([4400, 4403, 4404, 4500])
 
@@ -123,16 +124,23 @@ export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
     }
   }, [windowIndex])
 
+  const sendInput = useCallback((data: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.send(`i${data}`)
+  }, [])
+
   return (
-    <div className="terminal-wrap">
-      {status !== 'connected' && (
-        <div className="terminal-status">
-          {status === 'connecting' && '连接中…'}
-          {status === 'reconnecting' && '连接断开，正在重连…'}
-          {status === 'closed' && '连接已关闭（无法建立此终端），请刷新或换一个 session'}
-        </div>
-      )}
-      <div className="term-mount" ref={containerRef} />
-    </div>
+    <>
+      <div className="terminal-wrap">
+        {status !== 'connected' && (
+          <div className="terminal-status">
+            {status === 'connecting' && '连接中…'}
+            {status === 'reconnecting' && '连接断开，正在重连…'}
+            {status === 'closed' && '连接已关闭（无法建立此终端），请刷新或换一个 session'}
+          </div>
+        )}
+        <div className="term-mount" ref={containerRef} />
+      </div>
+      <InputBar onSend={sendInput} />
+    </>
   )
 }

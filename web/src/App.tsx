@@ -11,6 +11,7 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
   const [selectedSession, setSelectedSession] = useState<string | undefined>()
   const [selectedWindow, setSelectedWindow] = useState(0)
   const [actionError, setActionError] = useState<string | undefined>()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const current = sessions.find((s) => s.name === selectedSession) ?? sessions[0]
   const currentWindow =
@@ -19,6 +20,7 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
   function handleSelectSession(name: string) {
     setSelectedSession(name)
     setSelectedWindow(0)
+    setSidebarOpen(false)
   }
 
   async function runAction(action: () => Promise<void>) {
@@ -62,7 +64,7 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
   }
 
   return (
-    <div className="app">
+    <div className={`app${sidebarOpen ? ' sidebar-open' : ''}`}>
       <SessionSidebar
         sessions={sessions}
         selected={current?.name}
@@ -71,15 +73,25 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
         onRename={handleRename}
         onDelete={handleDelete}
       />
+      <div className="backdrop" onClick={() => setSidebarOpen(false)} />
       <main className="main">
         {(error ?? actionError) && <div className="banner-error">{error ?? actionError}</div>}
         {current && currentWindow ? (
           <>
-            <WindowTabs
-              windows={current.windows}
-              selected={currentWindow.index}
-              onSelect={setSelectedWindow}
-            />
+            <div className="main-header">
+              <button
+                className="sidebar-toggle"
+                aria-label="打开 session 列表"
+                onClick={() => setSidebarOpen((o) => !o)}
+              >
+                ☰
+              </button>
+              <WindowTabs
+                windows={current.windows}
+                selected={currentWindow.index}
+                onSelect={setSelectedWindow}
+              />
+            </div>
             <TerminalView
               session={current.name}
               windowIndex={currentWindow.index}
