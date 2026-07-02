@@ -35,6 +35,7 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
 
   const server = http.createServer(app)
   const wss = new WebSocketServer({ noServer: true })
+  wss.on('error', (error) => console.error('WebSocketServer 错误:', error))
   server.on('upgrade', (req, socket, head) => {
     if (!req.url?.startsWith('/ws/terminal')) {
       socket.destroy()

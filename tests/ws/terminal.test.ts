@@ -230,4 +230,18 @@ describe('handleTerminalConnection', () => {
     await flush()
     expect(execCalls.some((c) => c[0] === 'kill-session')).toBe(true)
   })
+
+  it('ws error 事件不会抛出未捕获异常', async () => {
+    const pty = makeFakePty()
+    const { deps, token } = makeDeps(pty)
+    const port = await startServer(deps)
+    const ws = connect(port, token, 'session=demo')
+    await waitOpen(ws)
+    await flush()
+    // 强制底层 socket 异常断开，触发服务端 ws 的 error/close 路径
+    ws.terminate()
+    await flush()
+    // 若服务端因未监听 error 崩溃，本测试进程会随之失败；活到这里即通过
+    expect(pty.killed).toBe(true)
+  })
 })

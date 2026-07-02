@@ -145,4 +145,6 @@ export async function handleTerminalConnection(
     pty.kill()
     void destroyView(deps.exec, view.viewName)
   })
+
+  ws.on('error', (error) => console.error('WebSocket 连接错误:', error))
 }
