@@ -1,9 +1,11 @@
 import { loadConfig } from './config.js'
+import { loadEnvFile } from './env.js'
 import { createAppServer } from './server.js'
 import { createTmuxExec } from './tmux/exec.js'
 import { cleanupOrphanViews } from './tmux/view.js'
 
-const config = loadConfig(process.env)
+// 真实环境变量优先于 .env 文件（.env 路径相对启动目录）
+const config = loadConfig({ ...loadEnvFile('.env'), ...process.env })
 const exec = createTmuxExec(config.socketName)
 
 await cleanupOrphanViews(exec).catch(() => undefined)
