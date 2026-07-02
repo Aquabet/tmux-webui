@@ -1,0 +1,188 @@
+import { createServer, type Server } from 'node:http'
+import { AddressInfo } from 'node:net'
+import { WebSocket, WebSocketServer } from 'ws'
+import { afterEach, describe, expect, it } from 'vitest'
+import { createSessionStore } from '../../src/auth/sessions.js'
+import type { TmuxExec } from '../../src/tmux/exec.js'
+import {
+  handleTerminalConnection,
+  type PtyLike,
+  type SpawnPty,
+  type TerminalDeps,
+} from '../../src/ws/terminal.js'
+
+interface FakePty extends PtyLike {
+  written: string[]
+  resizes: Array<[number, number]>
+  killed: boolean
+  emitData(d: string): void
+  emitExit(): void
+}
+
+function makeFakePty(): FakePty {
+  let dataCb: ((d: string) => void) | undefined
+  let exitCb: (() => void) | undefined
+  const pty: FakePty = {
+    written: [],
+    resizes: [],
+    killed: false,
+    onData: (cb) => {
+      dataCb = cb
+    },
+    onExit: (cb) => {
+      exitCb = cb
+    },
+    write: (d) => pty.written.push(d),
+    resize: (c, r) => pty.resizes.push([c, r]),
+    kill: () => {
+      pty.killed = true
+    },
+    emitData: (d) => dataCb?.(d),
+    emitExit: () => exitCb?.(),
+  }
+  return pty
+}
+
+let server: Server | undefined
+
+afterEach(() => {
+  server?.close()
+  server = undefined
+})
+
+async function startServer(deps: TerminalDeps): Promise<number> {
+  server = createServer()
+  const wss = new WebSocketServer({ noServer: true })
+  server.on('upgrade', (req, socket, head) => {
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      void handleTerminalConnection(ws, req, deps)
+    })
+  })
+  await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))
+  return (server.address() as AddressInfo).port
+}
+
+function makeDeps(pty: FakePty) {
+  const store = createSessionStore(60_000)
+  const token = store.create()
+  const execCalls: string[][] = []
+  const exec: TmuxExec = async (args) => {
+    execCalls.push(args)
+    return ''
+  }
+  const spawnPty: SpawnPty = () => pty
+  const deps: TerminalDeps = { exec, store, spawnPty }
+  return { deps, token, execCalls }
+}
+
+function connect(port: number, token: string | undefined, query: string) {
+  return new WebSocket(`ws://127.0.0.1:${port}/ws/terminal?${query}`, {
+    headers: token ? { cookie: `webui_token=${token}` } : {},
+  })
+}
+
+function waitClose(ws: WebSocket): Promise<number> {
+  return new Promise((resolve) => ws.on('close', (code) => resolve(code)))
+}
+
+function waitOpen(ws: WebSocket): Promise<void> {
+  return new Promise((resolve, reject) => {
+    ws.on('open', resolve)
+    ws.on('error', reject)
+  })
+}
+
+const flush = () => new Promise((r) => setTimeout(r, 50))
+
+describe('handleTerminalConnection', () => {
+  it('无认证 cookie 时以 4401 关闭', async () => {
+    const { deps } = makeDeps(makeFakePty())
+    const port = await startServer(deps)
+    const code = await waitClose(connect(port, undefined, 'session=demo'))
+    expect(code).toBe(4401)
+  })
+
+  it('缺 session 参数时以 4400 关闭', async () => {
+    const { deps, token } = makeDeps(makeFakePty())
+    const port = await startServer(deps)
+    const code = await waitClose(connect(port, token, ''))
+    expect(code).toBe(4400)
+  })
+
+  it('createView 失败时以 4404 关闭', async () => {
+    const pty = makeFakePty()
+    const { deps, token } = makeDeps(pty)
+    deps.exec = async () => {
+      throw new Error("can't find session")
+    }
+    const port = await startServer(deps)
+    const code = await waitClose(connect(port, token, 'session=nope'))
+    expect(code).toBe(4404)
+  })
+
+  it('pty 输出转发到客户端；i 帧写入 pty；r 帧 resize；w 帧调 select-window', async () => {
+    const pty = makeFakePty()
+    const { deps, token, execCalls } = makeDeps(pty)
+    const port = await startServer(deps)
+    const ws = connect(port, token, 'session=demo&window=1')
+    await waitOpen(ws)
+    await flush()
+
+    const received: string[] = []
+    ws.on('message', (d) => received.push(d.toString()))
+    pty.emitData('hello from tmux')
+    ws.send('iecho hi\r')
+    ws.send('r{"cols":120,"rows":40}')
+    ws.send('w{"index":2}')
+    await flush()
+
+    expect(received).toEqual(['hello from tmux'])
+    expect(pty.written).toEqual(['echo hi\r'])
+    expect(pty.resizes).toEqual([[120, 40]])
+    const selectCalls = execCalls.filter((c) => c[0] === 'select-window')
+    // 一次来自 createView 的 window=1，一次来自 w 帧的 index=2
+    expect(selectCalls).toHaveLength(2)
+    expect(selectCalls[1][2]).toMatch(/^webui-[0-9a-f]{8}:2$/)
+    ws.close()
+    await flush()
+  })
+
+  it('客户端断开时 kill pty 并销毁视图', async () => {
+    const pty = makeFakePty()
+    const { deps, token, execCalls } = makeDeps(pty)
+    const port = await startServer(deps)
+    const ws = connect(port, token, 'session=demo')
+    await waitOpen(ws)
+    await flush()
+    ws.close()
+    await flush()
+    expect(pty.killed).toBe(true)
+    expect(execCalls.some((c) => c[0] === 'kill-session')).toBe(true)
+  })
+
+  it('pty 退出时以 4410 关闭客户端', async () => {
+    const pty = makeFakePty()
+    const { deps, token } = makeDeps(pty)
+    const port = await startServer(deps)
+    const ws = connect(port, token, 'session=demo')
+    const closed = waitClose(ws)
+    await waitOpen(ws)
+    await flush()
+    pty.emitExit()
+    expect(await closed).toBe(4410)
+  })
+
+  it('非法 JSON 控制帧不导致崩溃', async () => {
+    const pty = makeFakePty()
+    const { deps, token } = makeDeps(pty)
+    const port = await startServer(deps)
+    const ws = connect(port, token, 'session=demo')
+    await waitOpen(ws)
+    await flush()
+    ws.send('r{bad json')
+    ws.send('x未知前缀')
+    await flush()
+    expect(ws.readyState).toBe(WebSocket.OPEN)
+    ws.close()
+  })
+})
