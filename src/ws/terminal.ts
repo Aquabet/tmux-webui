@@ -54,6 +54,20 @@ export async function handleTerminalConnection(
   req: IncomingMessage,
   deps: TerminalDeps,
 ): Promise<void> {
+  const origin = req.headers.origin
+  if (origin) {
+    let originHost: string | undefined
+    try {
+      originHost = new URL(origin).host
+    } catch {
+      originHost = undefined
+    }
+    if (!originHost || originHost !== req.headers.host) {
+      ws.close(4403, 'forbidden origin')
+      return
+    }
+  }
+
   const cookies = parseCookies(req.headers.cookie)
   const token = cookies[COOKIE_NAME]
   if (!token || !deps.store.isValid(token)) {

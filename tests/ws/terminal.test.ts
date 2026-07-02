@@ -185,4 +185,28 @@ describe('handleTerminalConnection', () => {
     expect(ws.readyState).toBe(WebSocket.OPEN)
     ws.close()
   })
+
+  it('跨站 Origin 时以 4403 关闭', async () => {
+    const { deps, token } = makeDeps(makeFakePty())
+    const port = await startServer(deps)
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/terminal?session=demo`, {
+      headers: { cookie: `webui_token=${token}`, origin: 'https://evil.example.com' },
+    })
+    const code = await new Promise<number>((resolve) => ws.on('close', (c) => resolve(c)))
+    expect(code).toBe(4403)
+  })
+
+  it('同源 Origin 正常通过', async () => {
+    const pty = makeFakePty()
+    const { deps, token } = makeDeps(pty)
+    const port = await startServer(deps)
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/terminal?session=demo`, {
+      headers: { cookie: `webui_token=${token}`, origin: `http://127.0.0.1:${port}` },
+    })
+    await new Promise<void>((resolve, reject) => {
+      ws.on('open', resolve)
+      ws.on('error', reject)
+    })
+    ws.close()
+  })
 })
