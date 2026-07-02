@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { Unicode11Addon } from '@xterm/addon-unicode11'
 
 const FATAL_CLOSE_CODES = new Set([4400, 4403, 4404, 4500])
 
@@ -28,9 +29,18 @@ export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
     // 重新同步到本次渲染时的 windowIndex，避免与下面的 windowIndex effect 出现执行顺序竞争
     winIndexRef.current = windowIndex
 
-    const term = new Terminal({ fontSize: 14, fontFamily: 'monospace', scrollback: 0 })
+    const term = new Terminal({
+      fontSize: 14,
+      fontFamily: 'monospace',
+      scrollback: 0,
+      allowProposedApi: true,
+    })
     const fit = new FitAddon()
     term.loadAddon(fit)
+    // xterm 默认按 Unicode 6 宽度表把 emoji 算作 1 列，而 tmux（现代 wcwidth）
+    // 算 2 列，emoji 之后的内容会整体错位一格；切到 Unicode 11 宽度表对齐两边
+    term.loadAddon(new Unicode11Addon())
+    term.unicode.activeVersion = '11'
     term.open(container)
 
     const sendSize = () => {
