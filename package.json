@@ -9,7 +9,7 @@
     "start": "node dist/main.js",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
     "hash-password": "tsx scripts/hash-password.ts"
   },
   "dependencies": {
