@@ -33,3 +33,19 @@ test('密码错误显示错误信息', async ({ page }) => {
   await page.getByRole('button', { name: '登录' }).click()
   await expect(page.getByText('密码错误')).toBeVisible()
 })
+
+test('终端可向上滚动查看较早输出', async ({ page }) => {
+  await page.goto('/')
+  await page.getByPlaceholder('密码').fill('secret')
+  await page.getByRole('button', { name: '登录' }).click()
+
+  const term = page.locator('.terminal')
+  await term.click()
+  await page.keyboard.type("for i in $(seq 1 100); do echo scrollback-$i; done")
+  await page.keyboard.press('Enter')
+  await expect(page.locator('.xterm-screen')).toContainText('scrollback-100')
+
+  await term.hover()
+  await page.mouse.wheel(0, -10_000)
+  await expect(page.locator('.xterm-screen')).toContainText('scrollback-1')
+})
