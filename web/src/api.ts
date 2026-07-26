@@ -43,6 +43,15 @@ export async function login(password: string): Promise<void> {
   }
 }
 
+export async function checkAuth(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/sessions')
+    return res.status !== 401
+  } catch {
+    return false
+  }
+}
+
 export async function logout(): Promise<void> {
   await fetch('/api/logout', { method: 'POST' })
 }
