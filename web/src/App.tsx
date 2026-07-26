@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react'
-import { AuthError, createSession, deleteSession, renameSession } from './api'
+import { useCallback, useEffect, useState } from 'react'
+import { AuthError, checkAuth, createSession, deleteSession, renameSession } from './api'
 import { Login } from './Login'
 import { SessionSidebar } from './SessionSidebar'
 import { loadSidebarCollapsed, toggleSidebarCollapsed } from './sidebarState'
@@ -120,8 +120,13 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
 }
 
 export function App() {
-  const [authed, setAuthed] = useState(false)
+  // null = 正在探测 cookie 是否仍有效，避免闪现登录页
+  const [authed, setAuthed] = useState<boolean | null>(null)
   const onAuthLost = useCallback(() => setAuthed(false), [])
+  useEffect(() => {
+    checkAuth().then(setAuthed)
+  }, [])
+  if (authed === null) return null
   if (!authed) return <Login onSuccess={() => setAuthed(true)} />
   return <Main onAuthLost={onAuthLost} />
 }

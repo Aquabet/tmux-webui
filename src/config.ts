@@ -1,3 +1,6 @@
+import { homedir } from 'node:os'
+import path from 'node:path'
+
 export interface Config {
   host: string
   port: number
@@ -5,6 +8,7 @@ export interface Config {
   socketName?: string
   sessionTtlMs: number
   cookieSecure: boolean
+  sessionFile: string
 }
 
 function parsePositiveInt(
@@ -40,5 +44,8 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
       7 * 24 * 3600 * 1000,
     ),
     cookieSecure: env.TMUX_WEBUI_COOKIE_SECURE === 'true',
+    // 空字符串表示禁用落盘（仅内存），测试用
+    sessionFile:
+      env.TMUX_WEBUI_SESSION_FILE ?? path.join(homedir(), '.tmux-webui', 'sessions.json'),
   }
 }

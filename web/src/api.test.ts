@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   AuthError,
+  checkAuth,
   createSession,
   deleteSession,
   fetchSessions,
@@ -26,6 +27,28 @@ describe('login', () => {
   it('失败时抛出服务端错误文案', async () => {
     mockFetch(401, { success: false, error: '密码错误' })
     await expect(login('pw')).rejects.toThrow('密码错误')
+  })
+})
+
+describe('checkAuth', () => {
+  it('cookie 有效（非 401）返回 true', async () => {
+    mockFetch(200, { success: true, data: [] })
+    await expect(checkAuth()).resolves.toBe(true)
+  })
+
+  it('tmux 未运行（503）仍视为已登录', async () => {
+    mockFetch(503, { success: false, error: 'tmux server 未运行' })
+    await expect(checkAuth()).resolves.toBe(true)
+  })
+
+  it('401 返回 false', async () => {
+    mockFetch(401, { success: false })
+    await expect(checkAuth()).resolves.toBe(false)
+  })
+
+  it('网络错误返回 false', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new Error('offline'))))
+    await expect(checkAuth()).resolves.toBe(false)
   })
 })
 

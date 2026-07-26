@@ -17,7 +17,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePty): http.Server {
   const exec = createTmuxExec(config.socketName)
-  const store = createSessionStore(config.sessionTtlMs)
+  const store = createSessionStore(config.sessionTtlMs, Date.now, config.sessionFile)
   const limiter = createRateLimiter(5, 60_000)
 
   const app = express()
