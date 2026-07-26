@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { AuthError, createSession, deleteSession, renameSession } from './api'
 import { Login } from './Login'
 import { SessionSidebar } from './SessionSidebar'
+import { loadSidebarCollapsed, toggleSidebarCollapsed } from './sidebarState'
 import { TerminalView } from './TerminalView'
 import { WindowTabs } from './WindowTabs'
 import { useSessions } from './useSessions'
@@ -12,6 +13,16 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
   const [selectedWindow, setSelectedWindow] = useState(0)
   const [actionError, setActionError] = useState<string | undefined>()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(loadSidebarCollapsed)
+
+  // 同一个 ☰ 按钮：桌面端切换折叠（持久化），窄屏切换抽屉
+  function handleToggleSidebar() {
+    if (window.matchMedia('(min-width: 701px)').matches) {
+      setSidebarCollapsed(toggleSidebarCollapsed)
+    } else {
+      setSidebarOpen((o) => !o)
+    }
+  }
 
   const current = sessions.find((s) => s.name === selectedSession) ?? sessions[0]
   const currentWindow =
@@ -64,7 +75,9 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
   }
 
   return (
-    <div className={`app${sidebarOpen ? ' sidebar-open' : ''}`}>
+    <div
+      className={`app${sidebarOpen ? ' sidebar-open' : ''}${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}
+    >
       <SessionSidebar
         sessions={sessions}
         selected={current?.name}
@@ -81,8 +94,8 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
             <div className="main-header">
               <button
                 className="sidebar-toggle"
-                aria-label="打开 session 列表"
-                onClick={() => setSidebarOpen((o) => !o)}
+                aria-label="切换 session 列表"
+                onClick={handleToggleSidebar}
               >
                 ☰
               </button>

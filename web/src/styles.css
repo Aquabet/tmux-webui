@@ -38,7 +38,7 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-u
 .dot[data-attached='true'] { background: #9ece6a; }
 .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .main-header { display: flex; align-items: stretch; background: var(--bg-alt); border-bottom: 1px solid var(--border); }
-.sidebar-toggle { display: none; border: none; background: transparent; color: var(--fg); font-size: 18px; padding: 6px 12px; cursor: pointer; }
+.sidebar-toggle { border: none; background: transparent; color: var(--fg); font-size: 18px; padding: 6px 12px; cursor: pointer; }
 .backdrop { display: none; }
 .window-tabs { flex: 1; display: flex; gap: 2px; padding: 6px 8px 0; overflow-x: auto; }
 .tab { padding: 8px 14px; border: none; border-radius: 6px 6px 0 0; background: transparent; color: var(--fg); cursor: pointer; font-size: 13px; white-space: nowrap; }
@@ -64,5 +64,9 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-u
   .sidebar { position: fixed; top: 0; bottom: 0; left: 0; width: 220px; z-index: 30; transform: translateX(-100%); transition: transform 0.2s ease; box-shadow: 2px 0 12px #0006; }
   .app.sidebar-open .sidebar { transform: translateX(0); }
   .app.sidebar-open .backdrop { display: block; position: fixed; inset: 0; z-index: 20; background: #00000088; }
-  .sidebar-toggle { display: block; }
+}
+
+/* 桌面端：☰ 切换侧栏折叠 */
+@media (min-width: 701px) {
+  .app.sidebar-collapsed .sidebar { display: none; }
 }
