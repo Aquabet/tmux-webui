@@ -3,6 +3,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { Unicode11Addon } from '@xterm/addon-unicode11'
 import { InputBar } from './InputBar'
+import { TERMINAL_OPTIONS } from './terminalOptions'
 
 const FATAL_CLOSE_CODES = new Set([4400, 4403, 4404, 4500])
 
@@ -30,12 +31,7 @@ export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
     // 重新同步到本次渲染时的 windowIndex，避免与下面的 windowIndex effect 出现执行顺序竞争
     winIndexRef.current = windowIndex
 
-    const term = new Terminal({
-      fontSize: 14,
-      fontFamily: 'monospace',
-      scrollback: 0,
-      allowProposedApi: true,
-    })
+    const term = new Terminal(TERMINAL_OPTIONS)
     const fit = new FitAddon()
     term.loadAddon(fit)
     // xterm 默认按 Unicode 6 宽度表把 emoji 算作 1 列，而 tmux（现代 wcwidth）
