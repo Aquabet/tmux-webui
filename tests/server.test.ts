@@ -21,6 +21,7 @@ describe('createAppServer', () => {
       socketName: 'webui-server-test-none',
       sessionTtlMs: 60_000,
       cookieSecure: false,
+      sessionFile: '',
     }
     server = createAppServer(config)
     await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))
@@ -42,6 +43,7 @@ describe('createAppServer', () => {
       socketName: 'webui-server-test-none',
       sessionTtlMs: 60_000,
       cookieSecure: false,
+      sessionFile: '',
     }
     server = createAppServer(config)
     await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))
@@ -66,6 +68,7 @@ describe('createAppServer', () => {
       socketName: 'webui-server-test-none',
       sessionTtlMs: 60_000,
       cookieSecure: false,
+      sessionFile: '',
     }
     server = createAppServer(config)
     await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))

@@ -1,3 +1,5 @@
+import { homedir } from 'node:os'
+import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { loadConfig } from '../src/config.js'
 
@@ -15,6 +17,7 @@ describe('loadConfig', () => {
       socketName: undefined,
       sessionTtlMs: 7 * 24 * 3600 * 1000,
       cookieSecure: false,
+      sessionFile: path.join(homedir(), '.tmux-webui', 'sessions.json'),
     })
   })
 
@@ -26,12 +29,14 @@ describe('loadConfig', () => {
       TMUX_WEBUI_SOCKET: 'testsock',
       TMUX_WEBUI_SESSION_TTL_MS: '1000',
       TMUX_WEBUI_COOKIE_SECURE: 'true',
+      TMUX_WEBUI_SESSION_FILE: '/tmp/custom-sessions.json',
     })
     expect(c.host).toBe('0.0.0.0')
     expect(c.port).toBe(9000)
     expect(c.socketName).toBe('testsock')
     expect(c.sessionTtlMs).toBe(1000)
     expect(c.cookieSecure).toBe(true)
+    expect(c.sessionFile).toBe('/tmp/custom-sessions.json')
   })
 
   it('PORT 非数字时抛错', () => {

@@ -20,6 +20,7 @@ async function makeApp(overrides: { exec?: TmuxExec; limiterMax?: number } = {})
     socketName: undefined,
     sessionTtlMs: 60_000,
     cookieSecure: false,
+    sessionFile: '',
   }
   const exec: TmuxExec =
     overrides.exec ??
