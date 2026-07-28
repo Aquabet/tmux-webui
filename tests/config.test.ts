@@ -18,6 +18,7 @@ describe('loadConfig', () => {
       sessionTtlMs: 7 * 24 * 3600 * 1000,
       cookieSecure: false,
       sessionFile: path.join(homedir(), '.tmux-webui', 'sessions.json'),
+      uploadDir: path.join(homedir(), '.tmux-webui', 'uploads'),
     })
   })
 
@@ -30,6 +31,7 @@ describe('loadConfig', () => {
       TMUX_WEBUI_SESSION_TTL_MS: '1000',
       TMUX_WEBUI_COOKIE_SECURE: 'true',
       TMUX_WEBUI_SESSION_FILE: '/tmp/custom-sessions.json',
+      TMUX_WEBUI_UPLOAD_DIR: '/tmp/custom-uploads',
     })
     expect(c.host).toBe('0.0.0.0')
     expect(c.port).toBe(9000)
@@ -37,6 +39,7 @@ describe('loadConfig', () => {
     expect(c.sessionTtlMs).toBe(1000)
     expect(c.cookieSecure).toBe(true)
     expect(c.sessionFile).toBe('/tmp/custom-sessions.json')
+    expect(c.uploadDir).toBe('/tmp/custom-uploads')
   })
 
   it('PORT 非数字时抛错', () => {

@@ -35,6 +35,7 @@ as-is — wrapping values in single quotes is recommended.
 | `TMUX_WEBUI_SESSION_TTL_MS` | 7 days | login session lifetime |
 | `TMUX_WEBUI_COOKIE_SECURE` | `false` | set to `true` behind an HTTPS reverse proxy |
 | `TMUX_WEBUI_SESSION_FILE` | `~/.tmux-webui/sessions.json` | session token persistence path (survives restarts); empty string disables |
+| `TMUX_WEBUI_UPLOAD_DIR` | `~/.tmux-webui/uploads` | where uploaded images are saved |
 
 ## Security Notes
 

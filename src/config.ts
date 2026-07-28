@@ -9,6 +9,7 @@ export interface Config {
   sessionTtlMs: number
   cookieSecure: boolean
   sessionFile: string
+  uploadDir: string
 }
 
 function parsePositiveInt(
@@ -47,5 +48,6 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     // 空字符串表示禁用落盘（仅内存），测试用
     sessionFile:
       env.TMUX_WEBUI_SESSION_FILE ?? path.join(homedir(), '.tmux-webui', 'sessions.json'),
+    uploadDir: env.TMUX_WEBUI_UPLOAD_DIR ?? path.join(homedir(), '.tmux-webui', 'uploads'),
   }
 }

@@ -7,6 +7,7 @@ import {
   fetchSessions,
   login,
   renameSession,
+  uploadImage,
 } from './api'
 
 afterEach(() => vi.restoreAllMocks())
@@ -49,6 +50,26 @@ describe('checkAuth', () => {
   it('网络错误返回 false', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new Error('offline'))))
     await expect(checkAuth()).resolves.toBe(false)
+  })
+})
+
+describe('uploadImage', () => {
+  it('POST 文件本体并返回保存路径', async () => {
+    mockFetch(200, { success: true, data: { path: '/home/u/.tmux-webui/uploads/img-1.png' } })
+    const file = new File(['x'], 'a.png', { type: 'image/png' })
+    await expect(uploadImage(file)).resolves.toBe('/home/u/.tmux-webui/uploads/img-1.png')
+    const call = vi.mocked(fetch).mock.calls[0]
+    expect(call[0]).toBe('/api/upload')
+    expect((call[1] as RequestInit).body).toBe(file)
+    expect((call[1] as RequestInit).headers).toEqual({ 'content-type': 'image/png' })
+  })
+
+  it('401 抛 AuthError，失败抛服务端文案', async () => {
+    const file = new File(['x'], 'a.png', { type: 'image/png' })
+    mockFetch(401, { success: false })
+    await expect(uploadImage(file)).rejects.toBeInstanceOf(AuthError)
+    mockFetch(400, { success: false, error: '仅支持 png/jpeg/webp/gif 图片' })
+    await expect(uploadImage(file)).rejects.toThrow('仅支持 png/jpeg/webp/gif 图片')
   })
 })
 

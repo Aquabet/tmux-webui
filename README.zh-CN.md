@@ -32,6 +32,7 @@ npm run build && npm start           # http://127.0.0.1:8090
 | `TMUX_WEBUI_SESSION_TTL_MS` | 7 天 | 登录有效期 |
 | `TMUX_WEBUI_COOKIE_SECURE` | `false` | HTTPS 反代后设为 `true` |
 | `TMUX_WEBUI_SESSION_FILE` | `~/.tmux-webui/sessions.json` | 登录 token 落盘路径（重启不掉登录），留空禁用 |
+| `TMUX_WEBUI_UPLOAD_DIR` | `~/.tmux-webui/uploads` | 手机上传图片的保存目录 |
 
 ## 安全须知
 
