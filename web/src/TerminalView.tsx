@@ -111,56 +111,96 @@ export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
     // 上报给应用，(0,0) 落在内容区外会被按区域处理滚动的 TUI 忽略
     let touchX = 0
     let touchY = 0
-    const touchScroll = createTouchScroll((deltaY) => {
+    const emitLines = (deltaY: number) => {
       const screen = container.querySelector('.xterm-screen')
       if (!screen) return
       const lines = Math.round(Math.abs(deltaY) / stepPx)
       const dir = deltaY > 0 ? 1 : -1
-      for (let i = 0; i < lines; i++) {
-        screen.dispatchEvent(
-          new WheelEvent('wheel', {
-            deltaY: dir,
-            deltaMode: WheelEvent.DOM_DELTA_LINE,
-            clientX: touchX,
-            clientY: touchY,
-            bubbles: true,
-            cancelable: true,
-          }),
-        )
+      // 应用开了 mouse tracking：绕开 xterm 的 wheel→mouse 管线（内部
+      // 活跃态/坐标换算时机不可控，真机上会随机吞事件），自己算格子坐标
+      // 直接把 SGR 滚动序列写进 WS —— 和桌面滚轮到达应用的字节完全一致
+      if (term.modes.mouseTrackingMode !== 'none') {
+        if (wsRef.current?.readyState !== WebSocket.OPEN) return
+        const rect = screen.getBoundingClientRect()
+        const clamp = (v: number, max: number) => Math.min(Math.max(v, 1), max)
+        const col = clamp(Math.ceil((touchX - rect.left) / (rect.width / term.cols)), term.cols)
+        const row = clamp(Math.ceil((touchY - rect.top) / (rect.height / term.rows)), term.rows)
+        const btn = dir > 0 ? 65 : 64
+        for (let i = 0; i < lines; i++) {
+          wsRef.current.send(`i\x1b[<${btn};${col};${row}M`)
+        }
+        return
       }
-    }, stepPx)
-    // xterm 自己处理过的 touch 会 preventDefault（mouse tracking 关闭时），跳过避免双滚。
-    // 我们接手时也立即 preventDefault：浏览器有时在 touchstart 后把手势判给
-    // 原生滚动候选，之后一个 touchmove 都不派发（真机日志证实），必须在
-    // touchstart 就声明手势归页面处理
-    const onTouchStart = (e: TouchEvent) => {
-      if (!e.defaultPrevented && e.touches.length === 1) {
-        touchX = e.touches[0].clientX
-        touchY = e.touches[0].clientY
-        touchScroll.start(e.touches[0].clientY)
-        e.preventDefault()
-      }
+      // 未开 mouse tracking（普通 shell）：直接滚 xterm 视口看 scrollback。
+      // 绝不在 touch 处理期间派发合成 DOM 事件——同步合成 WheelEvent 会
+      // 打断 Chrome 后续的 touchmove 派发（滑一两行就断流的根因）
+      term.scrollLines(dir * lines)
     }
-    const onTouchMove = (e: TouchEvent) => {
-      if (e.defaultPrevented || e.touches.length !== 1) return
-      touchX = e.touches[0].clientX
-      touchY = e.touches[0].clientY
-      touchScroll.move(e.touches[0].clientY)
+    const touchScroll = createTouchScroll(emitLines, stepPx)
+
+    // 惯性滚动：抬手后按末速度衰减继续滚，接近原生滚动手感
+    let flingFrame = 0
+    const startFling = (v0: number) => {
+      let v = v0
+      let acc = 0
+      let last = performance.now()
+      const tick = (now: number) => {
+        acc += v * (now - last)
+        v *= 0.95 ** ((now - last) / 16)
+        last = now
+        if (Math.abs(acc) >= stepPx) {
+          emitLines(acc)
+          acc = acc % stepPx
+        }
+        if (Math.abs(v) > 0.05) flingFrame = requestAnimationFrame(tick)
+      }
+      flingFrame = requestAnimationFrame(tick)
+    }
+    // 手势用 Pointer Events + setPointerCapture：Touch Events 会参与浏览器
+    // 滚动手势仲裁，实测（真机 + CDP 复现）中途会随机停发 touchmove；
+    // pointer capture 明确宣示手势归属，事件持续派发
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch' || !e.isPrimary) return
+      cancelAnimationFrame(flingFrame)
+      container.setPointerCapture(e.pointerId)
+      touchX = e.clientX
+      touchY = e.clientY
+      touchScroll.start(e.clientY)
+    }
+    const onPointerMove = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch' || !e.isPrimary) return
+      touchX = e.clientX
+      touchY = e.clientY
+      touchScroll.move(e.clientY)
+    }
+    const onPointerEnd = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch' || !e.isPrimary) return
+      const v = touchScroll.end()
+      if (Math.abs(v) > 0.2) startFling(v)
+    }
+    // touch 事件在 capture 阶段整体拦截：既阻止浏览器原生滚动/选择，也让
+    // xterm 的 touch 处理彻底失效（滚动统一走上面的 pointer 手势），避免双滚
+    const blockTouch = (e: TouchEvent) => {
       e.preventDefault()
+      e.stopPropagation()
     }
-    const onTouchEnd = () => touchScroll.end()
-    container.addEventListener('touchstart', onTouchStart, { passive: false })
-    container.addEventListener('touchmove', onTouchMove, { passive: false })
-    container.addEventListener('touchend', onTouchEnd)
-    container.addEventListener('touchcancel', onTouchEnd)
+    container.addEventListener('pointerdown', onPointerDown)
+    container.addEventListener('pointermove', onPointerMove)
+    container.addEventListener('pointerup', onPointerEnd)
+    container.addEventListener('pointercancel', onPointerEnd)
+    container.addEventListener('touchstart', blockTouch, { capture: true, passive: false })
+    container.addEventListener('touchmove', blockTouch, { capture: true, passive: false })
 
     return () => {
       disposed = true
       cancelAnimationFrame(initialFitFrame)
-      container.removeEventListener('touchstart', onTouchStart)
-      container.removeEventListener('touchmove', onTouchMove)
-      container.removeEventListener('touchend', onTouchEnd)
-      container.removeEventListener('touchcancel', onTouchEnd)
+      container.removeEventListener('pointerdown', onPointerDown)
+      container.removeEventListener('pointermove', onPointerMove)
+      container.removeEventListener('pointerup', onPointerEnd)
+      container.removeEventListener('pointercancel', onPointerEnd)
+      container.removeEventListener('touchstart', blockTouch, { capture: true })
+      container.removeEventListener('touchmove', blockTouch, { capture: true })
+      cancelAnimationFrame(flingFrame)
       observer.disconnect()
       resizeSub.dispose()
       dataSub.dispose()

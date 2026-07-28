@@ -55,3 +55,38 @@ describe('createTouchScroll', () => {
     expect(emit).not.toHaveBeenCalled()
   })
 })
+
+describe('惯性速度', () => {
+  it('匀速上滑后 end 返回近似速度（px/ms，正向）', () => {
+    const s = createTouchScroll(vi.fn(), 20)
+    s.start(500, 0)
+    s.move(480, 16)
+    s.move(460, 32)
+    s.move(440, 48)
+    const v = s.end(48)
+    expect(v).toBeGreaterThan(0.8)
+    expect(v).toBeLessThan(1.6)
+  })
+
+  it('下滑速度为负', () => {
+    const s = createTouchScroll(vi.fn(), 20)
+    s.start(100, 0)
+    s.move(140, 16)
+    s.move(180, 32)
+    expect(s.end(32)).toBeLessThan(0)
+  })
+
+  it('停顿后抬手速度为 0', () => {
+    const s = createTouchScroll(vi.fn(), 20)
+    s.start(500, 0)
+    s.move(460, 16)
+    const v = s.end(500)
+    expect(v).toBe(0)
+  })
+
+  it('未滑动直接 end 速度为 0', () => {
+    const s = createTouchScroll(vi.fn(), 20)
+    s.start(100, 0)
+    expect(s.end(10)).toBe(0)
+  })
+})
