@@ -3,6 +3,8 @@ import type { WebSocket } from 'ws'
 import type { SessionStore } from '../auth/sessions.js'
 import { COOKIE_NAME } from '../http/middleware.js'
 import type { TmuxExec } from '../tmux/exec.js'
+import { captureHistory } from '../tmux/history.js'
+import { createAltScreenFilter } from './altScreenFilter.js'
 import { createView, destroyView, selectWindow, type View } from '../tmux/view.js'
 
 export interface PtyLike {
@@ -108,6 +110,16 @@ export async function handleTerminalConnection(
     return
   }
 
+  // attach 前注入 pane 历史：视图会话全新，xterm 没有 attach 之前的输出，
+  // 普通缓冲应用（shell/Codex）翻不了旧内容。先把 tmux 历史写给前端进
+  // scrollback，随后 attach 的整屏重绘接在其后，顺序天然无竞争
+  try {
+    const history = await captureHistory(deps.exec, view.viewName)
+    if (history && ws.readyState === ws.OPEN) ws.send(history)
+  } catch (error) {
+    console.error('注入 pane 历史失败:', error)
+  }
+
   const socketArgs = deps.socketName ? ['-L', deps.socketName] : []
   let pty: PtyLike
   try {
@@ -119,8 +131,11 @@ export async function handleTerminalConnection(
     return
   }
 
+  // 滤掉 tmux 的 alt screen 切换，xterm 留在 normal buffer 积累 scrollback
+  const filterAltScreen = createAltScreenFilter()
   pty.onData((data) => {
-    if (ws.readyState === ws.OPEN) ws.send(data)
+    const filtered = filterAltScreen(data)
+    if (filtered && ws.readyState === ws.OPEN) ws.send(filtered)
   })
   pty.onExit(() => {
     ws.close(4410, 'pty exited')
@@ -144,9 +159,27 @@ export async function handleTerminalConnection(
     if (kind === 'w') {
       const parsed = safeJsonParse(rest)
       if (windowSchemaGuard(parsed) && parsed.index >= 0) {
-        selectWindow(deps.exec, view.viewName, parsed.index).catch((error) =>
-          console.error('切换 window 失败:', error),
-        )
+        void (async () => {
+          // 目标 window 的历史也在切换前注入。前提：当前 pane 不在
+          // alternate screen（否则这些字节会写进即将被丢弃的 alt 缓冲）
+          try {
+            const current = (
+              await deps.exec(['display-message', '-p', '-t', view.viewName, '#{alternate_on}'])
+            ).trim()
+            if (current === '0') {
+              const history = await captureHistory(
+                deps.exec,
+                `${view.viewName}:${parsed.index}`,
+              )
+              if (history && ws.readyState === ws.OPEN) ws.send(history)
+            }
+          } catch (error) {
+            console.error('注入 window 历史失败:', error)
+          }
+          await selectWindow(deps.exec, view.viewName, parsed.index).catch((error) =>
+            console.error('切换 window 失败:', error),
+          )
+        })()
       }
     }
   }

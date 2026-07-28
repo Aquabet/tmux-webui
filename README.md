@@ -19,6 +19,25 @@ npm run build && npm start               # http://127.0.0.1:8090
 Development mode: `npm run dev` (backend) + `npm --prefix web run dev`
 (frontend on port 5173, with automatic proxying).
 
+## Mobile
+
+Optimized for phones (shown on touch devices / narrow screens):
+
+- **Touch scrolling** with inertia. Works both for TUIs that use mouse
+  tracking (Claude Code, htop, …— swipes are delivered as terminal scroll
+  events, same bytes as a desktop mouse wheel) and for plain shells
+  (scrolls the xterm scrollback).
+- **Input bar** above the system keyboard: a key row (`Esc` `Tab` `^C` `↑`
+  `↓` `⏎`) plus a text box that grows with its content. Enter sends,
+  Shift+Enter inserts a newline; text goes through the system IME, so voice
+  and swipe input work reliably.
+- **Image upload**: the `Img` button opens the photo picker, uploads the
+  image to the server (`TMUX_WEBUI_UPLOAD_DIR`) and inserts its file path
+  into the input box — mention it in a message and Claude Code will read
+  the image from that path.
+- The layout shrinks when the soft keyboard opens, keeping the session
+  sidebar toggle and window tabs reachable.
+
 ## Configuration (.env or environment variables)
 
 On startup the server reads a **`.env` file from the working directory**
