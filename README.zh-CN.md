@@ -17,6 +17,21 @@ npm run build && npm start           # http://127.0.0.1:8090
 
 开发模式：`npm run dev`（后端）+ `npm --prefix web run dev`（前端，端口 5173，自动代理）。
 
+## 手机端
+
+针对手机做了专门优化（触屏/窄屏设备自动启用）：
+
+- **触摸滚动**（带惯性）：对开启 mouse tracking 的 TUI（Claude Code、htop
+  等）滑动会作为终端滚动事件送达，与桌面滚轮字节一致；普通 shell 则滚动
+  xterm scrollback 回看历史输出。
+- **输入条**：系统键盘上方一排辅助键（`Esc` `Tab` `^C` `↑` `↓` `⏎`）+ 随内容
+  自动长高的输入框。回车发送，Shift+回车换行；文字走系统输入法，语音、
+  滑动输入都可靠。
+- **图片上传**：`Img` 按钮拉起相册，图片上传到服务器
+  （`TMUX_WEBUI_UPLOAD_DIR`）并把文件路径插入输入框——消息里带上路径，
+  Claude Code 会自行读取该图片。
+- 软键盘弹出时布局自动收缩，侧栏开关与 window tabs 始终可见可点。
+
 ## 配置（.env 或环境变量）
 
 启动时会读取**启动目录下的 `.env` 文件**（可选，见 `.env.example`）；

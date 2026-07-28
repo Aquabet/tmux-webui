@@ -45,7 +45,15 @@ describe('InputBar', () => {
     fireEvent.click(screen.getByText('^C'))
     fireEvent.click(screen.getByText('↑'))
     fireEvent.click(screen.getByText('↓'))
-    expect(onSend.mock.calls.map((c) => c[0])).toEqual(['\x1b', '\t', '\x03', '\x1b[A', '\x1b[B'])
+    fireEvent.click(screen.getByText('⏎'))
+    expect(onSend.mock.calls.map((c) => c[0])).toEqual([
+      '\x1b',
+      '\t',
+      '\x03',
+      '\x1b[A',
+      '\x1b[B',
+      '\r',
+    ])
     expect(input.value).toBe('half typed')
   })
 

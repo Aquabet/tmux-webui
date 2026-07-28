@@ -76,8 +76,11 @@ export function InputBar({ onSend }: Props) {
         <button type="button" onClick={() => onSend('\x1b[B')}>
           ↓
         </button>
+        <button type="button" onClick={() => onSend('\r')}>
+          ⏎
+        </button>
         <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()}>
-          {uploading ? '⋯' : '图'}
+          {uploading ? '⋯' : 'Img'}
         </button>
         <input
           ref={fileRef}
