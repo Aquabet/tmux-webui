@@ -22,6 +22,7 @@ describe('createAppServer', () => {
       sessionTtlMs: 60_000,
       cookieSecure: false,
       sessionFile: '',
+      uploadDir: '/tmp/webui-test-uploads',
     }
     server = createAppServer(config)
     await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))
@@ -44,6 +45,7 @@ describe('createAppServer', () => {
       sessionTtlMs: 60_000,
       cookieSecure: false,
       sessionFile: '',
+      uploadDir: '/tmp/webui-test-uploads',
     }
     server = createAppServer(config)
     await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))
@@ -69,6 +71,7 @@ describe('createAppServer', () => {
       sessionTtlMs: 60_000,
       cookieSecure: false,
       sessionFile: '',
+      uploadDir: '/tmp/webui-test-uploads',
     }
     server = createAppServer(config)
     await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))

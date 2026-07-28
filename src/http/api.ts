@@ -1,4 +1,7 @@
-import { Router, json, type Response } from 'express'
+import { randomBytes } from 'node:crypto'
+import { mkdir, writeFile } from 'node:fs/promises'
+import path from 'node:path'
+import { Router, json, raw, type Response } from 'express'
 import { z } from 'zod'
 import { verifyPassword } from '../auth/password.js'
 import type { RateLimiter } from '../auth/rateLimit.js'
@@ -23,6 +26,14 @@ export interface ApiDeps {
 
 const loginSchema = z.object({ password: z.string().min(1).max(200) })
 const sessionNameSchema = z.object({ name: z.string().min(1).max(64) })
+
+// 白名单 mime → 扩展名；文件名完全由服务端生成，客户端无法影响路径
+const IMAGE_EXT: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+}
 
 function sendTmuxError(res: Response, error: unknown, fallback: string): void {
   if (error instanceof TmuxError) {
@@ -78,6 +89,33 @@ export function createApiRouter(deps: ApiDeps): Router {
     res.clearCookie(COOKIE_NAME)
     res.json({ success: true })
   })
+
+  // 上传图片存盘，返回绝对路径。用途：把路径粘进终端输入，
+  // Claude Code 等 CLI 会自行读取消息中提到的图片文件
+  router.post(
+    '/upload',
+    requireAuth(deps.store),
+    raw({ type: 'image/*', limit: '15mb' }),
+    async (req, res) => {
+      const ext = IMAGE_EXT[req.headers['content-type'] ?? '']
+      if (!ext || !Buffer.isBuffer(req.body) || req.body.length === 0) {
+        res.status(400).json({ success: false, error: '仅支持 png/jpeg/webp/gif 图片' })
+        return
+      }
+      try {
+        await mkdir(deps.config.uploadDir, { recursive: true })
+        const file = path.join(
+          deps.config.uploadDir,
+          `img-${Date.now()}-${randomBytes(4).toString('hex')}.${ext}`,
+        )
+        await writeFile(file, req.body)
+        res.json({ success: true, data: { path: file } })
+      } catch (error) {
+        console.error('保存上传图片失败:', error)
+        res.status(500).json({ success: false, error: '保存图片失败' })
+      }
+    },
+  )
 
   router.get('/sessions', requireAuth(deps.store), async (_req, res) => {
     try {

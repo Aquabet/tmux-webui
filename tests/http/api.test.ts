@@ -1,7 +1,10 @@
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import cookieParser from 'cookie-parser'
 import express from 'express'
 import request from 'supertest'
-import { describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it } from 'vitest'
 import { hashPassword } from '../../src/auth/password.js'
 import { createRateLimiter } from '../../src/auth/rateLimit.js'
 import { createSessionStore } from '../../src/auth/sessions.js'
@@ -12,6 +15,9 @@ import { TmuxError, type TmuxExec } from '../../src/tmux/exec.js'
 const SESSIONS_OUT = 'demo\t1\n'
 const WINDOWS_OUT = 'demo\t0\tclaude\t1\n'
 
+const UPLOAD_DIR = mkdtempSync(path.join(tmpdir(), 'webui-upload-'))
+afterAll(() => rmSync(UPLOAD_DIR, { recursive: true, force: true }))
+
 async function makeApp(overrides: { exec?: TmuxExec; limiterMax?: number } = {}) {
   const config: Config = {
     host: '127.0.0.1',
@@ -21,6 +27,7 @@ async function makeApp(overrides: { exec?: TmuxExec; limiterMax?: number } = {})
     sessionTtlMs: 60_000,
     cookieSecure: false,
     sessionFile: '',
+    uploadDir: UPLOAD_DIR,
   }
   const exec: TmuxExec =
     overrides.exec ??
@@ -239,5 +246,51 @@ describe('POST /api/logout', () => {
     const agent = await loginAgent(app)
     await agent.post('/api/logout').expect(200)
     await agent.get('/api/sessions').expect(401)
+  })
+})
+
+describe('POST /api/upload', () => {
+  const PNG = Buffer.from('89504e470d0a1a0a0000000d494844520000000100000001', 'hex')
+
+  it('未登录返回 401', async () => {
+    const app = await makeApp()
+    await request(app)
+      .post('/api/upload')
+      .set('content-type', 'image/png')
+      .send(PNG)
+      .expect(401)
+  })
+
+  it('保存图片到 uploadDir 并返回绝对路径', async () => {
+    const app = await makeApp()
+    const agent = await loginAgent(app)
+    const res = await agent.post('/api/upload').set('content-type', 'image/png').send(PNG)
+    expect(res.status).toBe(200)
+    const saved = res.body.data.path as string
+    expect(saved.startsWith(UPLOAD_DIR)).toBe(true)
+    expect(saved.endsWith('.png')).toBe(true)
+    expect(existsSync(saved)).toBe(true)
+    expect(readFileSync(saved).equals(PNG)).toBe(true)
+  })
+
+  it('jpeg 扩展名为 .jpg', async () => {
+    const app = await makeApp()
+    const agent = await loginAgent(app)
+    const res = await agent.post('/api/upload').set('content-type', 'image/jpeg').send(PNG)
+    expect(res.status).toBe(200)
+    expect((res.body.data.path as string).endsWith('.jpg')).toBe(true)
+  })
+
+  it('非图片类型返回 400', async () => {
+    const app = await makeApp()
+    const agent = await loginAgent(app)
+    await agent.post('/api/upload').set('content-type', 'text/plain').send('hi').expect(400)
+    await agent.post('/api/upload').set('content-type', 'image/svg+xml').send('<svg/>').expect(400)
+  })
+
+  it('空 body 返回 400', async () => {
+    const app = await makeApp()
+    const agent = await loginAgent(app)
+    await agent.post('/api/upload').set('content-type', 'image/png').expect(400)
   })
 })

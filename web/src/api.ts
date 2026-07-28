@@ -43,6 +43,18 @@ export async function login(password: string): Promise<void> {
   }
 }
 
+export async function uploadImage(file: File): Promise<string> {
+  const res = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { 'content-type': file.type },
+    body: file,
+  })
+  if (res.status === 401) throw new AuthError()
+  const body = await parseBody<{ path: string }>(res)
+  if (!res.ok || !body.success || !body.data) throw new Error(body.error ?? '上传失败')
+  return body.data.path
+}
+
 export async function checkAuth(): Promise<boolean> {
   try {
     const res = await fetch('/api/sessions')
