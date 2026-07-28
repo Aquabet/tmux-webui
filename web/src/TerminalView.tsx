@@ -102,23 +102,54 @@ export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
 
     // 手机端滑动滚动：应用开启 mouse tracking 时 xterm 忽略 touch，
     // 把滑动合成 WheelEvent 派发回 xterm，走桌面滚轮同一路径。
-    // 步长取一行高度，保证每次派发至少滚一行（wheel→mouse 上报按行取整）。
+    // 每行派发一个 WheelEvent：xterm 的 wheel→mouse 上报每个事件只发一次
+    // 滚动（幅度被丢弃），快速滑动的大位移必须拆成多个单行事件才滚得动。
+    // deltaMode 用 DOM_DELTA_LINE：pixel 模式按设备像素行高换算，高 DPR 下
+    // CSS 像素增量不足一行会被 floor 掉。
+    const stepPx = Math.ceil(TERMINAL_OPTIONS.fontSize! * 1.2)
+    // 合成事件必须带手指真实坐标：mouse tracking 下 wheel 会连同格子坐标
+    // 上报给应用，(0,0) 落在内容区外会被按区域处理滚动的 TUI 忽略
+    let touchX = 0
+    let touchY = 0
     const touchScroll = createTouchScroll((deltaY) => {
-      container.querySelector('.xterm-screen')?.dispatchEvent(
-        new WheelEvent('wheel', { deltaY, bubbles: true, cancelable: true }),
-      )
-    }, Math.ceil(TERMINAL_OPTIONS.fontSize! * 1.2))
-    // xterm 自己处理过的 touch 会 preventDefault（mouse tracking 关闭时），跳过避免双滚
+      const screen = container.querySelector('.xterm-screen')
+      if (!screen) return
+      const lines = Math.round(Math.abs(deltaY) / stepPx)
+      const dir = deltaY > 0 ? 1 : -1
+      for (let i = 0; i < lines; i++) {
+        screen.dispatchEvent(
+          new WheelEvent('wheel', {
+            deltaY: dir,
+            deltaMode: WheelEvent.DOM_DELTA_LINE,
+            clientX: touchX,
+            clientY: touchY,
+            bubbles: true,
+            cancelable: true,
+          }),
+        )
+      }
+    }, stepPx)
+    // xterm 自己处理过的 touch 会 preventDefault（mouse tracking 关闭时），跳过避免双滚。
+    // 我们接手时也立即 preventDefault：浏览器有时在 touchstart 后把手势判给
+    // 原生滚动候选，之后一个 touchmove 都不派发（真机日志证实），必须在
+    // touchstart 就声明手势归页面处理
     const onTouchStart = (e: TouchEvent) => {
-      if (!e.defaultPrevented && e.touches.length === 1) touchScroll.start(e.touches[0].clientY)
+      if (!e.defaultPrevented && e.touches.length === 1) {
+        touchX = e.touches[0].clientX
+        touchY = e.touches[0].clientY
+        touchScroll.start(e.touches[0].clientY)
+        e.preventDefault()
+      }
     }
     const onTouchMove = (e: TouchEvent) => {
       if (e.defaultPrevented || e.touches.length !== 1) return
+      touchX = e.touches[0].clientX
+      touchY = e.touches[0].clientY
       touchScroll.move(e.touches[0].clientY)
       e.preventDefault()
     }
     const onTouchEnd = () => touchScroll.end()
-    container.addEventListener('touchstart', onTouchStart)
+    container.addEventListener('touchstart', onTouchStart, { passive: false })
     container.addEventListener('touchmove', onTouchMove, { passive: false })
     container.addEventListener('touchend', onTouchEnd)
     container.addEventListener('touchcancel', onTouchEnd)

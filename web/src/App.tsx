@@ -126,6 +126,24 @@ export function App() {
   useEffect(() => {
     checkAuth().then(setAuthed)
   }, [])
+
+  // 软键盘弹出时把布局收缩到可视区高度：viewport meta 的 resizes-content
+  // 部分浏览器（iOS Safari 等）不支持，改用 visualViewport 兜底；
+  // scrollTo(0,0) 抵消浏览器为露出焦点输入框做的整页上移，保住顶部按钮
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const apply = () => {
+      document.documentElement.style.setProperty('--app-height', `${vv.height}px`)
+      window.scrollTo(0, 0)
+    }
+    apply()
+    vv.addEventListener('resize', apply)
+    return () => {
+      vv.removeEventListener('resize', apply)
+      document.documentElement.style.removeProperty('--app-height')
+    }
+  }, [])
   if (authed === null) return null
   if (!authed) return <Login onSuccess={() => setAuthed(true)} />
   return <Main onAuthLost={onAuthLost} />
