@@ -4,6 +4,7 @@ import { FitAddon } from '@xterm/addon-fit'
 import { Unicode11Addon } from '@xterm/addon-unicode11'
 import { InputBar } from './InputBar'
 import { TERMINAL_OPTIONS } from './terminalOptions'
+import { createTouchScroll } from './touchScroll'
 
 const FATAL_CLOSE_CODES = new Set([4400, 4403, 4404, 4500])
 
@@ -99,9 +100,36 @@ export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
     const observer = new ResizeObserver(() => fit.fit())
     observer.observe(container)
 
+    // 手机端滑动滚动：应用开启 mouse tracking 时 xterm 忽略 touch，
+    // 把滑动合成 WheelEvent 派发回 xterm，走桌面滚轮同一路径。
+    // 步长取一行高度，保证每次派发至少滚一行（wheel→mouse 上报按行取整）。
+    const touchScroll = createTouchScroll((deltaY) => {
+      container.querySelector('.xterm-screen')?.dispatchEvent(
+        new WheelEvent('wheel', { deltaY, bubbles: true, cancelable: true }),
+      )
+    }, Math.ceil(TERMINAL_OPTIONS.fontSize! * 1.2))
+    // xterm 自己处理过的 touch 会 preventDefault（mouse tracking 关闭时），跳过避免双滚
+    const onTouchStart = (e: TouchEvent) => {
+      if (!e.defaultPrevented && e.touches.length === 1) touchScroll.start(e.touches[0].clientY)
+    }
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.defaultPrevented || e.touches.length !== 1) return
+      touchScroll.move(e.touches[0].clientY)
+      e.preventDefault()
+    }
+    const onTouchEnd = () => touchScroll.end()
+    container.addEventListener('touchstart', onTouchStart)
+    container.addEventListener('touchmove', onTouchMove, { passive: false })
+    container.addEventListener('touchend', onTouchEnd)
+    container.addEventListener('touchcancel', onTouchEnd)
+
     return () => {
       disposed = true
       cancelAnimationFrame(initialFitFrame)
+      container.removeEventListener('touchstart', onTouchStart)
+      container.removeEventListener('touchmove', onTouchMove)
+      container.removeEventListener('touchend', onTouchEnd)
+      container.removeEventListener('touchcancel', onTouchEnd)
       observer.disconnect()
       resizeSub.dispose()
       dataSub.dispose()
