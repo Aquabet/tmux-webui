@@ -73,6 +73,7 @@ export interface VersionInfo {
   latest: string | null
   url: string | null
   updateAvailable: boolean
+  canUpdate: boolean
 }
 
 export async function fetchVersion(): Promise<VersionInfo> {
@@ -81,6 +82,15 @@ export async function fetchVersion(): Promise<VersionInfo> {
   const body = await parseBody<VersionInfo>(res)
   if (!res.ok || !body.success || !body.data) throw new Error(body.error ?? '获取版本失败')
   return body.data
+}
+
+// 在独立 tmux session 里启动更新，返回的会话名用于切过去看输出
+export async function startUpdate(): Promise<string> {
+  const res = await fetch('/api/update', { method: 'POST' })
+  if (res.status === 401) throw new AuthError()
+  const body = await parseBody<{ session: string }>(res)
+  if (!res.ok || !body.success || !body.data) throw new Error(body.error ?? '启动更新失败')
+  return body.data.session
 }
 
 export async function fetchSessions(): Promise<ApiSession[]> {

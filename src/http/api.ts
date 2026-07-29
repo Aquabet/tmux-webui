@@ -15,6 +15,7 @@ import {
   renameSession,
   sessionNameError,
 } from '../tmux/manage.js'
+import { canSelfUpdate, startUpdateSession } from '../selfUpdate.js'
 import type { UpdateInfo } from '../update.js'
 import { COOKIE_NAME, requireAuth } from './middleware.js'
 
@@ -24,6 +25,7 @@ export interface ApiDeps {
   limiter: RateLimiter
   exec: TmuxExec
   checkUpdate: () => Promise<UpdateInfo>
+  repoRoot: string
 }
 
 const loginSchema = z.object({ password: z.string().min(1).max(200) })
@@ -125,7 +127,26 @@ export function createApiRouter(deps: ApiDeps): Router {
 
   // 放在鉴权后：未登录的人没必要知道这台机器跑的什么版本
   router.get('/version', requireAuth(deps.store), async (_req, res) => {
-    res.json({ success: true, data: await deps.checkUpdate() })
+    const info = await deps.checkUpdate()
+    res.json({ success: true, data: { ...info, canUpdate: canSelfUpdate(deps.repoRoot) } })
+  })
+
+  // 一键更新：在独立 tmux session 里跑仓库自带的 update.sh。命令固定，
+  // 不接受请求里的任何参数——这个端点等价于远程执行代码，可控面必须为零
+  router.post('/update', requireAuth(deps.store), async (_req, res) => {
+    try {
+      res.json({ success: true, data: await startUpdateSession(deps.exec, deps.repoRoot) })
+    } catch (error) {
+      if (error instanceof TmuxError) {
+        sendTmuxError(res, error, '启动更新失败')
+        return
+      }
+      // 脚本缺失、已有更新在跑：都是用户可理解的状态，原样回传
+      res.status(409).json({
+        success: false,
+        error: error instanceof Error ? error.message : '启动更新失败',
+      })
+    }
   })
 
   router.get('/sessions', requireAuth(deps.store), async (_req, res) => {

@@ -32,7 +32,13 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-u
 .session-action:hover { background: var(--border); opacity: 1; }
 .new-session { margin-top: 10px; width: 100%; padding: 8px; border: 1px dashed var(--border); border-radius: 6px; background: transparent; color: var(--fg); opacity: 0.7; cursor: pointer; font-size: 13px; }
 .new-session:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
-.update-notice { display: block; margin-top: 10px; padding: 6px 8px; border-radius: 6px; background: #7aa2f733; color: var(--accent); font-size: 12px; text-decoration: none; }
+/* 侧栏底部版本区：无新版时只有一行灰版本号，有新版才展开提示与更新按钮 */
+.version-badge { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; font-size: 12px; }
+.version-current { opacity: 0.45; }
+.version-new { padding: 6px 8px; border-radius: 6px; background: #7aa2f733; color: var(--accent); text-decoration: none; }
+.version-badge button { padding: 6px 8px; border: 1px solid var(--accent); border-radius: 6px; background: transparent; color: var(--accent); font-size: 12px; cursor: pointer; }
+.version-badge button:disabled { opacity: 0.5; cursor: default; }
+.version-error { color: #f7768e; }
 .sidebar .session:hover { background: var(--border); }
 .sidebar .session.selected { background: var(--accent); color: var(--bg-alt); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: #565f89; flex-shrink: 0; }

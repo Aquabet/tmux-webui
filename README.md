@@ -132,6 +132,14 @@ Two lines that are easy to get wrong:
 
 ### Updating
 
+The sidebar shows the version you are running. When a newer release exists it
+says so and offers an **Update** button: the server starts the update in a
+separate tmux session (`tmux-webui-update`) and the UI switches to it, so you
+watch it run. It has to be a separate session — the update restarts the
+service, which would otherwise kill the process performing it.
+
+The same thing from a shell:
+
 ```bash
 ./scripts/update.sh
 ```
@@ -203,7 +211,7 @@ quotes is recommended.
 
 Once logged in, the server checks the latest GitHub release at most once every
 6 hours and shows a link in the sidebar when a newer version exists. It never
-installs anything — run [`./scripts/update.sh`](#updating) when you want it. The
+installs anything on its own — updating happens when you press the button. The
 check is the only outbound request this server makes; set
 `TMUX_WEBUI_UPDATE_CHECK=false` to disable it.
 
@@ -215,6 +223,10 @@ directly to the public internet:
 - Keep the default `127.0.0.1` listen address; access it via Tailscale or a
   reverse proxy with HTTPS
 - Set `TMUX_WEBUI_COOKIE_SECURE=true` behind a TLS-terminating proxy
+- The Update button runs `scripts/update.sh` from the directory the server was
+  started from. The command is fixed and takes nothing from the request — no
+  branch, ref, or path — so an authenticated client cannot make it run anything
+  else. It is unavailable when that script is missing
 - There is no default password: the server refuses to start until
   `TMUX_WEBUI_PASSWORD_HASH` is set
 - Binding to a non-loopback address prints a startup warning — it is not a
