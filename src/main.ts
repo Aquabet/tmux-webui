@@ -78,7 +78,7 @@ switch (command.kind) {
     await serve()
     break
   case 'init':
-    process.exit(await runInit())
+    process.exit(await runInit(command.passwordStdin))
     break
   case 'help':
     console.log(HELP_TEXT)

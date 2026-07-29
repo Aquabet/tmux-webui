@@ -34,6 +34,31 @@ node dist/main.js         # http://127.0.0.1:8090
 `node dist/main.js help` 列出全部子命令和环境变量。
 嫌命令长可以 `npm link`，之后直接敲 `tmux-webui`。
 
+### 非交互部署（CI、配置管理、AI agent 代跑）
+
+`init` 默认要交互式终端。没有终端时，密码从标准输入喂进去：
+
+```bash
+printf '%s' "$TMUX_WEBUI_PASSWORD" | node dist/main.js init --password-stdin
+```
+
+- **不要**把密码作为命令行参数传——会进 shell 历史，同机器上别的用户还能从 `ps` 看到。
+- 可重复执行：直接覆盖已存的哈希，不询问，`config.json` 里其它配置保留。
+- 密码短于 8 位时退出码非 0。
+
+不开浏览器验证部署结果：
+
+```bash
+curl -si localhost:8090/api/sessions | head -1                 # HTTP/1.1 401 Unauthorized
+curl -sc /tmp/c -X POST -H 'content-type: application/json' \
+  -d "{\"password\":\"$TMUX_WEBUI_PASSWORD\"}" \
+  localhost:8090/api/login -o /dev/null -w '%{http_code}\n'    # 200
+curl -sb /tmp/c localhost:8090/api/sessions                    # {"success":true,...}
+```
+
+**替别人部署时**：不要把 `TMUX_WEBUI_HOST` 从 `127.0.0.1` 改掉，不要把
+`config.json` 或密码哈希提交进仓库；对方需要远程访问就配 Tailscale 或带 TLS 的反代。
+
 开发模式：`npm run dev`（后端）+ `npm --prefix web run dev`（前端，端口 5173，自动代理）。
 
 ### 开机自启（Linux）
@@ -123,6 +148,20 @@ systemctl --user restart tmux-webui   # 若按上面配了服务
 - 反代 TLS 后设置 `TMUX_WEBUI_COOKIE_SECURE=true`
 - 没有默认密码：未设置 `TMUX_WEBUI_PASSWORD_HASH` 时服务直接拒绝启动
 - 绑定非回环地址会在启动时打印告警——在不可信网络上这不是受支持的配置
+
+## 排错
+
+| 现象 | 原因 | 处理 |
+|---|---|---|
+| `未找到 tmux 命令`（启动即退出） | PATH 里没有 tmux | 装上 tmux 再启动 |
+| `TMUX_WEBUI_PASSWORD_HASH 未设置` | 还没设访问密码 | 跑 `init`，见[快速开始](#快速开始) |
+| `端口 8090 已被占用` | 端口被别的进程占了 | 设 `TMUX_WEBUI_PORT`，或停掉那个进程 |
+| `没有权限监听 …` | 用了 1024 以下的端口 | 换 ≥1024 的端口，用反代对外 |
+| `init 需要交互式终端` | 无 TTY 环境跑了 `init` | 改用 `--password-stdin`，见[非交互部署](#非交互部署ci配置管理ai-agent-代跑) |
+| `npm install` 报 `gyp ERR!` | 缺 `node-pty` 需要的 C++ 工具链 | 装 `python3`、`make` 和编译器，见[前置依赖](#前置依赖) |
+| 页面空白、`/assets/…` 404 | 前端没构建 | 跑 `npm run build` |
+| 界面提示 `tmux server 未运行`（503） | 装了 tmux 但没有会话 | 先起一个：`tmux new -d -s main` |
+| 密码总是登录失败 | 存的哈希与密码对不上 | 重跑 `init`；注意优先级是 环境变量 > `.env` > `config.json` |
 
 ## 测试
 

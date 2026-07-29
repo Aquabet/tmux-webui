@@ -37,6 +37,34 @@ node dist/main.js         # http://127.0.0.1:8090
 `node dist/main.js help` lists all subcommands and environment variables.
 Prefer a short command? `npm link` puts `tmux-webui` on your `PATH`.
 
+### Non-interactive setup (CI, config management, AI agents)
+
+`init` prompts on a TTY. When there is no terminal, feed the password on stdin:
+
+```bash
+printf '%s' "$TMUX_WEBUI_PASSWORD" | node dist/main.js init --password-stdin
+```
+
+- Never pass the password as an argument — it lands in shell history and is
+  visible to `ps` for other users on the machine.
+- Rerunning is idempotent: it overwrites the stored hash without prompting and
+  keeps every other setting in `config.json`.
+- Exits non-zero if the password is shorter than 8 characters.
+
+Verify the deployment without a browser:
+
+```bash
+curl -si localhost:8090/api/sessions | head -1                 # HTTP/1.1 401 Unauthorized
+curl -sc /tmp/c -X POST -H 'content-type: application/json' \
+  -d "{\"password\":\"$TMUX_WEBUI_PASSWORD\"}" \
+  localhost:8090/api/login -o /dev/null -w '%{http_code}\n'    # 200
+curl -sb /tmp/c localhost:8090/api/sessions                    # {"success":true,...}
+```
+
+Deploying on someone's behalf? Do not change `TMUX_WEBUI_HOST` from
+`127.0.0.1`, do not commit `config.json` or the hash to a repository, and set
+up Tailscale or a TLS reverse proxy if the person needs remote access.
+
 Development mode: `npm run dev` (backend) + `npm --prefix web run dev`
 (frontend on port 5173, with automatic proxying).
 
@@ -141,6 +169,20 @@ directly to the public internet:
   `TMUX_WEBUI_PASSWORD_HASH` is set
 - Binding to a non-loopback address prints a startup warning — it is not a
   supported configuration on an untrusted network
+
+## Troubleshooting
+
+| What you see | Cause | Fix |
+|---|---|---|
+| `未找到 tmux 命令` (exits immediately) | tmux is not on `PATH` | install tmux, then start the server again |
+| `TMUX_WEBUI_PASSWORD_HASH 未设置` | no password configured yet | run `init` (see [Quick Start](#quick-start)) |
+| `端口 8090 已被占用` | another process holds the port | set `TMUX_WEBUI_PORT`, or stop that process |
+| `没有权限监听 …` | port below 1024 without privileges | use a port ≥ 1024 and reverse-proxy to it |
+| `init 需要交互式终端` | `init` ran without a TTY | use `--password-stdin`, see [Non-interactive setup](#non-interactive-setup-ci-config-management-ai-agents) |
+| `gyp ERR!` during `npm install` | no C++ toolchain for `node-pty` | install `python3`, `make`, and a compiler — see [Prerequisites](#prerequisites) |
+| Blank page, `404` on `/assets/…` | frontend was never built | run `npm run build` |
+| `tmux server 未运行` (503 in the UI) | tmux is installed but no session exists | start one: `tmux new -d -s main` |
+| Login always fails | the stored hash does not match the password | rerun `init`; note that config precedence is env > `.env` > `config.json` |
 
 ## Testing
 

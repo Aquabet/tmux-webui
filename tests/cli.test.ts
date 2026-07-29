@@ -7,7 +7,21 @@ describe('parseArgs', () => {
   })
 
   it('识别 init 子命令', () => {
-    expect(parseArgs(['init'])).toEqual({ kind: 'init' })
+    expect(parseArgs(['init'])).toEqual({ kind: 'init', passwordStdin: false })
+  })
+
+  it('init --password-stdin 供非交互环境（CI / AI agent）使用', () => {
+    expect(parseArgs(['init', '--password-stdin'])).toEqual({
+      kind: 'init',
+      passwordStdin: true,
+    })
+  })
+
+  it('init 后面跟未知参数要报错，不能当成默认 init 吞掉', () => {
+    expect(parseArgs(['init', '--password=hunter2'])).toEqual({
+      kind: 'unknown',
+      arg: '--password=hunter2',
+    })
   })
 
   it('识别 help / version 的长短写法', () => {
