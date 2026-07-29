@@ -13,11 +13,24 @@ tmux window，完整交互终端（xterm.js）。浏览器视图基于 tmux 分�
 
 ## 快速开始
 
+需要同一台机器上有 **Node.js ≥ 20** 和 **tmux**。
+
 ```bash
+npx tmux-webui init   # 设置访问密码（哈希后存入 ~/.tmux-webui/config.json）
+npx tmux-webui        # http://127.0.0.1:8090
+```
+
+或者装一次：`npm install -g tmux-webui`，之后直接 `tmux-webui`。
+
+`tmux-webui help` 列出全部子命令和环境变量。
+
+### 从源码运行
+
+```bash
+git clone https://github.com/Aquabet/tmux-webui.git && cd tmux-webui
 npm install && npm --prefix web install
-cp .env.example .env
-npm run hash-password -- 你的密码     # 生成哈希，粘贴进 .env
-npm run build && npm start           # http://127.0.0.1:8090
+npm run build
+node dist/main.js init && node dist/main.js
 ```
 
 开发模式：`npm run dev`（后端）+ `npm --prefix web run dev`（前端，端口 5173，自动代理）。
@@ -37,15 +50,21 @@ npm run build && npm start           # http://127.0.0.1:8090
   Claude Code 会自行读取该图片。
 - 软键盘弹出时布局自动收缩，侧栏开关与 window tabs 始终可见可点。
 
-## 配置（.env 或环境变量）
+## 配置
 
-启动时会读取**启动目录下的 `.env` 文件**（可选，见 `.env.example`）；
-真实环境变量优先于 `.env`。`.env` 不做变量展开，bcrypt 哈希里的 `$` 原样保留，
+三处来源，优先级由高到低：
+
+1. 真实环境变量
+2. 启动目录下的 `.env` 文件（可选，见 `.env.example`）
+3. `~/.tmux-webui/config.json`——`tmux-webui init` 写入，权限 `0600`
+
+`config.json` 是扁平 JSON 对象，键名与环境变量完全一致，例如
+`{"TMUX_WEBUI_PORT": 9000}`。`.env` 不做变量展开，bcrypt 哈希里的 `$` 原样保留，
 建议用单引号包裹值。
 
 | 变量 | 默认 | 说明 |
 |---|---|---|
-| `TMUX_WEBUI_PASSWORD_HASH` | 必填 | bcrypt 哈希，用 `npm run hash-password` 生成 |
+| `TMUX_WEBUI_PASSWORD_HASH` | 必填 | 访问密码的 bcrypt 哈希，由 `tmux-webui init` 写入 |
 | `TMUX_WEBUI_HOST` | `127.0.0.1` | 监听地址 |
 | `TMUX_WEBUI_PORT` | `8090` | 监听端口 |
 | `TMUX_WEBUI_SOCKET` | （默认 socket） | `tmux -L` socket 名 |

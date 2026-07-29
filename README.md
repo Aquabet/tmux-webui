@@ -16,11 +16,24 @@ independent** of clients attached on your machine — neither disturbs the other
 
 ## Quick Start
 
+Requires **Node.js ≥ 20** and **tmux** on the same machine.
+
 ```bash
+npx tmux-webui init   # set the access password (stored hashed in ~/.tmux-webui/config.json)
+npx tmux-webui        # http://127.0.0.1:8090
+```
+
+Or install it once: `npm install -g tmux-webui`, then `tmux-webui`.
+
+`tmux-webui help` lists all subcommands and environment variables.
+
+### From source
+
+```bash
+git clone https://github.com/Aquabet/tmux-webui.git && cd tmux-webui
 npm install && npm --prefix web install
-cp .env.example .env
-npm run hash-password -- your-password   # generate a hash, paste it into .env
-npm run build && npm start               # http://127.0.0.1:8090
+npm run build
+node dist/main.js init && node dist/main.js
 ```
 
 Development mode: `npm run dev` (backend) + `npm --prefix web run dev`
@@ -45,16 +58,22 @@ Optimized for phones (shown on touch devices / narrow screens):
 - The layout shrinks when the soft keyboard opens, keeping the session
   sidebar toggle and window tabs reachable.
 
-## Configuration (.env or environment variables)
+## Configuration
 
-On startup the server reads a **`.env` file from the working directory**
-(optional, see `.env.example`); real environment variables take precedence over
-`.env`. No variable expansion is performed, so `$` inside bcrypt hashes is kept
-as-is — wrapping values in single quotes is recommended.
+Three sources, highest priority first:
+
+1. Real environment variables
+2. A `.env` file in the working directory (optional, see `.env.example`)
+3. `~/.tmux-webui/config.json` — written by `tmux-webui init`, mode `0600`
+
+`config.json` is a flat JSON object using the same key names as the environment
+variables, e.g. `{"TMUX_WEBUI_PORT": 9000}`. In `.env`, no variable expansion is
+performed, so `$` inside bcrypt hashes is kept as-is — wrapping values in single
+quotes is recommended.
 
 | Variable | Default | Description |
 |---|---|---|
-| `TMUX_WEBUI_PASSWORD_HASH` | required | bcrypt hash, generate with `npm run hash-password` |
+| `TMUX_WEBUI_PASSWORD_HASH` | required | bcrypt hash of the access password, set by `tmux-webui init` |
 | `TMUX_WEBUI_HOST` | `127.0.0.1` | listen address |
 | `TMUX_WEBUI_PORT` | `8090` | listen port |
 | `TMUX_WEBUI_SOCKET` | (default socket) | `tmux -L` socket name |

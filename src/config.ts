@@ -54,7 +54,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
   const passwordHash = env.TMUX_WEBUI_PASSWORD_HASH
   if (!passwordHash) {
     throw new Error(
-      'TMUX_WEBUI_PASSWORD_HASH 未设置。请运行 `npm run hash-password` 生成后再启动。',
+      'TMUX_WEBUI_PASSWORD_HASH 未设置：还没有设访问密码。请先运行 `tmux-webui init`。',
     )
   }
   return {
