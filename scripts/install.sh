@@ -65,9 +65,11 @@ if [ "$(uname -s)" != "Darwin" ]; then
   echo "  编译工具链就绪"
 fi
 
+# 用 ci 而非 install：严格按 lockfile 装，且不会改动 lockfile——
+# npm install 会顺手改 peer 标志位，把工作区弄脏，之后 update.sh 会拒绝更新
 echo "==> 安装依赖"
-npm install
-npm --prefix web install
+npm ci
+npm --prefix web ci
 
 echo "==> 构建"
 npm run build
