@@ -48,7 +48,8 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-u
 /* 按内容定宽再均分剩余空间：键多了 flex:1 会把 Mode 这类文字键压到溢出；
    窄屏放不下时换行而不是压扁 */
 .input-keys { display: flex; flex-wrap: wrap; gap: 6px; }
-.input-keys button { flex: 1 0 auto; min-width: 40px; padding: 10px 6px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--fg); font-size: 14px; cursor: pointer; }
+/* 长按连删要禁掉长按选择/iOS 长按气泡，否则按住会被系统手势打断 */
+.input-keys button { flex: 1 0 auto; min-width: 40px; padding: 10px 6px; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--fg); font-size: 14px; cursor: pointer; }
 .input-keys button:active { background: var(--border); }
 /* 高度由 JS 随内容撑开（autoResize），封顶 30vh 后内部滚动；16px 防 iOS 聚焦自动缩放 */
 .input-bar textarea { width: 100%; box-sizing: border-box; resize: none; overflow-y: auto; max-height: 30vh; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--fg); font-size: 16px; font-family: inherit; line-height: 1.4; }

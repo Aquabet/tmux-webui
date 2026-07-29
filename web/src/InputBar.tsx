@@ -1,12 +1,13 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { uploadImage } from './api'
 
 interface Props {
   onSend: (data: string) => void
 }
 
-// 发完文本等多久再发回车。太短会被 TUI 并进同一次粘贴，太长手感发飘。
-const ENTER_DELAY_MS = 80
+// 长按连发的起始延迟与间隔，对齐系统键盘的手感
+const REPEAT_DELAY_MS = 400
+const REPEAT_INTERVAL_MS = 60
 
 // 移动端输入条：xterm 的隐藏 textarea 对语音/滑动输入法的 composition
 // 事件支持不佳（长句只上屏个别字符），原生输入框则完全走系统 IME，
@@ -16,6 +17,26 @@ export function InputBar({ onSend }: Props) {
   const [uploading, setUploading] = useState(false)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const repeatRef = useRef<{ delay?: number; interval?: number }>({})
+
+  // 长按连发：按下先发一次，超过起始延迟后按固定间隔重复，抬手/移出/取消即停。
+  // 用 pointer 事件而非 click，抬手才结束的语义 click 表达不了。
+  function startRepeat(data: string) {
+    stopRepeat()
+    onSend(data)
+    repeatRef.current.delay = window.setTimeout(() => {
+      repeatRef.current.interval = window.setInterval(() => onSend(data), REPEAT_INTERVAL_MS)
+    }, REPEAT_DELAY_MS)
+  }
+
+  function stopRepeat() {
+    window.clearTimeout(repeatRef.current.delay)
+    window.clearInterval(repeatRef.current.interval)
+    repeatRef.current = {}
+  }
+
+  // 卸载时若还按着（切换 window / 断连），定时器不能留下来继续发
+  useEffect(() => stopRepeat, [])
 
   // 上传图片后把服务器路径插进输入框：Claude Code 等 CLI 会读取消息里的图片路径
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -36,16 +57,11 @@ export function InputBar({ onSend }: Props) {
     }
   }
 
+  // 有内容时只把文字送进终端，不替用户按回车——送进去的文字先落在对端
+  // （Claude Code 的输入框、shell 的命令行）里，还能继续改；要提交再点 ⏎。
+  // 框为空时回车才等价于给终端按一下回车。
   function send() {
-    // 文本和回车必须分两次写：连在一起是一整块突发输入，Claude Code 这类 TUI
-    // 会判成「粘贴」，末尾 \r 变成粘贴内容里的换行而不是提交键。隔开一拍再发
-    // 回车，对端才当成独立按键。
-    if (text) {
-      onSend(text)
-      setTimeout(() => onSend('\r'), ENTER_DELAY_MS)
-    } else {
-      onSend('\r')
-    }
+    onSend(text || '\r')
     setText('')
     const ta = taRef.current
     if (ta) ta.style.height = 'auto'
@@ -90,8 +106,16 @@ export function InputBar({ onSend }: Props) {
         <button type="button" onClick={() => onSend('\r')}>
           ⏎
         </button>
-        {/* 退格用 DEL(0x7f)：readline / TUI 普遍按这个字节认退格，而非 BS(0x08) */}
-        <button type="button" title="退格" onClick={() => onSend('\x7f')}>
+        {/* 退格用 DEL(0x7f)：readline / TUI 普遍按这个字节认退格，而非 BS(0x08)。
+            长按连删——手机上逐字点删一句话太痛苦 */}
+        <button
+          type="button"
+          title="退格（可长按连删）"
+          onPointerDown={() => startRepeat('\x7f')}
+          onPointerUp={stopRepeat}
+          onPointerLeave={stopRepeat}
+          onPointerCancel={stopRepeat}
+        >
           ⌫
         </button>
         {/* Shift+Tab（CSI Z）：Claude Code 用它循环切换 mode（plan / auto-accept 等） */}
@@ -118,7 +142,7 @@ export function InputBar({ onSend }: Props) {
           autoResize(e.target)
         }}
         onKeyDown={onKeyDown}
-        placeholder="输入命令，回车发送"
+        placeholder="输入文字，回车送入终端"
         autoCapitalize="off"
         autoComplete="off"
         autoCorrect="off"

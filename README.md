@@ -48,9 +48,13 @@ Optimized for phones (shown on touch devices / narrow screens):
   events, same bytes as a desktop mouse wheel) and for plain shells
   (scrolls the xterm scrollback).
 - **Input bar** above the system keyboard: a key row (`Esc` `Tab` `^C` `↑`
-  `↓` `⏎`) plus a text box that grows with its content. Enter sends,
-  Shift+Enter inserts a newline; text goes through the system IME, so voice
-  and swipe input work reliably.
+  `↓` `⏎` `⌫` `Mode`) plus a text box that grows with its content. Enter
+  delivers the text into the terminal without submitting it — it lands in the
+  TUI's own prompt where you can still edit it; tap `⏎` when you want to
+  submit. With the box empty, Enter is a plain terminal Enter. Shift+Enter
+  inserts a newline. Text goes through the system IME, so voice and swipe
+  input work reliably. `⌫` repeats while held; `Mode` sends Shift+Tab, which
+  cycles Claude Code's mode.
 - **Image upload**: the `Img` button opens the photo picker, uploads the
   image to the server (`TMUX_WEBUI_UPLOAD_DIR`) and inserts its file path
   into the input box — mention it in a message and Claude Code will read
