@@ -10,6 +10,30 @@ export interface Config {
   cookieSecure: boolean
   sessionFile: string
   uploadDir: string
+  updateCheck: boolean
+}
+
+function isLoopback(host: string): boolean {
+  return host === 'localhost' || host === '::1' || /^127\./.test(host)
+}
+
+// 这个服务等于「网页版 shell」，绑到非回环地址就是把机器暴露出去。
+// 启动时把风险明说，而不是让人从文档里读到。
+export function bindWarnings(config: Config): string[] {
+  if (isLoopback(config.host)) {
+    return []
+  }
+  const warnings = [
+    `监听在 ${config.host}——本机以外可访问。这是网页版 shell，拿到密码即等于拿到你的账号权限。` +
+      `请勿直接暴露到公网：用 Tailscale/WireGuard，或反代加 TLS 并做访问控制。`,
+  ]
+  if (!config.cookieSecure) {
+    warnings.push(
+      'TMUX_WEBUI_COOKIE_SECURE 未开启：会话 cookie 会走明文 HTTP 传输，可被同网络嗅探。' +
+        '已启用 HTTPS 时请设为 true。',
+    )
+  }
+  return warnings
 }
 
 function parsePositiveInt(
@@ -31,7 +55,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
   const passwordHash = env.TMUX_WEBUI_PASSWORD_HASH
   if (!passwordHash) {
     throw new Error(
-      'TMUX_WEBUI_PASSWORD_HASH 未设置。请运行 `npm run hash-password` 生成后再启动。',
+      'TMUX_WEBUI_PASSWORD_HASH 未设置：还没有设访问密码。请先运行 `tmux-webui init`。',
     )
   }
   return {
@@ -49,5 +73,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     sessionFile:
       env.TMUX_WEBUI_SESSION_FILE ?? path.join(homedir(), '.tmux-webui', 'sessions.json'),
     uploadDir: env.TMUX_WEBUI_UPLOAD_DIR ?? path.join(homedir(), '.tmux-webui', 'uploads'),
+    // 唯一的对外网络请求（查 GitHub 最新 release），设 false 可完全关掉
+    updateCheck: env.TMUX_WEBUI_UPDATE_CHECK !== 'false',
   }
 }

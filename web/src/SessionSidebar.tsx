@@ -1,3 +1,4 @@
+import { UpdateNotice } from './UpdateNotice'
 import type { ApiSession } from './api'
 
 interface Props {
@@ -52,6 +53,7 @@ export function SessionSidebar({
       <button className="new-session" onClick={onCreate}>
         ＋ 新建 session
       </button>
+      <UpdateNotice />
     </aside>
   )
 }

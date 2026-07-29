@@ -1,4 +1,6 @@
+import { existsSync } from 'node:fs'
 import type { AddressInfo } from 'node:net'
+import path from 'node:path'
 import { describe, expect, it, afterEach } from 'vitest'
 import type { Server } from 'node:http'
 import { hashPassword } from '../src/auth/password.js'
@@ -23,6 +25,7 @@ describe('createAppServer', () => {
       cookieSecure: false,
       sessionFile: '',
       uploadDir: '/tmp/webui-test-uploads',
+      updateCheck: false,
     }
     server = createAppServer(config)
     await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))
@@ -46,7 +49,15 @@ describe('createAppServer', () => {
       cookieSecure: false,
       sessionFile: '',
       uploadDir: '/tmp/webui-test-uploads',
+      updateCheck: false,
     }
+    // 静态资源只在 web/dist 存在时才挂载，缺了这里会以「cache-control 是 null」
+    // 的形式失败，看不出真正原因，所以先显式检查
+    expect(
+      existsSync(path.resolve(import.meta.dirname, '../web/dist/index.html')),
+      '需要先 npm run build：未构建前端时服务不挂载静态资源，本用例无从断言',
+    ).toBe(true)
+
     server = createAppServer(config)
     await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))
     const port = (server.address() as AddressInfo).port
@@ -72,6 +83,7 @@ describe('createAppServer', () => {
       cookieSecure: false,
       sessionFile: '',
       uploadDir: '/tmp/webui-test-uploads',
+      updateCheck: false,
     }
     server = createAppServer(config)
     await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))

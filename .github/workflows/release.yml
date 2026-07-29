@@ -1,0 +1,57 @@
+name: Release
+
+# 打 tag 触发：git tag v0.2.0 && git push origin v0.2.0
+# 只建 GitHub Release，不发 npm——安装走 git clone。
+# 服务端的更新提示读的正是这里的 latest release，所以每个版本都要有 Release。
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # 建 Release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install tmux
+        run: sudo apt-get update && sudo apt-get install -y tmux
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm --prefix web ci
+
+      # 版本对不上就别发：更新提示比的是 tag 与本地 package.json 的版本，
+      # 两边不一致会让所有人看到错误的「有新版本」
+      - name: Tag matches package.json version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          tag_version="${TAG#v}"
+          pkg_version="$(node -p 'require("./package.json").version')"
+          if [ "$tag_version" != "$pkg_version" ]; then
+            echo "tag $tag_version != package.json $pkg_version" >&2
+            exit 1
+          fi
+
+      # 构建在测试之前：静态资源缓存头的用例依赖 web/dist 存在
+      - name: Test
+        run: |
+          npm run typecheck
+          npm run build
+          npm test
+          npm --prefix web test
+
+      - name: Create GitHub Release
+        env:
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$TAG" --generate-notes

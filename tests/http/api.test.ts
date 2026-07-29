@@ -28,6 +28,7 @@ async function makeApp(overrides: { exec?: TmuxExec; limiterMax?: number } = {})
     cookieSecure: false,
     sessionFile: '',
     uploadDir: UPLOAD_DIR,
+    updateCheck: false,
   }
   const exec: TmuxExec =
     overrides.exec ??
@@ -41,6 +42,12 @@ async function makeApp(overrides: { exec?: TmuxExec; limiterMax?: number } = {})
       store: createSessionStore(60_000),
       limiter: createRateLimiter(overrides.limiterMax ?? 100, 60_000),
       exec,
+      checkUpdate: async () => ({
+        current: '0.1.0',
+        latest: null,
+        url: null,
+        updateAvailable: false,
+      }),
     }),
   )
   return app
@@ -90,6 +97,18 @@ describe('GET /api/sessions', () => {
     const app = await makeApp()
     const res = await request(app).get('/api/sessions')
     expect(res.status).toBe(401)
+  })
+
+  it('/version 需要登录，认证后返回版本与更新信息', async () => {
+    const app = await makeApp()
+    expect((await request(app).get('/api/version')).status).toBe(401)
+    const agent = await loginAgent(app)
+    const res = await agent.get('/api/version')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({
+      success: true,
+      data: { current: '0.1.0', latest: null, url: null, updateAvailable: false },
+    })
   })
 
   it('认证后返回 session 树', async () => {

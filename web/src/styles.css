@@ -32,6 +32,7 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-u
 .session-action:hover { background: var(--border); opacity: 1; }
 .new-session { margin-top: 10px; width: 100%; padding: 8px; border: 1px dashed var(--border); border-radius: 6px; background: transparent; color: var(--fg); opacity: 0.7; cursor: pointer; font-size: 13px; }
 .new-session:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
+.update-notice { display: block; margin-top: 10px; padding: 6px 8px; border-radius: 6px; background: #7aa2f733; color: var(--accent); font-size: 12px; text-decoration: none; }
 .sidebar .session:hover { background: var(--border); }
 .sidebar .session.selected { background: var(--accent); color: var(--bg-alt); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: #565f89; flex-shrink: 0; }
@@ -45,8 +46,11 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-u
 .tab.selected { background: var(--bg); color: var(--accent); font-weight: 600; }
 .terminal-wrap { flex: 1; position: relative; min-height: 0; }
 .input-bar { display: none; flex-direction: column; gap: 6px; padding: 8px; background: var(--bg-alt); border-top: 1px solid var(--border); }
-.input-keys { display: flex; gap: 6px; }
-.input-keys button { flex: 1; padding: 10px 0; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--fg); font-size: 14px; cursor: pointer; }
+/* 按内容定宽再均分剩余空间：键多了 flex:1 会把 Mode 这类文字键压到溢出；
+   窄屏放不下时换行而不是压扁 */
+.input-keys { display: flex; flex-wrap: wrap; gap: 6px; }
+/* 长按连删要禁掉长按选择/iOS 长按气泡，否则按住会被系统手势打断 */
+.input-keys button { flex: 1 0 auto; min-width: 40px; padding: 10px 6px; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--fg); font-size: 14px; cursor: pointer; }
 .input-keys button:active { background: var(--border); }
 /* 高度由 JS 随内容撑开（autoResize），封顶 30vh 后内部滚动；16px 防 iOS 聚焦自动缩放 */
 .input-bar textarea { width: 100%; box-sizing: border-box; resize: none; overflow-y: auto; max-height: 30vh; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--fg); font-size: 16px; font-family: inherit; line-height: 1.4; }

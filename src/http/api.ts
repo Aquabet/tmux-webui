@@ -15,6 +15,7 @@ import {
   renameSession,
   sessionNameError,
 } from '../tmux/manage.js'
+import type { UpdateInfo } from '../update.js'
 import { COOKIE_NAME, requireAuth } from './middleware.js'
 
 export interface ApiDeps {
@@ -22,6 +23,7 @@ export interface ApiDeps {
   store: SessionStore
   limiter: RateLimiter
   exec: TmuxExec
+  checkUpdate: () => Promise<UpdateInfo>
 }
 
 const loginSchema = z.object({ password: z.string().min(1).max(200) })
@@ -37,6 +39,10 @@ const IMAGE_EXT: Record<string, string> = {
 
 function sendTmuxError(res: Response, error: unknown, fallback: string): void {
   if (error instanceof TmuxError) {
+    if (error.code === 'NOT_INSTALLED') {
+      res.status(503).json({ success: false, error: error.message })
+      return
+    }
     if (error.code === 'NO_SERVER') {
       res.status(503).json({ success: false, error: 'tmux server 未运行' })
       return
@@ -117,17 +123,17 @@ export function createApiRouter(deps: ApiDeps): Router {
     },
   )
 
+  // 放在鉴权后：未登录的人没必要知道这台机器跑的什么版本
+  router.get('/version', requireAuth(deps.store), async (_req, res) => {
+    res.json({ success: true, data: await deps.checkUpdate() })
+  })
+
   router.get('/sessions', requireAuth(deps.store), async (_req, res) => {
     try {
       const data = await listSessions(deps.exec)
       res.json({ success: true, data })
     } catch (error) {
-      if (error instanceof TmuxError && error.code === 'NO_SERVER') {
-        res.status(503).json({ success: false, error: 'tmux server 未运行' })
-        return
-      }
-      console.error('获取会话列表失败:', error)
-      res.status(500).json({ success: false, error: '获取会话列表失败' })
+      sendTmuxError(res, error, '获取会话列表失败')
     }
   })
 

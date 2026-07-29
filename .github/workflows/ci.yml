@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # package.json engines 声明 >=20，两端各测一个
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      # 后端测试会真的起 tmux（独立 socket），运行环境必须有它
+      - name: Install tmux
+        run: sudo apt-get update && sudo apt-get install -y tmux
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm --prefix web ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # 必须在测试之前：服务只在 web/dist 存在时挂载静态资源，
+      # 静态资源缓存头的用例依赖构建产物
+      - name: Build
+        run: npm run build
+
+      - name: Backend tests
+        run: npm test
+
+      - name: Frontend tests
+        run: npm --prefix web test
