@@ -16,9 +16,13 @@ const SESSIONS_OUT = 'demo\t1\n'
 const WINDOWS_OUT = 'demo\t0\tclaude\t1\n'
 
 const UPLOAD_DIR = mkdtempSync(path.join(tmpdir(), 'webui-upload-'))
+// 真仓库根：scripts/update.sh 确实存在且可执行
+const REPO_ROOT = path.resolve(import.meta.dirname, '../..')
 afterAll(() => rmSync(UPLOAD_DIR, { recursive: true, force: true }))
 
-async function makeApp(overrides: { exec?: TmuxExec; limiterMax?: number } = {}) {
+async function makeApp(
+  overrides: { exec?: TmuxExec; limiterMax?: number; repoRoot?: string } = {},
+) {
   const config: Config = {
     host: '127.0.0.1',
     port: 0,
@@ -48,6 +52,8 @@ async function makeApp(overrides: { exec?: TmuxExec; limiterMax?: number } = {})
         url: null,
         updateAvailable: false,
       }),
+      // 默认指向一个没有 update.sh 的目录：一键更新按不可用处理
+      repoRoot: overrides.repoRoot ?? UPLOAD_DIR,
     }),
   )
   return app
@@ -107,8 +113,53 @@ describe('GET /api/sessions', () => {
     expect(res.status).toBe(200)
     expect(res.body).toEqual({
       success: true,
-      data: { current: '0.1.0', latest: null, url: null, updateAvailable: false },
+      data: {
+        current: '0.1.0',
+        latest: null,
+        url: null,
+        updateAvailable: false,
+        canUpdate: false,
+      },
     })
+  })
+
+  it('仓库里有 update.sh 时 canUpdate 为真', async () => {
+    const agent = await loginAgent(await makeApp({ repoRoot: REPO_ROOT }))
+    expect((await agent.get('/api/version')).body.data.canUpdate).toBe(true)
+  })
+
+  it('/update 需要登录，认证后在独立 session 里拉起更新脚本', async () => {
+    const calls: string[][] = []
+    const exec: TmuxExec = async (args) => {
+      calls.push(args)
+      if (args[0] === 'has-session') throw new TmuxError('FAILED', "can't find session")
+      return ''
+    }
+    const app = await makeApp({ exec, repoRoot: REPO_ROOT })
+    expect((await request(app).post('/api/update')).status).toBe(401)
+
+    const agent = await loginAgent(app)
+    const res = await agent.post('/api/update')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ success: true, data: { session: 'tmux-webui-update' } })
+    expect(calls.some((c) => c[0] === 'new-session' && c.includes('tmux-webui-update'))).toBe(
+      true,
+    )
+  })
+
+  it('/update 在没有 update.sh 的部署里返回 409 而不是 500', async () => {
+    const agent = await loginAgent(await makeApp())
+    const res = await agent.post('/api/update')
+    expect(res.status).toBe(409)
+    expect(res.body.error).toMatch(/update\.sh/)
+  })
+
+  it('/update 在更新已在进行时返回 409', async () => {
+    // has-session 成功 = 会话已存在
+    const agent = await loginAgent(await makeApp({ exec: async () => '', repoRoot: REPO_ROOT }))
+    const res = await agent.post('/api/update')
+    expect(res.status).toBe(409)
+    expect(res.body.error).toMatch(/已在进行/)
   })
 
   it('认证后返回 session 树', async () => {

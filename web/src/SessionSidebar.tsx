@@ -1,4 +1,4 @@
-import { UpdateNotice } from './UpdateNotice'
+import { VersionBadge } from './VersionBadge'
 import type { ApiSession } from './api'
 
 interface Props {
@@ -8,6 +8,8 @@ interface Props {
   onCreate: () => void
   onRename: (name: string) => void
   onDelete: (name: string) => void
+  onUpdateStarted: (session: string) => void
+  onAuthLost: () => void
 }
 
 export function SessionSidebar({
@@ -17,6 +19,8 @@ export function SessionSidebar({
   onCreate,
   onRename,
   onDelete,
+  onUpdateStarted,
+  onAuthLost,
 }: Props) {
   return (
     <aside className="sidebar">
@@ -53,7 +57,7 @@ export function SessionSidebar({
       <button className="new-session" onClick={onCreate}>
         ＋ 新建 session
       </button>
-      <UpdateNotice />
+      <VersionBadge onUpdateStarted={onUpdateStarted} onAuthLost={onAuthLost} />
     </aside>
   )
 }

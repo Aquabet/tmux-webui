@@ -38,7 +38,9 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
     current: packageVersion(),
     enabled: config.updateCheck,
   })
-  app.use('/api', createApiRouter({ config, store, limiter, exec, checkUpdate }))
+  // dist/ 的上一级即仓库根，update.sh 和 package.json 都在那里
+  const repoRoot = path.resolve(__dirname, '..')
+  app.use('/api', createApiRouter({ config, store, limiter, exec, checkUpdate, repoRoot }))
 
   const staticDir = path.resolve(__dirname, '../web/dist')
   if (existsSync(staticDir)) {

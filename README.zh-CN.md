@@ -121,6 +121,12 @@ loginctl enable-linger "$USER"   # 必须，否则退出登录后服务被杀
 
 ### 更新
 
+侧栏底部常驻显示当前版本。有新版本时会提示，并出现**更新按钮**：点击后服务端
+在独立的 tmux session（`tmux-webui-update`）里执行更新，界面自动切过去，你能
+看着它跑完。必须放在独立 session 里——更新会重启服务，也就是杀掉执行它的进程。
+
+命令行里做同样的事：
+
 ```bash
 ./scripts/update.sh
 ```
@@ -181,7 +187,7 @@ loginctl enable-linger "$USER"   # 必须，否则退出登录后服务被杀
 ### 更新提示
 
 登录后服务端最多每 6 小时查一次 GitHub 最新 release，有新版就在侧栏显示链接。
-**只提示不自动安装**——想更新时自己跑 [`./scripts/update.sh`](#更新)。
+默认**不自动安装**，要不要更新由你点[更新按钮](#更新)决定。
 这是本服务唯一的对外请求，设 `TMUX_WEBUI_UPDATE_CHECK=false` 可关闭。
 
 ## 安全须知
@@ -190,6 +196,9 @@ loginctl enable-linger "$USER"   # 必须，否则退出登录后服务被杀
 
 - 保持默认只监听 `127.0.0.1`，通过 Tailscale 或带 HTTPS 的反向代理访问
 - 反代 TLS 后设置 `TMUX_WEBUI_COOKIE_SECURE=true`
+- 更新按钮执行的是服务启动目录下的 `scripts/update.sh`。命令是固定的，
+  不接受请求里的任何内容（分支、ref、路径都不行），已登录的客户端也无法让它
+  跑别的东西；脚本不存在时该功能不出现
 - 没有默认密码：未设置 `TMUX_WEBUI_PASSWORD_HASH` 时服务直接拒绝启动
 - 绑定非回环地址会在启动时打印告警——在不可信网络上这不是受支持的配置
 

@@ -34,6 +34,12 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
     setSidebarOpen(false)
   }
 
+  // 更新在新建的 tmux session 里跑，直接切过去，用户能看着它执行完
+  function handleUpdateStarted(session: string) {
+    refresh()
+    handleSelectSession(session)
+  }
+
   async function runAction(action: () => Promise<void>) {
     setActionError(undefined)
     try {
@@ -85,6 +91,8 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
         onCreate={handleCreate}
         onRename={handleRename}
         onDelete={handleDelete}
+        onUpdateStarted={handleUpdateStarted}
+        onAuthLost={onAuthLost}
       />
       <div className="backdrop" onClick={() => setSidebarOpen(false)} />
       <main className="main">
