@@ -12,13 +12,17 @@ deployment step as security-relevant.
 ## Deploying it for someone
 
 ```bash
-printf '%s' "$PASSWORD" | ./scripts/install.sh --password-stdin
-node dist/main.js
+printf '%s' "$PASSWORD" | ./scripts/install.sh --password-stdin --systemd
 ```
 
+That installs, builds, sets the password, and registers a systemd user service
+that survives logout and reboot. **Prefer this over leaving `node dist/main.js`
+running in the foreground** — a shell you started dies with your session, and
+the person is left with nothing after the next reboot.
+
 `install.sh` checks prerequisites first and fails with one actionable line;
-prefer it over running the npm steps yourself. `--systemd` also installs and
-starts a user service.
+prefer it over running the npm steps yourself. Drop `--systemd` only when
+systemd is unavailable or the person asked for a foreground process.
 
 Requires Node ≥ 20, tmux ≥ 2.2, and — on Linux — `python3`/`make`/a C++
 compiler, because `node-pty` has no Linux prebuild and compiles on install.
@@ -48,6 +52,8 @@ Full conventions, commands, and local-testing pitfalls are in
   `web/dist`.
 - Conventional commits (`feat:` / `fix:` / `docs:` / …). Never commit to `main`;
   branch as `<type>/<short-description>` and open a PR.
+- **Wait for CI to pass before merging** (`gh pr checks <number>`). A green local
+  run is not evidence — CI builds from scratch, your working tree does not.
 - Comments explain *why*, in the style already in the file. Existing comments
   are in Chinese — match the surrounding file.
 - Config is read in one place (`src/config.ts`); external input is validated

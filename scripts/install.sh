@@ -90,14 +90,23 @@ if [ "$setup_systemd" = true ]; then
   else
     echo "==> 写入 ${unit}"
     mkdir -p "$(dirname "$unit")"
+    # KillMode=process 是必须的：从界面新建 session 时，若 tmux server 尚未运行，
+    # 它会作为本服务的子进程被拉起。默认的 control-group 模式会在重启本服务时
+    # 把整个 cgroup 杀光，连带干掉用户的 tmux server 和里面所有会话。
     cat >"$unit" <<EOF
 [Unit]
 Description=tmux-webui
+After=network-online.target
+Wants=network-online.target
 
 [Service]
+Type=simple
 WorkingDirectory=${repo_root}
+Environment=PATH=$(dirname "$(command -v node)"):/usr/local/bin:/usr/bin:/bin
 ExecStart=$(command -v node) ${repo_root}/dist/main.js
 Restart=on-failure
+RestartSec=5
+KillMode=process
 
 [Install]
 WantedBy=default.target
@@ -111,5 +120,11 @@ EOF
 fi
 
 echo
-echo "完成。启动: node dist/main.js    然后打开 http://127.0.0.1:8090"
+if [ "$setup_systemd" = true ]; then
+  echo "完成。服务已注册开机自启，打开 http://127.0.0.1:8090"
+  echo "常用: systemctl --user {status,restart,stop} tmux-webui"
+else
+  echo "完成。前台启动: node dist/main.js    然后打开 http://127.0.0.1:8090"
+  echo "要开机自启（推荐）: ./scripts/install.sh --systemd"
+fi
 echo "这是网页版 shell，默认只监听本机；远程访问请走 Tailscale 或带 TLS 的反代。"

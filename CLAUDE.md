@@ -26,6 +26,16 @@ npm run test:e2e                 # Playwright，需要另外装浏览器
   推上去开 PR。一个分支一件事。
 - Conventional commits：`feat` / `fix` / `refactor` / `docs` / `test` / `chore` /
   `perf` / `ci`。
+- **CI 全绿才能合并。** 先确认状态再动手：
+
+  ```bash
+  gh pr checks <number>          # 等到没有 pending，且全部 pass
+  gh pr merge <number> --merge --delete-branch
+  ```
+
+  本地测试通过**不能**替代 CI：工作区残留的 `web/dist` 之类产物会给出假绿灯，
+  这个仓库已经因此漏过一次——CI 在干净环境里跑，本地不是。CI 失败时先修，
+  不要用 `--admin` 或改分支保护绕过去。
 - 完整规则见 [docs/development.md](docs/development.md)。
 
 ## 版本号

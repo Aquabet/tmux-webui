@@ -25,18 +25,28 @@ tmux window，完整交互终端（xterm.js）。浏览器视图基于 tmux 分�
 
 ```bash
 git clone https://github.com/Aquabet/tmux-webui.git && cd tmux-webui
-./scripts/install.sh      # 查依赖、装、构建、设密码
-node dist/main.js         # http://127.0.0.1:8090
+./scripts/install.sh --systemd
 ```
 
-`install.sh` 会在装任何东西**之前**先查 Node、tmux 和编译工具链，缺依赖时
-只花你一行提示，而不是一屏 `gyp ERR!`。加 `--systemd` 可顺带装好并启动
-user service。它做的事和下面手动步骤完全一样：
+这条命令会查依赖、安装、构建、让你设访问密码，并注册成开机自启的 systemd
+user service。然后打开 <http://127.0.0.1:8090>。之后日常操作：
 
 ```bash
-npm install && npm --prefix web install
-npm run build
-node dist/main.js init    # 设置访问密码（哈希后存入 ~/.tmux-webui/config.json）
+systemctl --user status tmux-webui
+systemctl --user restart tmux-webui
+journalctl --user -u tmux-webui -f
+```
+
+**在装任何东西之前先查依赖**是这个脚本的意义：缺编译器时你只花一行提示，
+而不是一屏 `gyp ERR!`。重复执行是安全的——已有的密码和 service 文件都不会被覆盖。
+
+### 前台运行
+
+调试时、或机器上没有 systemd 时用：
+
+```bash
+./scripts/install.sh      # 同上，但不装 service
+node dist/main.js         # Ctrl-C 停止
 ```
 
 `node dist/main.js help` 列出全部子命令和环境变量。
@@ -71,26 +81,43 @@ curl -sb /tmp/c localhost:8090/api/sessions                    # {"success":true
 
 开发模式：`npm run dev`（后端）+ `npm --prefix web run dev`（前端，端口 5173，自动代理）。
 
-### 开机自启（Linux）
+### 想自己写 service 的话
+
+`--systemd` 做的事是：写 `~/.config/systemd/user/tmux-webui.service`、
+`systemctl --user enable --now tmux-webui`、开启 linger。等价的手写版本：
 
 ```ini
-# ~/.config/systemd/user/tmux-webui.service
 [Unit]
 Description=tmux-webui
+After=network-online.target
+Wants=network-online.target
 
 [Service]
+Type=simple
 WorkingDirectory=%h/tmux-webui
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
 ExecStart=/usr/bin/env node %h/tmux-webui/dist/main.js
 Restart=on-failure
+RestartSec=5
+KillMode=process
 
 [Install]
 WantedBy=default.target
 ```
 
 ```bash
+systemctl --user daemon-reload
 systemctl --user enable --now tmux-webui
 loginctl enable-linger "$USER"   # 必须，否则退出登录后服务被杀
 ```
+
+其中两行容易漏，漏了会出事：
+
+- **`KillMode=process`**——从界面新建 session 时，若 tmux server 还没运行，
+  它会作为本服务的子进程被拉起。默认的 `control-group` 模式下，重启 tmux-webui
+  会把整个 cgroup 杀光，**连带干掉 tmux server 和里面所有会话**。
+- **`loginctl enable-linger`**——不开的话 user service 在你退出登录时就停了，
+  重启机器后根本不会自启。
 
 ### 更新
 
@@ -98,7 +125,7 @@ loginctl enable-linger "$USER"   # 必须，否则退出登录后服务被杀
 git pull
 npm install && npm --prefix web install
 npm run build
-systemctl --user restart tmux-webui   # 若按上面配了服务
+systemctl --user restart tmux-webui
 ```
 
 有新版本时侧栏会提示，见[更新提示](#更新提示)。
@@ -172,6 +199,8 @@ systemctl --user restart tmux-webui   # 若按上面配了服务
 | 页面空白、`/assets/…` 404 | 前端没构建 | 跑 `npm run build` |
 | 界面提示 `tmux server 未运行`（503） | 装了 tmux 但没有会话 | 先起一个：`tmux new -d -s main` |
 | 密码总是登录失败 | 存的哈希与密码对不上 | 重跑 `init`；注意优先级是 环境变量 > `.env` > `config.json` |
+| 重启机器或退出登录后服务没了 | 没开 linger | `loginctl enable-linger "$USER"` |
+| 重启 tmux-webui 把 tmux 会话一起杀了 | unit 缺 `KillMode=process` | 补上并 `systemctl --user daemon-reload` |
 
 ## 测试
 

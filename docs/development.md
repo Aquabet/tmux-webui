@@ -6,7 +6,11 @@
 - Every feature / fix gets its own branch, cut from the latest `main`:
   - Naming: `<type>/<short-description>`, e.g. `feat/desktop-sidebar-collapse`, `fix/emoji-width`.
 - When done, push the branch and open a PR targeting `main`.
-- Merge to `main` only after the PR is approved, then delete the feature branch.
+- **Merge only once CI is green.** Wait for every check to finish and pass
+  (`gh pr checks <number>`) before merging, then delete the feature branch.
+  Passing tests locally is not a substitute: leftover build output in your
+  working tree can produce a false green, which has already happened once in
+  this repo. Fix a red CI rather than bypassing it.
 - One branch, one concern: don't stack unrelated feat commits on a fix branch.
 
 ## Commit Convention

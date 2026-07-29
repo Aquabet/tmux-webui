@@ -28,19 +28,30 @@ Both the server and tmux must run on the same machine and as the same user.
 
 ```bash
 git clone https://github.com/Aquabet/tmux-webui.git && cd tmux-webui
-./scripts/install.sh      # checks prerequisites, installs, builds, sets the password
-node dist/main.js         # http://127.0.0.1:8090
+./scripts/install.sh --systemd
 ```
 
-`install.sh` verifies Node, tmux, and the compiler toolchain *before* installing
-anything, so a missing dependency costs you one line instead of a screen of
-`gyp ERR!`. Add `--systemd` to also install and start a user service. It runs
-only what the manual steps below do:
+That checks prerequisites, installs, builds, asks for an access password, and
+registers a systemd user service that starts on boot. Open
+<http://127.0.0.1:8090>. From then on:
 
 ```bash
-npm install && npm --prefix web install
-npm run build
-node dist/main.js init    # set the access password (hashed into ~/.tmux-webui/config.json)
+systemctl --user status tmux-webui
+systemctl --user restart tmux-webui
+journalctl --user -u tmux-webui -f
+```
+
+Checking prerequisites *before* installing is the point: a missing compiler
+costs you one line instead of a screen of `gyp ERR!`. Rerunning the script is
+safe — it never overwrites an existing password or service file.
+
+### Running it in the foreground instead
+
+Useful while debugging, or on a machine without systemd:
+
+```bash
+./scripts/install.sh      # same, minus the service
+node dist/main.js         # Ctrl-C to stop
 ```
 
 `node dist/main.js help` lists all subcommands and environment variables.
@@ -79,26 +90,45 @@ up Tailscale or a TLS reverse proxy if the person needs remote access.
 Development mode: `npm run dev` (backend) + `npm --prefix web run dev`
 (frontend on port 5173, with automatic proxying).
 
-### Run it on boot (Linux)
+### The service, if you want to write it yourself
+
+`--systemd` writes `~/.config/systemd/user/tmux-webui.service`, runs
+`systemctl --user enable --now tmux-webui`, and enables lingering. The
+equivalent by hand:
 
 ```ini
-# ~/.config/systemd/user/tmux-webui.service
 [Unit]
 Description=tmux-webui
+After=network-online.target
+Wants=network-online.target
 
 [Service]
+Type=simple
 WorkingDirectory=%h/tmux-webui
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
 ExecStart=/usr/bin/env node %h/tmux-webui/dist/main.js
 Restart=on-failure
+RestartSec=5
+KillMode=process
 
 [Install]
 WantedBy=default.target
 ```
 
 ```bash
+systemctl --user daemon-reload
 systemctl --user enable --now tmux-webui
 loginctl enable-linger "$USER"   # required, or the service dies when you log out
 ```
+
+Two lines that are easy to get wrong:
+
+- **`KillMode=process`** — creating a session from the UI starts the tmux
+  server as a child of this service if it was not already running. Under the
+  default `control-group`, restarting tmux-webui would then kill the tmux
+  server and every session in it.
+- **`loginctl enable-linger`** — without it a user service stops when you log
+  out, so it never survives a reboot.
 
 ### Updating
 
@@ -106,7 +136,7 @@ loginctl enable-linger "$USER"   # required, or the service dies when you log ou
 git pull
 npm install && npm --prefix web install
 npm run build
-systemctl --user restart tmux-webui   # if you set up the service above
+systemctl --user restart tmux-webui
 ```
 
 The sidebar tells you when a newer release exists — see
@@ -194,6 +224,8 @@ directly to the public internet:
 | Blank page, `404` on `/assets/…` | frontend was never built | run `npm run build` |
 | `tmux server 未运行` (503 in the UI) | tmux is installed but no session exists | start one: `tmux new -d -s main` |
 | Login always fails | the stored hash does not match the password | rerun `init`; note that config precedence is env > `.env` > `config.json` |
+| Service is gone after a reboot or logout | lingering was never enabled | `loginctl enable-linger "$USER"` |
+| Restarting tmux-webui killed your tmux sessions | the unit lacks `KillMode=process` | add it and `systemctl --user daemon-reload` |
 
 ## Testing
 
