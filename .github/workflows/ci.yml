@@ -33,11 +33,13 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # 必须在测试之前：服务只在 web/dist 存在时挂载静态资源，
+      # 静态资源缓存头的用例依赖构建产物
+      - name: Build
+        run: npm run build
+
       - name: Backend tests
         run: npm test
 
       - name: Frontend tests
         run: npm --prefix web test
-
-      - name: Build
-        run: npm run build

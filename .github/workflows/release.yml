@@ -42,12 +42,13 @@ jobs:
             exit 1
           fi
 
+      # 构建在测试之前：静态资源缓存头的用例依赖 web/dist 存在
       - name: Test
         run: |
           npm run typecheck
+          npm run build
           npm test
           npm --prefix web test
-          npm run build
 
       - name: Create GitHub Release
         env:
