@@ -53,6 +53,9 @@ npm run test:e2e                 # Playwright，需要另外装浏览器
 
 - **git tag 无特殊前缀**：`v3.1.0`（裸 `3.1.0` 也认，两种都会触发
   `release.yml` 建 GitHub Release）。
+- **合并到 `main` 不等于发布。** 用户的 `scripts/update.sh` 默认切到最新
+  release tag，不跟 `main`；侧栏提示比的也是 release。所以功能合了但没打 tag
+  时，没有人会拿到它——想让用户收到，就得发一个版本。
 - **`package.json` 的 `version` 与 tag 一致**：`3.1.0`。workflow 会校验 tag 去掉
   可选的 `v` 后与它相同，对不上直接失败。
 - 更新提示按数值比较，π 展开天然成立（`3.141` > `3.14` > `3.1`）。

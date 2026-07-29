@@ -122,11 +122,18 @@ loginctl enable-linger "$USER"   # 必须，否则退出登录后服务被杀
 ### 更新
 
 ```bash
-git pull
-npm install && npm --prefix web install
-npm run build
-systemctl --user restart tmux-webui
+./scripts/update.sh
 ```
+
+它会拉取远端、列出即将更新的提交、等你确认，然后切到**最新的 release tag**、
+重装依赖、重新构建，并重启指向本目录的 systemd 服务。加 `--yes` 跳过确认
+（无终端时必须加）。
+
+**跟 release 而不是 main 是刻意的**：侧栏提示比的就是 GitHub 最新 release，
+更新到别处会让"提示里说的版本"和"实际跑的代码"对不上。想跟 `main`（拿到
+尚未发布的提交）用 `./scripts/update.sh --main`。
+
+工作区有未提交改动时脚本会拒绝执行，不会覆盖你的修改。
 
 有新版本时侧栏会提示，见[更新提示](#更新提示)。
 
@@ -174,7 +181,7 @@ systemctl --user restart tmux-webui
 ### 更新提示
 
 登录后服务端最多每 6 小时查一次 GitHub 最新 release，有新版就在侧栏显示链接。
-**只提示不自动安装**——更新步骤见[更新](#更新)。
+**只提示不自动安装**——想更新时自己跑 [`./scripts/update.sh`](#更新)。
 这是本服务唯一的对外请求，设 `TMUX_WEBUI_UPDATE_CHECK=false` 可关闭。
 
 ## 安全须知

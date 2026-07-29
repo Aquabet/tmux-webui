@@ -133,13 +133,22 @@ Two lines that are easy to get wrong:
 ### Updating
 
 ```bash
-git pull
-npm install && npm --prefix web install
-npm run build
-systemctl --user restart tmux-webui
+./scripts/update.sh
 ```
 
-The sidebar tells you when a newer release exists — see
+It fetches, shows you the commits you are about to get, asks for confirmation,
+checks out the **latest release tag**, reinstalls, rebuilds, and restarts the
+systemd service if one points at this directory. Add `--yes` to skip the prompt
+(required when there is no terminal).
+
+Tracking releases is deliberate: the sidebar notice compares your version
+against the latest GitHub release, so updating to anything else would leave the
+version it names and the code you run out of step. To follow `main` instead —
+picking up commits that have not been released yet — use `./scripts/update.sh
+--main`.
+
+The script refuses to run with uncommitted changes rather than overwriting
+them. The sidebar tells you when a newer release exists — see
 [Update notification](#update-notification).
 
 ## Mobile
@@ -194,8 +203,8 @@ quotes is recommended.
 
 Once logged in, the server checks the latest GitHub release at most once every
 6 hours and shows a link in the sidebar when a newer version exists. It never
-installs anything — see [Updating](#updating) for the two commands. The check is
-the only outbound request this server makes; set
+installs anything — run [`./scripts/update.sh`](#updating) when you want it. The
+check is the only outbound request this server makes; set
 `TMUX_WEBUI_UPDATE_CHECK=false` to disable it.
 
 ## Security Notes
