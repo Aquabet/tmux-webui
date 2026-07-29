@@ -1,0 +1,61 @@
+name: Publish
+
+# 打 tag 触发：git tag v0.2.0 && git push origin v0.2.0
+# 需要在仓库 Settings > Secrets 里加 NPM_TOKEN（npm 的 Automation token）
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # 建 GitHub Release
+  id-token: write # npm provenance（可验证包由本仓库这次 workflow 构建）
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install tmux
+        run: sudo apt-get update && sudo apt-get install -y tmux
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm --prefix web ci
+
+      # 版本对不上就别发：npm 上的版本无法覆盖，发错只能作废重来
+      - name: Tag matches package.json version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          tag_version="${TAG#v}"
+          pkg_version="$(node -p 'require("./package.json").version')"
+          if [ "$tag_version" != "$pkg_version" ]; then
+            echo "tag $tag_version != package.json $pkg_version" >&2
+            exit 1
+          fi
+
+      - name: Test
+        run: |
+          npm run typecheck
+          npm test
+          npm --prefix web test
+
+      # publish 会先跑 prepublishOnly（npm run build）
+      - name: Publish to npm
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        env:
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$TAG" --generate-notes
