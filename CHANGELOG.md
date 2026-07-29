@@ -9,6 +9,31 @@ with patches incrementing the last position (`3.1.1`, `3.1.2`). See
 
 ## [Unreleased]
 
+## [3.1.2] - 2026-07-29
+
+### Added
+
+- The session sidebar identifies Codex, Claude Code, Pi, Kimi Code, and
+  OpenCode with distinct icons, falling back to a Terminal icon. Icon brightness
+  shows whether the session has an active foreground, independently from the
+  lower-right work-state light: green and animated while running, amber while
+  waiting for input, and gray-blue when exact status is unavailable.
+- Agent detection follows pane process trees so wrapper commands work, and
+  treats attached tmux-webui grouped views as active foregrounds.
+- `scripts/install-agent-status.mjs` installs lifecycle status integrations for
+  all supported agents without replacing unrelated user hooks. English and
+  Chinese setup guides document behavior, privacy boundaries, and manual
+  configuration.
+
+### Fixed
+
+- Claude Code hooks recover their pane from the parent process tree when Claude
+  does not preserve `TMUX_PANE`.
+- Per-agent status storage and outer-agent ownership prevent a nested agent from
+  overwriting its host agent's state and leaving a gray unknown light behind.
+- Re-running the status installer repairs hook commands that point at an old
+  tmux-webui checkout, including its managed Kimi configuration block.
+
 ## [3.1.1] - 2026-07-29
 
 ### Added
@@ -59,6 +84,7 @@ First public release.
   once every 6 hours, behind auth) and links to it from the sidebar. It never
   installs anything; `TMUX_WEBUI_UPDATE_CHECK=false` disables the check.
 
-[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.1...HEAD
+[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.2...HEAD
+[3.1.2]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.2
 [3.1.1]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.1
 [3.1.0]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.0
