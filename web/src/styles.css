@@ -26,7 +26,33 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-u
 .sidebar h2 { font-size: 12px; text-transform: uppercase; opacity: 0.6; margin: 0 0 8px; }
 .sidebar ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .sidebar li { display: flex; align-items: center; gap: 2px; min-width: 0; }
-.sidebar .session { flex: 1; min-width: 0; text-align: left; padding: 8px 10px; border: none; border-radius: 6px; background: transparent; color: var(--fg); cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar .session { flex: 1; min-width: 0; text-align: left; padding: 8px 10px; border: none; border-radius: 6px; background: transparent; color: var(--fg); cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; overflow: hidden; white-space: nowrap; }
+.session-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.agent-badges { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.agent-badge { position: relative; display: inline-grid; place-items: center; width: 21px; height: 21px; border: 1px solid #565f8966; border-radius: 6px; background: #1a1b2699; color: #c0caf5; transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease; }
+.agent-badge[data-agent='claude'] { color: #e0af68; }
+.agent-badge[data-agent='pi'] { color: #bb9af7; }
+.agent-badge[data-agent='kimi'] { color: #7dcfff; }
+.agent-badge[data-agent='opencode'] { color: #9ece6a; }
+.agent-badge[data-agent='terminal'] { color: #a9b1d6; }
+.agent-badge svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.agent-badge svg.agent-logo-fill { fill: currentColor; stroke: none; }
+.agent-badge[data-attached='false'] { background: #11121acc; border-color: #35394c88; box-shadow: none; }
+.agent-badge[data-attached='false'] svg { color: #565f89; opacity: 0.45; filter: grayscale(1); }
+.agent-badge[data-attached='true'] { background: #7aa2f71f; border-color: #7aa2f766; box-shadow: 0 0 7px #7aa2f726; }
+.agent-status-dot { position: absolute; right: -2px; bottom: -2px; width: 7px; height: 7px; border: 1.5px solid var(--bg-alt); border-radius: 50%; background: #565f89; }
+.agent-badge[data-status='running'] .agent-status-dot { background: #9ece6a; box-shadow: 0 0 0 2px #9ece6a22; animation: agent-running 1.8s ease-out infinite; }
+.agent-badge[data-status='idle'] .agent-status-dot { background: #e0af68; }
+.session.selected .agent-badge[data-attached='false'] { background: #16161e99; border-color: #16161e55; }
+.session.selected .agent-badge[data-attached='true'] { background: #16161ecc; border-color: #c0caf5cc; box-shadow: 0 0 7px #16161e66; }
+.session.selected .agent-status-dot { border-color: #16161e; }
+@keyframes agent-running {
+  0%, 45% { box-shadow: 0 0 0 0 #9ece6a66; }
+  100% { box-shadow: 0 0 0 4px #9ece6a00; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .agent-badge[data-status='running'] .agent-status-dot { animation: none; }
+}
 .session-action { visibility: hidden; flex-shrink: 0; border: none; background: transparent; color: var(--fg); opacity: 0.55; cursor: pointer; padding: 4px 6px; border-radius: 4px; font-size: 13px; line-height: 1; }
 .sidebar li:hover .session-action, .session-action:focus-visible { visibility: visible; }
 .session-action:hover { background: var(--border); opacity: 1; }
@@ -41,8 +67,6 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-u
 .version-error { color: #f7768e; }
 .sidebar .session:hover { background: var(--border); }
 .sidebar .session.selected { background: var(--accent); color: var(--bg-alt); }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: #565f89; flex-shrink: 0; }
-.dot[data-attached='true'] { background: #9ece6a; }
 .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .main-header { display: flex; align-items: stretch; background: var(--bg-alt); border-bottom: 1px solid var(--border); }
 .sidebar-toggle { border: none; background: transparent; color: var(--fg); font-size: 18px; padding: 6px 12px; cursor: pointer; }

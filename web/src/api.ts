@@ -4,10 +4,19 @@ export interface ApiWindow {
   active: boolean
 }
 
+export type ApiAgentKind = 'codex' | 'claude' | 'pi' | 'kimi' | 'opencode'
+export type ApiAgentStatus = 'running' | 'idle'
+
+export interface ApiAgent {
+  kind: ApiAgentKind
+  status?: ApiAgentStatus
+}
+
 export interface ApiSession {
   name: string
   attached: boolean
   windows: ApiWindow[]
+  agents?: ApiAgent[]
 }
 
 export class AuthError extends Error {
