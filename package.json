@@ -27,6 +27,10 @@
   "files": [
     "dist",
     "web/dist",
+    "scripts/agent-status-hook.sh",
+    "scripts/install-agent-status.mjs",
+    "integrations",
+    "docs",
     "README.md",
     "README.zh-CN.md",
     "LICENSE"
