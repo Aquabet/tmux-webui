@@ -9,6 +9,29 @@ with patches incrementing the last position (`3.1.1`, `3.1.2`). See
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-07-29
+
+### Added
+
+- The sidebar always shows the running version. When a newer release exists it
+  says so and offers an Update button, which runs the update in a separate
+  `tmux-webui-update` session and switches the UI to it. The command is fixed
+  and takes nothing from the request; the button is absent when
+  `scripts/update.sh` is not present.
+- `scripts/update.sh`: checks out the latest release tag (`--main` to follow the
+  branch instead), reinstalls, rebuilds, and restarts the systemd service that
+  points at this directory. Refuses to run with uncommitted changes.
+
+### Fixed
+
+- Mobile: with no tmux sessions the sidebar toggle was not rendered, leaving no
+  way to open the drawer and therefore no way to create a session.
+- `scripts/install.sh` now writes a service unit with `KillMode=process`.
+  Without it, restarting tmux-webui could kill a tmux server that had been
+  started as its child, taking every session with it.
+- Both scripts use `npm ci` instead of `npm install`, which was rewriting
+  `package-lock.json` and leaving the working tree dirty.
+
 ## [3.1.0] - 2026-07-28
 
 First public release.
@@ -36,5 +59,6 @@ First public release.
   once every 6 hours, behind auth) and links to it from the sidebar. It never
   installs anything; `TMUX_WEBUI_UPDATE_CHECK=false` disables the check.
 
-[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.1...HEAD
+[3.1.1]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.1
 [3.1.0]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.0
