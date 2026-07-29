@@ -6,8 +6,9 @@ a Terminal icon. tmux itself cannot tell whether an agent is handling a turn
 or waiting at its input box, so exact status comes from lifecycle hooks or
 plugins.
 
-The hook writes only two small tmux pane options. It does not read prompts,
-terminal output, transcripts, or credentials.
+The hook writes only small tmux pane options: a provider-scoped status plus
+compatibility agent/status fields. It does not read prompts, terminal output,
+transcripts, or credentials.
 
 ## Supported badges
 
