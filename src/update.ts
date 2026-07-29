@@ -10,8 +10,8 @@ export interface UpdateInfo {
   updateAvailable: boolean
 }
 
-// tag 前缀：本项目用 pi（见 CLAUDE.md 的版本号规则），历史上的 v 也认
-const VERSION_PREFIX = /^(?:pi-?|v)/
+// tag 可以写 v3.1.0 或裸 3.1.0，两种都认
+const VERSION_PREFIX = /^v/
 
 // 只比 x.y.z 三段数值；带 - 后缀的预发布版排在同号正式版之前，
 // 不做完整 semver 的预发布串比较（发布节奏用不上）。

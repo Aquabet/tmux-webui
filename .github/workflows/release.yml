@@ -1,11 +1,11 @@
 name: Release
 
-# 打 tag 触发：git tag pi3.14.0 && git push origin pi3.14.0
+# 打 tag 触发：git tag v3.14.0 && git push origin v3.14.0（裸 3.14.0 也认）
 # 版本号规则（π 展开）见 CLAUDE.md。只建 GitHub Release，不发 npm——安装走
 # git clone。服务端的更新提示读的正是这里的 latest release，所以每个版本都要有。
 on:
   push:
-    tags: ['pi*']
+    tags: ['v*', '[0-9]*']
 
 permissions:
   contents: write # 建 Release
@@ -35,8 +35,7 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          tag_version="${TAG#pi}"
-          tag_version="${tag_version#-}"
+          tag_version="${TAG#v}"
           pkg_version="$(node -p 'require("./package.json").version')"
           if [ "$tag_version" != "$pkg_version" ]; then
             echo "tag $tag_version != package.json $pkg_version" >&2

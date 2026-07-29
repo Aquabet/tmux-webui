@@ -4,8 +4,8 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Versions walk the digits of π: `3.1.0` → `3.14.0` → `3.141.0` → `3.1415.0`,
-with patches incrementing the last position (`3.1.1`, `3.1.2`). Git tags carry a
-`pi` prefix (`pi3.1.0`). See [CLAUDE.md](CLAUDE.md#版本号) for the rules.
+with patches incrementing the last position (`3.1.1`, `3.1.2`). See
+[CLAUDE.md](CLAUDE.md#版本号) for the rules.
 
 ## [Unreleased]
 
@@ -36,5 +36,5 @@ First public release.
   once every 6 hours, behind auth) and links to it from the sidebar. It never
   installs anything; `TMUX_WEBUI_UPDATE_CHECK=false` disables the check.
 
-[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/pi3.1.0...HEAD
-[3.1.0]: https://github.com/Aquabet/tmux-webui/releases/tag/pi3.1.0
+[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.0
