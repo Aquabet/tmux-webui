@@ -15,6 +15,7 @@ import {
   renameSession,
   sessionNameError,
 } from '../tmux/manage.js'
+import type { UpdateInfo } from '../update.js'
 import { COOKIE_NAME, requireAuth } from './middleware.js'
 
 export interface ApiDeps {
@@ -22,6 +23,7 @@ export interface ApiDeps {
   store: SessionStore
   limiter: RateLimiter
   exec: TmuxExec
+  checkUpdate: () => Promise<UpdateInfo>
 }
 
 const loginSchema = z.object({ password: z.string().min(1).max(200) })
@@ -116,6 +118,11 @@ export function createApiRouter(deps: ApiDeps): Router {
       }
     },
   )
+
+  // 放在鉴权后：未登录的人没必要知道这台机器跑的什么版本
+  router.get('/version', requireAuth(deps.store), async (_req, res) => {
+    res.json({ success: true, data: await deps.checkUpdate() })
+  })
 
   router.get('/sessions', requireAuth(deps.store), async (_req, res) => {
     try {

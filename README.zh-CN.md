@@ -74,6 +74,13 @@ node dist/main.js init && node dist/main.js
 | `TMUX_WEBUI_COOKIE_SECURE` | `false` | HTTPS 反代后设为 `true` |
 | `TMUX_WEBUI_SESSION_FILE` | `~/.tmux-webui/sessions.json` | 登录 token 落盘路径（重启不掉登录），留空禁用 |
 | `TMUX_WEBUI_UPLOAD_DIR` | `~/.tmux-webui/uploads` | 手机上传图片的保存目录 |
+| `TMUX_WEBUI_UPDATE_CHECK` | `true` | 设为 `false` 则完全不访问 GitHub 查版本 |
+
+### 更新提示
+
+登录后服务端最多每 6 小时查一次 GitHub 最新 release，有新版就在侧栏显示链接。
+**只提示不自动安装**——更新用 `npm update -g tmux-webui`（源码安装则 `git pull`）。
+这是本服务唯一的对外请求，设 `TMUX_WEBUI_UPDATE_CHECK=false` 可关闭。
 
 ## 安全须知
 

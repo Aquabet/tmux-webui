@@ -68,6 +68,21 @@ export async function logout(): Promise<void> {
   await fetch('/api/logout', { method: 'POST' })
 }
 
+export interface VersionInfo {
+  current: string
+  latest: string | null
+  url: string | null
+  updateAvailable: boolean
+}
+
+export async function fetchVersion(): Promise<VersionInfo> {
+  const res = await fetch('/api/version')
+  if (res.status === 401) throw new AuthError()
+  const body = await parseBody<VersionInfo>(res)
+  if (!res.ok || !body.success || !body.data) throw new Error(body.error ?? '获取版本失败')
+  return body.data
+}
+
 export async function fetchSessions(): Promise<ApiSession[]> {
   const res = await fetch('/api/sessions')
   if (res.status === 401) throw new AuthError()

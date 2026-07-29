@@ -85,6 +85,15 @@ quotes is recommended.
 | `TMUX_WEBUI_COOKIE_SECURE` | `false` | set to `true` behind an HTTPS reverse proxy |
 | `TMUX_WEBUI_SESSION_FILE` | `~/.tmux-webui/sessions.json` | session token persistence path (survives restarts); empty string disables |
 | `TMUX_WEBUI_UPLOAD_DIR` | `~/.tmux-webui/uploads` | where uploaded images are saved |
+| `TMUX_WEBUI_UPDATE_CHECK` | `true` | set to `false` to never contact GitHub for release info |
+
+### Update notification
+
+Once logged in, the server checks the latest GitHub release at most once every
+6 hours and shows a link in the sidebar when a newer version exists. It never
+installs anything — update with `npm update -g tmux-webui` (or `git pull` for a
+source checkout). The check is the only outbound request this server makes; set
+`TMUX_WEBUI_UPDATE_CHECK=false` to disable it.
 
 ## Security Notes
 

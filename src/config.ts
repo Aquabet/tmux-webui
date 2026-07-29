@@ -10,6 +10,7 @@ export interface Config {
   cookieSecure: boolean
   sessionFile: string
   uploadDir: string
+  updateCheck: boolean
 }
 
 function isLoopback(host: string): boolean {
@@ -72,5 +73,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     sessionFile:
       env.TMUX_WEBUI_SESSION_FILE ?? path.join(homedir(), '.tmux-webui', 'sessions.json'),
     uploadDir: env.TMUX_WEBUI_UPLOAD_DIR ?? path.join(homedir(), '.tmux-webui', 'uploads'),
+    // 唯一的对外网络请求（查 GitHub 最新 release），设 false 可完全关掉
+    updateCheck: env.TMUX_WEBUI_UPDATE_CHECK !== 'false',
   }
 }

@@ -19,7 +19,16 @@ describe('loadConfig', () => {
       cookieSecure: false,
       sessionFile: path.join(homedir(), '.tmux-webui', 'sessions.json'),
       uploadDir: path.join(homedir(), '.tmux-webui', 'uploads'),
+      updateCheck: true,
     })
+  })
+
+  it('UPDATE_CHECK=false 关闭更新检查（其它值一律视为开启）', () => {
+    const at = (v: string) =>
+      loadConfig({ TMUX_WEBUI_PASSWORD_HASH: 'h', TMUX_WEBUI_UPDATE_CHECK: v }).updateCheck
+    expect(at('false')).toBe(false)
+    expect(at('true')).toBe(true)
+    expect(at('')).toBe(true)
   })
 
   it('读取全部环境变量覆盖', () => {

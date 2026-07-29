@@ -30,6 +30,9 @@ First public release.
 - Configuration from environment variables, a `.env` file, or
   `~/.tmux-webui/config.json` (written by `init` with mode `0600`).
 - Startup warning when bound to a non-loopback address.
+- Update notification: the server checks the latest GitHub release (at most
+  once every 6 hours, behind auth) and links to it from the sidebar. It never
+  installs anything; `TMUX_WEBUI_UPDATE_CHECK=false` disables the check.
 
 [Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/Aquabet/tmux-webui/releases/tag/v0.1.0

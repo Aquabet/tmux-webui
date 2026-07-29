@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -11,9 +11,18 @@ import type { Config } from './config.js'
 import { createApiRouter } from './http/api.js'
 import { spawnNodePty } from './pty.js'
 import { createTmuxExec } from './tmux/exec.js'
+import { createUpdateChecker } from './update.js'
 import { handleTerminalConnection, type SpawnPty } from './ws/terminal.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+function packageVersion(): string {
+  try {
+    return JSON.parse(readFileSync(path.resolve(__dirname, '../package.json'), 'utf8')).version
+  } catch {
+    return '0.0.0'
+  }
+}
 
 export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePty): http.Server {
   const exec = createTmuxExec(config.socketName)
@@ -25,7 +34,11 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
   // 这样限速器拿到的 req.ip 是真实客户端 IP，远程直连伪造的 XFF 不会被信任。
   app.set('trust proxy', 'loopback')
   app.use(cookieParser())
-  app.use('/api', createApiRouter({ config, store, limiter, exec }))
+  const checkUpdate = createUpdateChecker({
+    current: packageVersion(),
+    enabled: config.updateCheck,
+  })
+  app.use('/api', createApiRouter({ config, store, limiter, exec, checkUpdate }))
 
   const staticDir = path.resolve(__dirname, '../web/dist')
   if (existsSync(staticDir)) {
