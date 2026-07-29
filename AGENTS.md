@@ -12,13 +12,17 @@ deployment step as security-relevant.
 ## Deploying it for someone
 
 ```bash
-printf '%s' "$PASSWORD" | ./scripts/install.sh --password-stdin
-node dist/main.js
+printf '%s' "$PASSWORD" | ./scripts/install.sh --password-stdin --systemd
 ```
 
+That installs, builds, sets the password, and registers a systemd user service
+that survives logout and reboot. **Prefer this over leaving `node dist/main.js`
+running in the foreground** — a shell you started dies with your session, and
+the person is left with nothing after the next reboot.
+
 `install.sh` checks prerequisites first and fails with one actionable line;
-prefer it over running the npm steps yourself. `--systemd` also installs and
-starts a user service.
+prefer it over running the npm steps yourself. Drop `--systemd` only when
+systemd is unavailable or the person asked for a foreground process.
 
 Requires Node ≥ 20, tmux ≥ 2.2, and — on Linux — `python3`/`make`/a C++
 compiler, because `node-pty` has no Linux prebuild and compiles on install.
