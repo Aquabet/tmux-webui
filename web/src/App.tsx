@@ -89,30 +89,37 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
       <div className="backdrop" onClick={() => setSidebarOpen(false)} />
       <main className="main">
         {(error ?? actionError) && <div className="banner-error">{error ?? actionError}</div>}
-        {current && currentWindow ? (
-          <>
-            <div className="main-header">
-              <button
-                className="sidebar-toggle"
-                aria-label="切换 session 列表"
-                onClick={handleToggleSidebar}
-              >
-                ☰
-              </button>
-              <WindowTabs
-                windows={current.windows}
-                selected={currentWindow.index}
-                onSelect={setSelectedWindow}
-              />
-            </div>
-            <TerminalView
-              session={current.name}
-              windowIndex={currentWindow.index}
-              onAuthLost={onAuthLost}
+        {/* 表头始终渲染：没有 session 时它也得在，否则窄屏下抽屉式侧栏
+            没有任何入口可打开，用户被锁死在空状态里，连 session 都建不了 */}
+        <div className="main-header">
+          <button
+            className="sidebar-toggle"
+            aria-label="切换 session 列表"
+            onClick={handleToggleSidebar}
+          >
+            ☰
+          </button>
+          {current && currentWindow && (
+            <WindowTabs
+              windows={current.windows}
+              selected={currentWindow.index}
+              onSelect={setSelectedWindow}
             />
-          </>
+          )}
+        </div>
+        {current && currentWindow ? (
+          <TerminalView
+            session={current.name}
+            windowIndex={currentWindow.index}
+            onAuthLost={onAuthLost}
+          />
         ) : (
-          <div className="empty">没有可用的 tmux session</div>
+          <div className="empty">
+            <p>没有可用的 tmux session</p>
+            <button className="new-session" onClick={handleCreate}>
+              ＋ 新建 session
+            </button>
+          </div>
         )}
       </main>
     </div>
