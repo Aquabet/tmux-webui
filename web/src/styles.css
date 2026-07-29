@@ -59,7 +59,8 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-u
 .term-mount { position: absolute; inset: 0; padding: 4px; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .terminal-status { position: absolute; top: 8px; right: 12px; z-index: 10; background: var(--bg-alt); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 12px; }
 .banner-error { background: #f7768e22; color: #f7768e; padding: 8px 12px; font-size: 13px; }
-.empty { display: flex; align-items: center; justify-content: center; flex: 1; opacity: 0.6; }
+.empty { display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; flex: 1; opacity: 0.6; }
+.empty .new-session { width: auto; padding: 8px 16px; }
 /* 触屏或窄屏：显示输入条（系统 IME 语音/滑动输入走这里，绕开 xterm 的
    composition 局限），操作按钮常显（无 hover） */
 @media (pointer: coarse), (max-width: 700px) {
