@@ -16,7 +16,15 @@ independent** of clients attached on your machine — neither disturbs the other
 
 ## Quick Start
 
-Requires **Node.js ≥ 20** and **tmux** on the same machine.
+### Prerequisites
+
+| Requirement | Notes |
+|---|---|
+| Node.js ≥ 20 | `engines` in `package.json`; older versions are untested |
+| tmux ≥ 2.2 | needs `set-hook`, added in 2.2. Developed against 3.x |
+| C++ toolchain | **Linux and BSD only.** `node-pty` ships prebuilt binaries for macOS and Windows but not Linux, so `npm install` compiles it: `python3`, `make`, and a C++ compiler must be present (`apt install build-essential python3` / `dnf group install c-development`) |
+
+Both the server and tmux must run on the same machine and as the same user.
 
 ```bash
 git clone https://github.com/Aquabet/tmux-webui.git && cd tmux-webui

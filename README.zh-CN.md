@@ -13,7 +13,15 @@ tmux window，完整交互终端（xterm.js）。浏览器视图基于 tmux 分�
 
 ## 快速开始
 
-需要同一台机器上有 **Node.js ≥ 20** 和 **tmux**。
+### 前置依赖
+
+| 依赖 | 说明 |
+|---|---|
+| Node.js ≥ 20 | `package.json` 的 `engines` 声明，更低版本未测试 |
+| tmux ≥ 2.2 | 用到 2.2 引入的 `set-hook`；开发环境是 3.x |
+| C++ 编译工具链 | **仅 Linux / BSD 需要。** `node-pty` 只为 macOS 和 Windows 提供预编译产物，Linux 下 `npm install` 会现场编译，需要 `python3`、`make` 和 C++ 编译器（`apt install build-essential python3` / `dnf group install c-development`） |
+
+服务和 tmux 必须在同一台机器、同一个用户下运行。
 
 ```bash
 git clone https://github.com/Aquabet/tmux-webui.git && cd tmux-webui

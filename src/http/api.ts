@@ -39,6 +39,10 @@ const IMAGE_EXT: Record<string, string> = {
 
 function sendTmuxError(res: Response, error: unknown, fallback: string): void {
   if (error instanceof TmuxError) {
+    if (error.code === 'NOT_INSTALLED') {
+      res.status(503).json({ success: false, error: error.message })
+      return
+    }
     if (error.code === 'NO_SERVER') {
       res.status(503).json({ success: false, error: 'tmux server 未运行' })
       return
@@ -129,12 +133,7 @@ export function createApiRouter(deps: ApiDeps): Router {
       const data = await listSessions(deps.exec)
       res.json({ success: true, data })
     } catch (error) {
-      if (error instanceof TmuxError && error.code === 'NO_SERVER') {
-        res.status(503).json({ success: false, error: 'tmux server 未运行' })
-        return
-      }
-      console.error('获取会话列表失败:', error)
-      res.status(500).json({ success: false, error: '获取会话列表失败' })
+      sendTmuxError(res, error, '获取会话列表失败')
     }
   })
 
