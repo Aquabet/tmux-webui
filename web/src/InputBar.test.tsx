@@ -46,6 +46,7 @@ describe('InputBar', () => {
     fireEvent.click(screen.getByText('↑'))
     fireEvent.click(screen.getByText('↓'))
     fireEvent.click(screen.getByText('⏎'))
+    fireEvent.click(screen.getByText('Mode'))
     expect(onSend.mock.calls.map((c) => c[0])).toEqual([
       '\x1b',
       '\t',
@@ -53,6 +54,7 @@ describe('InputBar', () => {
       '\x1b[A',
       '\x1b[B',
       '\r',
+      '\x1b[Z',
     ])
     expect(input.value).toBe('half typed')
   })

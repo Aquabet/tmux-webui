@@ -79,6 +79,10 @@ export function InputBar({ onSend }: Props) {
         <button type="button" onClick={() => onSend('\r')}>
           ⏎
         </button>
+        {/* Shift+Tab（CSI Z）：Claude Code 用它循环切换 mode（plan / auto-accept 等） */}
+        <button type="button" title="Shift+Tab 切换 Claude Code mode" onClick={() => onSend('\x1b[Z')}>
+          Mode
+        </button>
         <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()}>
           {uploading ? '⋯' : 'Img'}
         </button>
