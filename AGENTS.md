@@ -40,8 +40,12 @@ table — read it before diagnosing from scratch.
 
 ## Changing the code
 
-- Test-first. `npm test` (backend, spawns real tmux on an isolated socket),
-  `npm --prefix web test` (frontend), `npm run typecheck`. All must pass.
+Full conventions, commands, and local-testing pitfalls are in
+[CLAUDE.md](CLAUDE.md) — read it before editing. The short version:
+
+- Test-first. `npm run typecheck`, `npm run build`, then `npm test` and
+  `npm --prefix web test`. **Build before test**: static-asset tests need
+  `web/dist`.
 - Conventional commits (`feat:` / `fix:` / `docs:` / …). Never commit to `main`;
   branch as `<type>/<short-description>` and open a PR.
 - Comments explain *why*, in the style already in the file. Existing comments

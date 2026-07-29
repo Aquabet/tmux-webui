@@ -28,7 +28,21 @@ Types: `feat` / `fix` / `refactor` / `docs` / `test` / `chore` / `perf` / `ci`.
 ## Local Checks
 
 ```bash
-cd web
-npx vitest run    # unit tests
-npx tsc --noEmit  # type check
+npm run typecheck          # backend + test project
+npm run build              # must run BEFORE npm test, see below
+npm test                   # backend; spawns a real tmux on an isolated socket
+npm --prefix web test      # frontend
+npm run test:e2e           # Playwright (installs browsers separately)
 ```
+
+`npm run build` has to come before `npm test`: static assets are only mounted
+when `web/dist` exists, and the cache-header test in `tests/server.test.ts`
+depends on the build output. Both CI workflows use this order.
+
+## Documentation
+
+`README.md` and `README.zh-CN.md` are kept in sync. Any change to behavior,
+CLI flags, environment variables, or prerequisites must land in both.
+
+Agent-facing notes live in [CLAUDE.md](../CLAUDE.md) and
+[AGENTS.md](../AGENTS.md).
