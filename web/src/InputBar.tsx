@@ -5,6 +5,9 @@ interface Props {
   onSend: (data: string) => void
 }
 
+// 发完文本等多久再发回车。太短会被 TUI 并进同一次粘贴，太长手感发飘。
+const ENTER_DELAY_MS = 80
+
 // 移动端输入条：xterm 的隐藏 textarea 对语音/滑动输入法的 composition
 // 事件支持不佳（长句只上屏个别字符），原生输入框则完全走系统 IME，
 // 整句确认后再发给终端。按键行与输入框分两行，避免手机上过窄。
@@ -34,7 +37,15 @@ export function InputBar({ onSend }: Props) {
   }
 
   function send() {
-    onSend(`${text}\r`)
+    // 文本和回车必须分两次写：连在一起是一整块突发输入，Claude Code 这类 TUI
+    // 会判成「粘贴」，末尾 \r 变成粘贴内容里的换行而不是提交键。隔开一拍再发
+    // 回车，对端才当成独立按键。
+    if (text) {
+      onSend(text)
+      setTimeout(() => onSend('\r'), ENTER_DELAY_MS)
+    } else {
+      onSend('\r')
+    }
     setText('')
     const ta = taRef.current
     if (ta) ta.style.height = 'auto'

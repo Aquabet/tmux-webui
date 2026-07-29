@@ -1,22 +1,37 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { InputBar } from './InputBar'
 import { uploadImage } from './api'
 
 vi.mock('./api', () => ({ uploadImage: vi.fn() }))
 
+afterEach(() => {
+  vi.useRealTimers()
+})
+
+// 文本与回车必须分两次写，否则 TUI 会把整块判成粘贴、回车退化成换行
+function flushEnter() {
+  act(() => {
+    vi.advanceTimersByTime(200)
+  })
+}
+
 describe('InputBar', () => {
-  it('提交后发送文本加回车并清空输入框', () => {
+  it('提交后先发文本、隔一拍再发回车，并清空输入框', () => {
+    vi.useFakeTimers()
     const onSend = vi.fn()
     render(<InputBar onSend={onSend} />)
     const input = screen.getByPlaceholderText<HTMLTextAreaElement>('输入命令，回车发送')
     fireEvent.change(input, { target: { value: 'echo hello world' } })
     fireEvent.submit(input.closest('form')!)
-    expect(onSend).toHaveBeenCalledWith('echo hello world\r')
+    expect(onSend.mock.calls).toEqual([['echo hello world']])
     expect(input.value).toBe('')
+    flushEnter()
+    expect(onSend.mock.calls).toEqual([['echo hello world'], ['\r']])
   })
 
   it('Enter 键提交，Shift+Enter 不提交（留给换行）', () => {
+    vi.useFakeTimers()
     const onSend = vi.fn()
     render(<InputBar onSend={onSend} />)
     const input = screen.getByPlaceholderText<HTMLTextAreaElement>('输入命令，回车发送')
@@ -24,7 +39,8 @@ describe('InputBar', () => {
     fireEvent.keyDown(input, { key: 'Enter', shiftKey: true })
     expect(onSend).not.toHaveBeenCalled()
     fireEvent.keyDown(input, { key: 'Enter' })
-    expect(onSend).toHaveBeenCalledWith('ls\r')
+    flushEnter()
+    expect(onSend.mock.calls).toEqual([['ls'], ['\r']])
     expect(input.value).toBe('')
   })
 
