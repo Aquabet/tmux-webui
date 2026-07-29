@@ -9,6 +9,16 @@ with patches incrementing the last position (`3.1.1`, `3.1.2`). See
 
 ## [Unreleased]
 
+## [3.1.3] - 2026-07-29
+
+### Fixed
+
+- Playwright MCP screenshots, page snapshots, and other generated files no
+  longer make the working tree appear dirty and block `scripts/update.sh`.
+  Genuine uncommitted changes still stop the update before checkout.
+- Repeated E2E runs reliably reset their dedicated tmux server instead of
+  racing the previous server's socket shutdown.
+
 ## [3.1.2] - 2026-07-29
 
 ### Added
@@ -84,7 +94,8 @@ First public release.
   once every 6 hours, behind auth) and links to it from the sidebar. It never
   installs anything; `TMUX_WEBUI_UPDATE_CHECK=false` disables the check.
 
-[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.2...HEAD
+[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.3...HEAD
+[3.1.3]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.3
 [3.1.2]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.2
 [3.1.1]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.1
 [3.1.0]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.0

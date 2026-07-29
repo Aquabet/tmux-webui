@@ -1,9 +1,12 @@
+import { execFileSync } from 'node:child_process'
 import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { TmuxError } from '../src/tmux/exec.js'
 import { canSelfUpdate, startUpdateSession, UPDATE_SESSION } from '../src/selfUpdate.js'
+
+const projectRoot = path.resolve(import.meta.dirname, '..')
 
 function repoWithScript(executable = true): string {
   const root = mkdtempSync(path.join(tmpdir(), 'webui-selfupdate-'))
@@ -13,6 +16,18 @@ function repoWithScript(executable = true): string {
   chmodSync(script, executable ? 0o755 : 0o644)
   return root
 }
+
+describe('update working tree hygiene', () => {
+  it('忽略 Playwright MCP 生成物，避免它们阻止安全更新', () => {
+    const ignoredBy = execFileSync(
+      'git',
+      ['check-ignore', '--verbose', '.playwright-mcp/page.yml'],
+      { cwd: projectRoot, encoding: 'utf8' },
+    )
+
+    expect(ignoredBy).toMatch(/^\.gitignore:.*:\.playwright-mcp\//)
+  })
+})
 
 describe('canSelfUpdate', () => {
   it('仓库里有可执行的 update.sh 时可用', () => {
