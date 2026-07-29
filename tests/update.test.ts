@@ -14,6 +14,19 @@ describe('compareVersions', () => {
     expect(compareVersions('v2', '1.9.9')).toBe(1)
   })
 
+  it('容忍 pi 前缀（本项目的 tag 前缀，带不带连字符都认）', () => {
+    expect(compareVersions('pi3.1.0', '3.1.0')).toBe(0)
+    expect(compareVersions('pi-3.1.0', '3.1.0')).toBe(0)
+    expect(compareVersions('pi3.14.0', 'pi3.1.0')).toBe(1)
+  })
+
+  it('π 展开的版本按数值比较：3.14 高于 3.1，3.141 高于 3.14', () => {
+    expect(compareVersions('3.14.0', '3.1.0')).toBe(1)
+    expect(compareVersions('3.141.0', '3.14.0')).toBe(1)
+    expect(compareVersions('3.1415.0', '3.141.0')).toBe(1)
+    expect(compareVersions('3.1.2', '3.1.10')).toBe(-1)
+  })
+
   it('预发布版本排在同号正式版之前', () => {
     expect(compareVersions('1.0.0-beta.1', '1.0.0')).toBe(-1)
     expect(compareVersions('1.0.0', '1.0.0-beta.1')).toBe(1)

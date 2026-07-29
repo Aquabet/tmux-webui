@@ -1,17 +1,39 @@
 {
   "name": "tmux-webui",
-  "version": "0.1.0",
+  "version": "3.1.0",
   "description": "tmux in your browser: session sidebar, window tabs, fully interactive terminal, mobile-friendly",
-  "keywords": ["tmux", "terminal", "web-terminal", "xterm", "ssh-alternative", "mobile"],
+  "keywords": [
+    "tmux",
+    "terminal",
+    "web-terminal",
+    "xterm",
+    "ssh-alternative",
+    "mobile"
+  ],
   "license": "MIT",
   "author": "Aquabet",
   "homepage": "https://github.com/Aquabet/tmux-webui#readme",
-  "repository": { "type": "git", "url": "git+https://github.com/Aquabet/tmux-webui.git" },
-  "bugs": { "url": "https://github.com/Aquabet/tmux-webui/issues" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aquabet/tmux-webui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Aquabet/tmux-webui/issues"
+  },
   "type": "module",
-  "bin": { "tmux-webui": "dist/main.js" },
-  "files": ["dist", "web/dist", "README.md", "README.zh-CN.md", "LICENSE"],
-  "engines": { "node": ">=20" },
+  "bin": {
+    "tmux-webui": "dist/main.js"
+  },
+  "files": [
+    "dist",
+    "web/dist",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "prepublishOnly": "npm run build",
     "dev": "tsx watch src/main.ts",

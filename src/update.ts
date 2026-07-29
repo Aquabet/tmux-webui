@@ -10,11 +10,15 @@ export interface UpdateInfo {
   updateAvailable: boolean
 }
 
+// tag 前缀：本项目用 pi（见 CLAUDE.md 的版本号规则），历史上的 v 也认
+const VERSION_PREFIX = /^(?:pi-?|v)/
+
 // 只比 x.y.z 三段数值；带 - 后缀的预发布版排在同号正式版之前，
-// 不做完整 semver 的预发布串比较（发布节奏用不上）
+// 不做完整 semver 的预发布串比较（发布节奏用不上）。
+// 数值比较对 π 展开天然成立：3.141 > 3.14 > 3.1
 export function compareVersions(a: string, b: string): number {
   const parse = (v: string) => {
-    const [core, pre] = v.replace(/^v/, '').split('-', 2)
+    const [core, pre] = v.replace(VERSION_PREFIX, '').split('-', 2)
     const nums = core.split('.').map((n) => Number.parseInt(n, 10) || 0)
     return { nums, isPrerelease: pre !== undefined }
   }
@@ -61,7 +65,7 @@ export function createUpdateChecker(options: CheckerOptions): () => Promise<Upda
     if (!res.ok) throw new Error(`GitHub releases 接口返回 ${res.status}`)
     const body = (await res.json()) as { tag_name?: unknown; html_url?: unknown }
     if (typeof body.tag_name !== 'string') throw new Error('releases 接口缺少 tag_name')
-    const latest = body.tag_name.replace(/^v/, '')
+    const latest = body.tag_name.replace(VERSION_PREFIX, '')
     return {
       current,
       latest,
