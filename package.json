@@ -1,6 +1,6 @@
 {
   "name": "tmux-webui",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "description": "tmux in your browser: session sidebar, window tabs, fully interactive terminal, mobile-friendly",
   "keywords": [
     "tmux",
@@ -27,6 +27,10 @@
   "files": [
     "dist",
     "web/dist",
+    "scripts/agent-status-hook.sh",
+    "scripts/install-agent-status.mjs",
+    "integrations",
+    "docs",
     "README.md",
     "README.zh-CN.md",
     "LICENSE"

@@ -1,4 +1,5 @@
 import { VersionBadge } from './VersionBadge'
+import { AgentBadge, TerminalBadge } from './AgentBadge'
 import type { ApiSession } from './api'
 
 interface Props {
@@ -32,8 +33,16 @@ export function SessionSidebar({
               className={`session${s.name === selected ? ' selected' : ''}`}
               onClick={() => onSelect(s.name)}
             >
-              <span className="dot" data-attached={s.attached} />
-              {s.name}
+              <span className="agent-badges">
+                {s.agents?.length ? (
+                  s.agents.map((agent) => (
+                    <AgentBadge key={agent.kind} agent={agent} attached={s.attached} />
+                  ))
+                ) : (
+                  <TerminalBadge attached={s.attached} />
+                )}
+              </span>
+              <span className="session-name">{s.name}</span>
             </button>
             <button
               className="session-action"

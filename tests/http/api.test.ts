@@ -14,6 +14,7 @@ import { TmuxError, type TmuxExec } from '../../src/tmux/exec.js'
 
 const SESSIONS_OUT = 'demo\t1\n'
 const WINDOWS_OUT = 'demo\t0\tclaude\t1\n'
+const PANES_OUT = 'demo\t%0\tclaude\tclaude\tidle\n'
 
 const UPLOAD_DIR = mkdtempSync(path.join(tmpdir(), 'webui-upload-'))
 // 真仓库根：scripts/update.sh 确实存在且可执行
@@ -36,7 +37,11 @@ async function makeApp(
   }
   const exec: TmuxExec =
     overrides.exec ??
-    (async (args) => (args[0] === 'list-sessions' ? SESSIONS_OUT : WINDOWS_OUT))
+    (async (args) => {
+      if (args[0] === 'list-sessions') return SESSIONS_OUT
+      if (args[0] === 'list-windows') return WINDOWS_OUT
+      return PANES_OUT
+    })
   const app = express()
   app.use(cookieParser())
   app.use(
@@ -174,6 +179,7 @@ describe('GET /api/sessions', () => {
           name: 'demo',
           attached: true,
           windows: [{ index: 0, name: 'claude', active: true }],
+          agents: [{ kind: 'claude', status: 'idle' }],
         },
       ],
     })

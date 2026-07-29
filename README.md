@@ -90,6 +90,44 @@ up Tailscale or a TLS reverse proxy if the person needs remote access.
 Development mode: `npm run dev` (backend) + `npm --prefix web run dev`
 (frontend on port 5173, with automatic proxying).
 
+### Coding agent badges
+
+The icon before each session name identifies what is running in its panes:
+
+| Icon | Automatically recognized commands | Exact running/stopped status |
+|---|---|---|
+| Codex | `codex`, including wrapper processes | Lifecycle hooks; default terminal-title activity is also used as a fallback |
+| Claude Code | `claude`, including wrapper processes | Lifecycle hooks |
+| Pi | `pi`; uses Pi's official compact mark | Shipped Pi extension |
+| Kimi Code | `kimi`, `kimi-code`, `kimi-cli` | Lifecycle hooks |
+| OpenCode | `opencode`, including wrapper processes | Shipped OpenCode plugin |
+| Terminal | Fallback when no supported agent is detected | No work-status dot |
+
+The badge carries two independent signals:
+
+- **Whole icon:** bright with a blue outline means a tmux client, including
+  another tmux-webui, is attached to the session group; dim gray means there is
+  no active frontend. Neutral Codex and Terminal marks use the same blue
+  outline and background glow instead of changing their brand color.
+- **Bottom-right dot:** green/pulsing (`#9ece6a`) means **running**; amber
+  (`#e0af68`) means **stopped and waiting for input**; gray-blue (`#565f89`)
+  means the agent was detected but exact status is unknown.
+
+These signals can differ: a detached agent can still be running, and an agent
+visible in a browser can be waiting for input. The sidebar refreshes both
+within 5 seconds. Hovering a badge shows its agent, work status, and frontend
+presence.
+
+See [Agent status badges](docs/agent-status.md) for the complete behavior
+matrix, detection limits, and setup. Hook/plugin-reported status requires tmux
+≥ 3.0; agent identification, frontend presence, and Codex's limited title
+fallback use the project's normal tmux ≥ 2.2 requirement. Install all supported
+status integrations without replacing existing hooks:
+
+```bash
+node scripts/install-agent-status.mjs codex claude pi kimi opencode
+```
+
 ### The service, if you want to write it yourself
 
 `--systemd` writes `~/.config/systemd/user/tmux-webui.service`, runs

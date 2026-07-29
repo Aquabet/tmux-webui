@@ -81,6 +81,42 @@ curl -sb /tmp/c localhost:8090/api/sessions                    # {"success":true
 
 开发模式：`npm run dev`（后端）+ `npm --prefix web run dev`（前端，端口 5173，自动代理）。
 
+### Coding agent 状态标记
+
+session 名称前的图标表示 pane 里运行的程序：
+
+| 图标 | 自动识别的命令 | 精确区分运行中/已停下 |
+|---|---|---|
+| Codex | `codex`，包括 wrapper 进程内的 Codex | Lifecycle hooks；默认 terminal title 的 activity 也可作兜底 |
+| Claude Code | `claude`，包括 wrapper 进程内的 Claude | Lifecycle hooks |
+| Pi | `pi`，使用 Pi 官方 compact mark | 项目附带的 Pi extension |
+| Kimi Code | `kimi`、`kimi-code`、`kimi-cli` | Lifecycle hooks |
+| OpenCode | `opencode`，包括 wrapper 进程 | 项目附带的 OpenCode plugin |
+| Terminal | 没有识别到以上 agent 时的普通终端 | 不显示工作状态灯 |
+
+一个 badge 同时表达两条互相独立的状态：
+
+- **整个图标：**明亮并带蓝色轮廓表示 session group 有 tmux 客户端连接，
+  包括本机 tmux 和其它 tmux-webui；变暗变灰表示没有活跃前台。Codex 和
+  Terminal 本身是中性色图标，因此用同样的蓝色轮廓和底光表达“有前台”，
+  不修改图标品牌色。
+- **右下角小灯：**绿色呼吸灯（`#9ece6a`）表示**运行中**；琥珀灯
+  （`#e0af68`）表示**已停下、等待输入**；灰蓝灯（`#565f89`）表示已识别
+  agent，但精确状态未知。
+
+两条状态可以不同：无人查看的 agent 仍可在后台运行；浏览器正在查看的 agent
+也可能已经停下等待输入。侧栏最多 5 秒刷新一次；鼠标停在 badge 上会显示 agent
+名称、工作状态和前台连接状态。
+
+完整组合、检测边界和配置方法见
+[Agent 状态标记](docs/agent-status.zh-CN.md)。通过 hook/plugin 上报精确状态需要
+tmux ≥ 3.0；agent 类型、前台连接和 Codex 有限的 title 兜底沿用 tmux ≥ 2.2。
+下面的命令可合并全部状态集成，不会覆盖已有 hooks：
+
+```bash
+node scripts/install-agent-status.mjs codex claude pi kimi opencode
+```
+
 ### 想自己写 service 的话
 
 `--systemd` 做的事是：写 `~/.config/systemd/user/tmux-webui.service`、
