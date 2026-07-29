@@ -12,6 +12,29 @@ export interface Config {
   uploadDir: string
 }
 
+function isLoopback(host: string): boolean {
+  return host === 'localhost' || host === '::1' || /^127\./.test(host)
+}
+
+// 这个服务等于「网页版 shell」，绑到非回环地址就是把机器暴露出去。
+// 启动时把风险明说，而不是让人从文档里读到。
+export function bindWarnings(config: Config): string[] {
+  if (isLoopback(config.host)) {
+    return []
+  }
+  const warnings = [
+    `监听在 ${config.host}——本机以外可访问。这是网页版 shell，拿到密码即等于拿到你的账号权限。` +
+      `请勿直接暴露到公网：用 Tailscale/WireGuard，或反代加 TLS 并做访问控制。`,
+  ]
+  if (!config.cookieSecure) {
+    warnings.push(
+      'TMUX_WEBUI_COOKIE_SECURE 未开启：会话 cookie 会走明文 HTTP 传输，可被同网络嗅探。' +
+        '已启用 HTTPS 时请设为 true。',
+    )
+  }
+  return warnings
+}
+
 function parsePositiveInt(
   name: string,
   raw: string | undefined,

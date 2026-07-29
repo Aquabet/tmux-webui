@@ -1,7 +1,7 @@
 import { homedir } from 'node:os'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { loadConfig } from '../src/config.js'
+import { bindWarnings, loadConfig, type Config } from '../src/config.js'
 
 describe('loadConfig', () => {
   it('缺少 PASSWORD_HASH 时抛错', () => {
@@ -52,5 +52,31 @@ describe('loadConfig', () => {
     expect(() =>
       loadConfig({ TMUX_WEBUI_PASSWORD_HASH: 'h', TMUX_WEBUI_SESSION_TTL_MS: '-1' }),
     ).toThrow(/TMUX_WEBUI_SESSION_TTL_MS/)
+  })
+})
+
+describe('bindWarnings', () => {
+  const base = loadConfig({ TMUX_WEBUI_PASSWORD_HASH: 'h' })
+  const at = (host: string, extra: Partial<Config> = {}): Config => ({
+    ...base,
+    host,
+    ...extra,
+  })
+
+  it('回环地址不告警', () => {
+    for (const host of ['127.0.0.1', 'localhost', '::1', '127.0.0.5']) {
+      expect(bindWarnings(at(host))).toEqual([])
+    }
+  })
+
+  it('监听非回环地址时告警暴露风险', () => {
+    const warnings = bindWarnings(at('0.0.0.0'))
+    expect(warnings.join('\n')).toMatch(/0\.0\.0\.0/)
+    expect(warnings.length).toBeGreaterThan(0)
+  })
+
+  it('非回环且 cookie 未加 Secure 时额外告警', () => {
+    expect(bindWarnings(at('192.168.1.9', { cookieSecure: false })).length).toBe(2)
+    expect(bindWarnings(at('192.168.1.9', { cookieSecure: true })).length).toBe(1)
   })
 })

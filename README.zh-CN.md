@@ -6,6 +6,11 @@
 tmux window，完整交互终端（xterm.js）。浏览器视图基于 tmux 分组会话，
 与你本机 attach 的客户端**完全独立**，互不干扰。
 
+> **⚠️ 部署前必读。** 浏览器终端等于运行它的那个账号的完整 shell 权限——
+> 任何人只要能连到端口并拿到密码，就等于拿到你的机器。请保持默认只监听
+> `127.0.0.1`，通过 Tailscale / WireGuard 访问，或用带 TLS 和访问控制的反向
+> 代理。**切勿直接暴露到公网。** 详见[安全须知](#安全须知)。
+
 ## 快速开始
 
 ```bash
@@ -55,6 +60,8 @@ npm run build && npm start           # http://127.0.0.1:8090
 
 - 保持默认只监听 `127.0.0.1`，通过 Tailscale 或带 HTTPS 的反向代理访问
 - 反代 TLS 后设置 `TMUX_WEBUI_COOKIE_SECURE=true`
+- 没有默认密码：未设置 `TMUX_WEBUI_PASSWORD_HASH` 时服务直接拒绝启动
+- 绑定非回环地址会在启动时打印告警——在不可信网络上这不是受支持的配置
 
 ## 测试
 
@@ -67,3 +74,7 @@ npm run test:e2e          # Playwright 全流程
 ## 参与开发
 
 分支流程与代码规范见 [Development Guide](docs/development.md)（英文）。
+
+## 许可证
+
+[MIT](LICENSE)

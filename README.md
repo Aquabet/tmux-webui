@@ -7,6 +7,13 @@ view and switch between all tmux windows, with a fully interactive terminal
 (xterm.js). The browser view uses tmux grouped sessions, so it is **completely
 independent** of clients attached on your machine — neither disturbs the other.
 
+> **⚠️ Read before you deploy it.** A browser terminal is full shell access to
+> the account running it. Anyone who reaches the port and gets the password owns
+> your machine. Keep the default `127.0.0.1` bind and reach it over Tailscale /
+> WireGuard, or put it behind a reverse proxy with TLS and access control.
+> **Never expose it directly to the public internet.** See
+> [Security Notes](#security-notes).
+
 ## Quick Start
 
 ```bash
@@ -64,6 +71,10 @@ directly to the public internet:
 - Keep the default `127.0.0.1` listen address; access it via Tailscale or a
   reverse proxy with HTTPS
 - Set `TMUX_WEBUI_COOKIE_SECURE=true` behind a TLS-terminating proxy
+- There is no default password: the server refuses to start until
+  `TMUX_WEBUI_PASSWORD_HASH` is set
+- Binding to a non-loopback address prints a startup warning — it is not a
+  supported configuration on an untrusted network
 
 ## Testing
 
@@ -77,3 +88,7 @@ npm run test:e2e          # Playwright end-to-end
 
 See the [Development Guide](docs/development.md) for the branch workflow and
 code conventions.
+
+## License
+
+[MIT](LICENSE)
