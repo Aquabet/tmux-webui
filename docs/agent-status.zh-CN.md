@@ -5,8 +5,8 @@ tmux-webui 不需要额外配置就能根据前台进程识别 `codex`、`claude
 本身不知道 agent 是在处理一轮任务，还是已经回到输入框等待，因此精确状态由
 lifecycle hooks 或插件上报。
 
-hook 只往当前 tmux pane 写两个很小的 user option；它不读取 prompt、终端输出、
-transcript 或凭据。
+hook 只往当前 tmux pane 写少量 user option：一项 provider 专属状态，以及兼容用的
+agent/status 字段；它不读取 prompt、终端输出、transcript 或凭据。
 
 ## 当前支持范围
 
