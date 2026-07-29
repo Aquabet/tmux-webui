@@ -79,6 +79,10 @@ export function InputBar({ onSend }: Props) {
         <button type="button" onClick={() => onSend('\r')}>
           ⏎
         </button>
+        {/* 退格用 DEL(0x7f)：readline / TUI 普遍按这个字节认退格，而非 BS(0x08) */}
+        <button type="button" title="退格" onClick={() => onSend('\x7f')}>
+          ⌫
+        </button>
         {/* Shift+Tab（CSI Z）：Claude Code 用它循环切换 mode（plan / auto-accept 等） */}
         <button type="button" title="Shift+Tab 切换 Claude Code mode" onClick={() => onSend('\x1b[Z')}>
           Mode
