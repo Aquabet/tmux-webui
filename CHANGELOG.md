@@ -16,6 +16,8 @@ with patches incrementing the last position (`3.1.1`, `3.1.2`). See
 - Playwright MCP screenshots, page snapshots, and other generated files no
   longer make the working tree appear dirty and block `scripts/update.sh`.
   Genuine uncommitted changes still stop the update before checkout.
+- Repeated E2E runs reliably reset their dedicated tmux server instead of
+  racing the previous server's socket shutdown.
 
 ## [3.1.2] - 2026-07-29
 
