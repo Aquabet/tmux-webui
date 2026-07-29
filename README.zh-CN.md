@@ -25,10 +25,18 @@ tmux window，完整交互终端（xterm.js）。浏览器视图基于 tmux 分�
 
 ```bash
 git clone https://github.com/Aquabet/tmux-webui.git && cd tmux-webui
+./scripts/install.sh      # 查依赖、装、构建、设密码
+node dist/main.js         # http://127.0.0.1:8090
+```
+
+`install.sh` 会在装任何东西**之前**先查 Node、tmux 和编译工具链，缺依赖时
+只花你一行提示，而不是一屏 `gyp ERR!`。加 `--systemd` 可顺带装好并启动
+user service。它做的事和下面手动步骤完全一样：
+
+```bash
 npm install && npm --prefix web install
 npm run build
 node dist/main.js init    # 设置访问密码（哈希后存入 ~/.tmux-webui/config.json）
-node dist/main.js         # http://127.0.0.1:8090
 ```
 
 `node dist/main.js help` 列出全部子命令和环境变量。
@@ -39,6 +47,8 @@ node dist/main.js         # http://127.0.0.1:8090
 `init` 默认要交互式终端。没有终端时，密码从标准输入喂进去：
 
 ```bash
+printf '%s' "$TMUX_WEBUI_PASSWORD" | ./scripts/install.sh --password-stdin
+# 仓库已经构建过的话：
 printf '%s' "$TMUX_WEBUI_PASSWORD" | node dist/main.js init --password-stdin
 ```
 

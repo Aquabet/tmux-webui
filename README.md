@@ -28,10 +28,19 @@ Both the server and tmux must run on the same machine and as the same user.
 
 ```bash
 git clone https://github.com/Aquabet/tmux-webui.git && cd tmux-webui
+./scripts/install.sh      # checks prerequisites, installs, builds, sets the password
+node dist/main.js         # http://127.0.0.1:8090
+```
+
+`install.sh` verifies Node, tmux, and the compiler toolchain *before* installing
+anything, so a missing dependency costs you one line instead of a screen of
+`gyp ERR!`. Add `--systemd` to also install and start a user service. It runs
+only what the manual steps below do:
+
+```bash
 npm install && npm --prefix web install
 npm run build
 node dist/main.js init    # set the access password (hashed into ~/.tmux-webui/config.json)
-node dist/main.js         # http://127.0.0.1:8090
 ```
 
 `node dist/main.js help` lists all subcommands and environment variables.
@@ -42,6 +51,8 @@ Prefer a short command? `npm link` puts `tmux-webui` on your `PATH`.
 `init` prompts on a TTY. When there is no terminal, feed the password on stdin:
 
 ```bash
+printf '%s' "$TMUX_WEBUI_PASSWORD" | ./scripts/install.sh --password-stdin
+# or, if the repo is already built:
 printf '%s' "$TMUX_WEBUI_PASSWORD" | node dist/main.js init --password-stdin
 ```
 

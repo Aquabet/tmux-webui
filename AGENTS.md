@@ -12,11 +12,13 @@ deployment step as security-relevant.
 ## Deploying it for someone
 
 ```bash
-npm install && npm --prefix web install
-npm run build
-printf '%s' "$PASSWORD" | node dist/main.js init --password-stdin
+printf '%s' "$PASSWORD" | ./scripts/install.sh --password-stdin
 node dist/main.js
 ```
+
+`install.sh` checks prerequisites first and fails with one actionable line;
+prefer it over running the npm steps yourself. `--systemd` also installs and
+starts a user service.
 
 Requires Node ≥ 20, tmux ≥ 2.2, and — on Linux — `python3`/`make`/a C++
 compiler, because `node-pty` has no Linux prebuild and compiles on install.
