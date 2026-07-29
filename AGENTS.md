@@ -52,6 +52,8 @@ Full conventions, commands, and local-testing pitfalls are in
   `web/dist`.
 - Conventional commits (`feat:` / `fix:` / `docs:` / …). Never commit to `main`;
   branch as `<type>/<short-description>` and open a PR.
+- **Wait for CI to pass before merging** (`gh pr checks <number>`). A green local
+  run is not evidence — CI builds from scratch, your working tree does not.
 - Comments explain *why*, in the style already in the file. Existing comments
   are in Chinese — match the surrounding file.
 - Config is read in one place (`src/config.ts`); external input is validated
