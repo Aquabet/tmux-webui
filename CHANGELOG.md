@@ -25,8 +25,7 @@ First public release.
   entry (voice and swipe input work), and image upload that inserts the saved
   path into the input.
 - Collapsible sidebar with persisted state.
-- `tmux-webui` CLI with `init`, `help`, and `version` subcommands; published to
-  npm so it runs via `npx tmux-webui`.
+- `tmux-webui` CLI with `init`, `help`, and `version` subcommands.
 - Configuration from environment variables, a `.env` file, or
   `~/.tmux-webui/config.json` (written by `init` with mode `0600`).
 - Startup warning when bound to a non-loopback address.

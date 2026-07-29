@@ -16,24 +16,49 @@ tmux window，完整交互终端（xterm.js）。浏览器视图基于 tmux 分�
 需要同一台机器上有 **Node.js ≥ 20** 和 **tmux**。
 
 ```bash
-npx tmux-webui init   # 设置访问密码（哈希后存入 ~/.tmux-webui/config.json）
-npx tmux-webui        # http://127.0.0.1:8090
-```
-
-或者装一次：`npm install -g tmux-webui`，之后直接 `tmux-webui`。
-
-`tmux-webui help` 列出全部子命令和环境变量。
-
-### 从源码运行
-
-```bash
 git clone https://github.com/Aquabet/tmux-webui.git && cd tmux-webui
 npm install && npm --prefix web install
 npm run build
-node dist/main.js init && node dist/main.js
+node dist/main.js init    # 设置访问密码（哈希后存入 ~/.tmux-webui/config.json）
+node dist/main.js         # http://127.0.0.1:8090
 ```
 
+`node dist/main.js help` 列出全部子命令和环境变量。
+嫌命令长可以 `npm link`，之后直接敲 `tmux-webui`。
+
 开发模式：`npm run dev`（后端）+ `npm --prefix web run dev`（前端，端口 5173，自动代理）。
+
+### 开机自启（Linux）
+
+```ini
+# ~/.config/systemd/user/tmux-webui.service
+[Unit]
+Description=tmux-webui
+
+[Service]
+WorkingDirectory=%h/tmux-webui
+ExecStart=/usr/bin/env node %h/tmux-webui/dist/main.js
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+```
+
+```bash
+systemctl --user enable --now tmux-webui
+loginctl enable-linger "$USER"   # 必须，否则退出登录后服务被杀
+```
+
+### 更新
+
+```bash
+git pull
+npm install && npm --prefix web install
+npm run build
+systemctl --user restart tmux-webui   # 若按上面配了服务
+```
+
+有新版本时侧栏会提示，见[更新提示](#更新提示)。
 
 ## 手机端
 
@@ -79,7 +104,7 @@ node dist/main.js init && node dist/main.js
 ### 更新提示
 
 登录后服务端最多每 6 小时查一次 GitHub 最新 release，有新版就在侧栏显示链接。
-**只提示不自动安装**——更新用 `npm update -g tmux-webui`（源码安装则 `git pull`）。
+**只提示不自动安装**——更新步骤见[更新](#更新)。
 这是本服务唯一的对外请求，设 `TMUX_WEBUI_UPDATE_CHECK=false` 可关闭。
 
 ## 安全须知

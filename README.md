@@ -19,25 +19,51 @@ independent** of clients attached on your machine — neither disturbs the other
 Requires **Node.js ≥ 20** and **tmux** on the same machine.
 
 ```bash
-npx tmux-webui init   # set the access password (stored hashed in ~/.tmux-webui/config.json)
-npx tmux-webui        # http://127.0.0.1:8090
-```
-
-Or install it once: `npm install -g tmux-webui`, then `tmux-webui`.
-
-`tmux-webui help` lists all subcommands and environment variables.
-
-### From source
-
-```bash
 git clone https://github.com/Aquabet/tmux-webui.git && cd tmux-webui
 npm install && npm --prefix web install
 npm run build
-node dist/main.js init && node dist/main.js
+node dist/main.js init    # set the access password (hashed into ~/.tmux-webui/config.json)
+node dist/main.js         # http://127.0.0.1:8090
 ```
+
+`node dist/main.js help` lists all subcommands and environment variables.
+Prefer a short command? `npm link` puts `tmux-webui` on your `PATH`.
 
 Development mode: `npm run dev` (backend) + `npm --prefix web run dev`
 (frontend on port 5173, with automatic proxying).
+
+### Run it on boot (Linux)
+
+```ini
+# ~/.config/systemd/user/tmux-webui.service
+[Unit]
+Description=tmux-webui
+
+[Service]
+WorkingDirectory=%h/tmux-webui
+ExecStart=/usr/bin/env node %h/tmux-webui/dist/main.js
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+```
+
+```bash
+systemctl --user enable --now tmux-webui
+loginctl enable-linger "$USER"   # required, or the service dies when you log out
+```
+
+### Updating
+
+```bash
+git pull
+npm install && npm --prefix web install
+npm run build
+systemctl --user restart tmux-webui   # if you set up the service above
+```
+
+The sidebar tells you when a newer release exists — see
+[Update notification](#update-notification).
 
 ## Mobile
 
@@ -91,8 +117,8 @@ quotes is recommended.
 
 Once logged in, the server checks the latest GitHub release at most once every
 6 hours and shows a link in the sidebar when a newer version exists. It never
-installs anything — update with `npm update -g tmux-webui` (or `git pull` for a
-source checkout). The check is the only outbound request this server makes; set
+installs anything — see [Updating](#updating) for the two commands. The check is
+the only outbound request this server makes; set
 `TMUX_WEBUI_UPDATE_CHECK=false` to disable it.
 
 ## Security Notes

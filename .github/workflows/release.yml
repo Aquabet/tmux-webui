@@ -1,17 +1,17 @@
-name: Publish
+name: Release
 
 # 打 tag 触发：git tag v0.2.0 && git push origin v0.2.0
-# 需要在仓库 Settings > Secrets 里加 NPM_TOKEN（npm 的 Automation token）
+# 只建 GitHub Release，不发 npm——安装走 git clone。
+# 服务端的更新提示读的正是这里的 latest release，所以每个版本都要有 Release。
 on:
   push:
     tags: ['v*']
 
 permissions:
-  contents: write # 建 GitHub Release
-  id-token: write # npm provenance（可验证包由本仓库这次 workflow 构建）
+  contents: write # 建 Release
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,7 +20,6 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          registry-url: https://registry.npmjs.org
 
       - name: Install tmux
         run: sudo apt-get update && sudo apt-get install -y tmux
@@ -30,7 +29,8 @@ jobs:
           npm ci
           npm --prefix web ci
 
-      # 版本对不上就别发：npm 上的版本无法覆盖，发错只能作废重来
+      # 版本对不上就别发：更新提示比的是 tag 与本地 package.json 的版本，
+      # 两边不一致会让所有人看到错误的「有新版本」
       - name: Tag matches package.json version
         env:
           TAG: ${{ github.ref_name }}
@@ -47,12 +47,7 @@ jobs:
           npm run typecheck
           npm test
           npm --prefix web test
-
-      # publish 会先跑 prepublishOnly（npm run build）
-      - name: Publish to npm
-        run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          npm run build
 
       - name: Create GitHub Release
         env:
