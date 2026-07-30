@@ -43,8 +43,11 @@ export async function startUpdateSession(
   // 命令是固定字符串，不拼接任何请求内容。跑完保留一个 shell，
   // 免得会话随脚本退出而销毁、输出跟着消失。
   const command =
-    `./${SCRIPT_RELATIVE} --yes; ` +
-    `printf '\\n=== 更新结束，可关闭本窗口 ===\\n'; ` +
+    `if ./${SCRIPT_RELATIVE} --yes; then ` +
+    `printf '\\n=== 更新完成，可关闭本窗口 ===\\n'; ` +
+    `else code=$?; ` +
+    `printf '\\n=== 更新失败（退出码 %s），请查看上方错误 ===\\n' "$code"; ` +
+    `fi; ` +
     'exec "${SHELL:-/bin/sh}"'
 
   await exec(['new-session', '-d', '-s', UPDATE_SESSION, '-c', repoRoot, command])

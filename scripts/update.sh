@@ -38,6 +38,32 @@ if [ -n "$(git status --porcelain)" ]; then
 $(git status --short)"
 fi
 
+ensure_node_tools() {
+  if command -v node >/dev/null && command -v npm >/dev/null; then
+    return
+  fi
+
+  # WebUI 发起的更新跑在 tmux server 的环境里；tmux 可能早于 NVM 初始化，
+  # PATH 里没有 node。运行中的 systemd 服务却知道实际 Node 路径，从 /proc
+  # 找回同一套 bin，避免 checkout 完才在 npm 阶段失败。
+  local service_pid service_node
+  service_pid="$(systemctl --user show tmux-webui.service -p MainPID --value 2>/dev/null || true)"
+  if [[ "$service_pid" =~ ^[1-9][0-9]*$ ]]; then
+    service_node="$(readlink "/proc/${service_pid}/exe" 2>/dev/null || true)"
+    if [ -x "$service_node" ]; then
+      PATH="$(dirname "$service_node"):${PATH}"
+      export PATH
+    fi
+  fi
+
+  command -v node >/dev/null ||
+    fail "未找到 node。请先让 tmux 的 PATH 包含 Node.js，或重新运行 install.sh --systemd。"
+  command -v npm >/dev/null ||
+    fail "找到了 node，但同目录没有 npm。请安装完整的 Node.js/npm 后重试。"
+}
+
+ensure_node_tools
+
 current_version="$(node -p 'require("./package.json").version' 2>/dev/null || echo 未知)"
 echo "==> 当前版本 ${current_version}"
 
@@ -53,14 +79,15 @@ else
   target_label="release ${target}"
 fi
 
+already_at_target=false
 if [ "$(git rev-parse HEAD)" = "$(git rev-parse "$target^{commit}")" ]; then
-  echo "已经是最新（${target_label}），无需更新。"
-  exit 0
+  already_at_target=true
+  echo "==> 代码已是 ${target_label}，仍将重建并重启以修复未完成的上次更新"
+else
+  echo "==> 将更新到 ${target_label}"
+  git --no-pager log --oneline "HEAD..${target}" | head -20
+  echo
 fi
-
-echo "==> 将更新到 ${target_label}"
-git --no-pager log --oneline "HEAD..${target}" | head -20
-echo
 
 if [ "$assume_yes" != true ]; then
   # 没有终端时不静默继续：更新会 checkout 代码并重启服务
@@ -76,7 +103,9 @@ if [ "$assume_yes" != true ]; then
   esac
 fi
 
-git checkout --quiet "$target"
+if [ "$already_at_target" != true ]; then
+  git checkout --quiet "$target"
+fi
 
 echo "==> 安装依赖"
 npm ci

@@ -67,6 +67,8 @@ describe('startUpdateSession', () => {
     const command = created?.[created.length - 1] ?? ''
     expect(command).toContain('scripts/update.sh')
     expect(command).toContain('--yes')
+    expect(command).toContain('更新失败')
+    expect(command).toContain('if ./')
   })
 
   it('更新会话已存在时拒绝重复启动', async () => {
