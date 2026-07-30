@@ -117,6 +117,13 @@ tmux ≥ 3.0；agent 类型、前台连接和 Codex 有限的 title 兜底沿用
 node scripts/install-agent-status.mjs codex claude pi kimi opencode
 ```
 
+### 系统资源仪表
+
+session 侧栏最下边缘固定显示两枚主机级仪表：CPU 活跃度和 RAM 占用，每 3 秒
+刷新一次。CPU 按采样窗口内所有逻辑核心的平均值计算；Linux 上 RAM 使用
+`MemAvailable`，不会把可回收的文件缓存误报成已占用内存，其它平台回退到
+Node 提供的可用内存值。`/api/resources` 与 session 列表使用相同的登录鉴权。
+
 ### 想自己写 service 的话
 
 `--systemd` 做的事是：写 `~/.config/systemd/user/tmux-webui.service`、

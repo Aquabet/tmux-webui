@@ -3,6 +3,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { SessionSidebar } from './SessionSidebar'
 
 vi.mock('./VersionBadge', () => ({ VersionBadge: () => null }))
+vi.mock('./ResourceUsage', () => ({
+  ResourceUsage: () => <div data-testid="resource-usage" />,
+}))
 
 const handlers = {
   selected: undefined,
@@ -15,6 +18,17 @@ const handlers = {
 }
 
 describe('SessionSidebar agent 状态', () => {
+  it('把系统资源仪表固定在侧栏 footer 的最下面', () => {
+    const { container } = render(<SessionSidebar {...handlers} sessions={[]} />)
+    const scroll = container.querySelector('.session-scroll') as HTMLElement
+    const footer = container.querySelector('.sidebar-footer') as HTMLElement
+
+    expect(scroll.firstElementChild?.tagName).toBe('UL')
+    expect(scroll.lastElementChild).toBe(screen.getByRole('button', { name: '＋ 新建 session' }))
+    expect(footer).toBeDefined()
+    expect(footer.lastElementChild).toBe(screen.getByTestId('resource-usage'))
+  })
+
   it('用不同图标展示各 coding agent 的精确状态', () => {
     render(
       <SessionSidebar

@@ -50,6 +50,31 @@ test('终端可向上滚动查看较早输出', async ({ page }) => {
   await expect(page.locator('.xterm-screen')).toContainText('scrollback-1')
 })
 
+test('侧栏底部固定显示 CPU 与 RAM 仪表', async ({ page }) => {
+  await page.goto('/')
+  await page.getByPlaceholder('密码').fill('secret')
+  await page.getByRole('button', { name: '登录' }).click()
+
+  const sidebar = page.locator('.sidebar')
+  const resources = page.getByLabel('系统资源占用')
+  await expect(resources).toBeVisible()
+  await expect(resources.getByLabel(/CPU 使用率/)).toBeVisible()
+  await expect(resources.getByLabel(/RAM 使用率/)).toBeVisible()
+
+  const sidebarBox = await sidebar.boundingBox()
+  const resourcesBox = await resources.boundingBox()
+  expect(sidebarBox).not.toBeNull()
+  expect(resourcesBox).not.toBeNull()
+  expect(
+    Math.abs(
+      (sidebarBox?.y ?? 0) +
+        (sidebarBox?.height ?? 0) -
+        ((resourcesBox?.y ?? 0) + (resourcesBox?.height ?? 0)) -
+        12,
+    ),
+  ).toBeLessThanOrEqual(1)
+})
+
 test('新版提示只在手机顶栏显示，侧栏关闭时仍可见', async ({ page }) => {
   await page.route('**/api/version', async (route) => {
     await route.fulfill({

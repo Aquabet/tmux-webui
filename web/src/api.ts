@@ -85,6 +85,22 @@ export interface VersionInfo {
   canUpdate: boolean
 }
 
+export interface SystemResources {
+  cpuPercent: number
+  cpuCount: number
+  memoryUsedBytes: number
+  memoryTotalBytes: number
+  memoryPercent: number
+}
+
+export async function fetchSystemResources(): Promise<SystemResources> {
+  const res = await fetch('/api/resources')
+  if (res.status === 401) throw new AuthError()
+  const body = await parseBody<SystemResources>(res)
+  if (!res.ok || !body.success || !body.data) throw new Error(body.error ?? '获取系统资源失败')
+  return body.data
+}
+
 export async function fetchVersion(): Promise<VersionInfo> {
   const res = await fetch('/api/version')
   if (res.status === 401) throw new AuthError()

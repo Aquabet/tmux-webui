@@ -128,6 +128,15 @@ status integrations without replacing existing hooks:
 node scripts/install-agent-status.mjs codex claude pi kimi opencode
 ```
 
+### System resource meters
+
+The bottom edge of the session sidebar stays pinned to two host-wide gauges:
+CPU activity and RAM usage. They refresh every 3 seconds while you are logged
+in. CPU is averaged across all logical cores over the sampling window; on
+Linux, RAM uses `MemAvailable` so reclaimable filesystem cache is not reported
+as occupied memory. Other platforms fall back to Node's available-memory
+reading. The `/api/resources` data is protected by the same login as sessions.
+
 ### The service, if you want to write it yourself
 
 `--systemd` writes `~/.config/systemd/user/tmux-webui.service`, runs
