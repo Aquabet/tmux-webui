@@ -4,6 +4,7 @@ import { Login } from './Login'
 import { SessionSidebar } from './SessionSidebar'
 import { loadSidebarCollapsed, toggleSidebarCollapsed } from './sidebarState'
 import { TerminalView } from './TerminalView'
+import { VersionBadge } from './VersionBadge'
 import { WindowTabs } from './WindowTabs'
 import { useSessions } from './useSessions'
 
@@ -114,6 +115,13 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
               onSelect={setSelectedWindow}
             />
           )}
+          <div className="mobile-version">
+            <VersionBadge
+              compact
+              onUpdateStarted={handleUpdateStarted}
+              onAuthLost={onAuthLost}
+            />
+          </div>
         </div>
         {current && currentWindow ? (
           <TerminalView

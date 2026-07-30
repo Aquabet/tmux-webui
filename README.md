@@ -171,10 +171,12 @@ Two lines that are easy to get wrong:
 ### Updating
 
 The sidebar shows the version you are running. When a newer release exists it
-says so and offers an **Update** button: the server starts the update in a
-separate tmux session (`tmux-webui-update`) and the UI switches to it, so you
-watch it run. It has to be a separate session — the update restarts the
-service, which would otherwise kill the process performing it.
+says so and offers an **Update** button. On phones the same notice also appears
+in the top bar, so it stays visible while the session drawer is closed. The
+server starts the update in a separate tmux session (`tmux-webui-update`) and
+the UI switches to it, so you watch it run. It has to be a separate session —
+the update restarts the service, which would otherwise kill the process
+performing it.
 
 The same thing from a shell:
 
@@ -248,10 +250,10 @@ quotes is recommended.
 ### Update notification
 
 Once logged in, the server checks the latest GitHub release at most once every
-6 hours and shows a link in the sidebar when a newer version exists. It never
-installs anything on its own — updating happens when you press the button. The
-check is the only outbound request this server makes; set
-`TMUX_WEBUI_UPDATE_CHECK=false` to disable it.
+6 hours and shows a link in the sidebar, plus a compact top-bar notice on
+phones, when a newer version exists. It never installs anything on its own —
+updating happens when you press the button. The check is the only outbound
+request this server makes; set `TMUX_WEBUI_UPDATE_CHECK=false` to disable it.
 
 ## Security Notes
 
