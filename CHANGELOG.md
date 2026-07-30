@@ -9,6 +9,14 @@ with patches incrementing the last position (`3.1.1`, `3.1.2`). See
 
 ## [Unreleased]
 
+## [3.1.4] - 2026-07-29
+
+### Fixed
+
+- Phones now show a compact new-version notice and Update button in the top
+  bar, so updates remain visible while the session drawer is closed. The notice
+  stays hidden on desktop and when the server is already up to date.
+
 ## [3.1.3] - 2026-07-29
 
 ### Fixed
@@ -94,7 +102,8 @@ First public release.
   once every 6 hours, behind auth) and links to it from the sidebar. It never
   installs anything; `TMUX_WEBUI_UPDATE_CHECK=false` disables the check.
 
-[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.3...HEAD
+[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.4...HEAD
+[3.1.4]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.4
 [3.1.3]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.3
 [3.1.2]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.2
 [3.1.1]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.1
