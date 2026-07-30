@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { VersionBadge } from './VersionBadge'
-import { fetchVersion, startUpdate } from './api'
+import { AuthError, fetchVersion, startUpdate } from './api'
 
 vi.mock('./api', () => ({
   AuthError: class AuthError extends Error {},
@@ -35,6 +35,15 @@ describe('VersionBadge', () => {
     renderBadge()
     expect(await screen.findByText('v3.1.0')).toBeDefined()
     expect(screen.queryByRole('button', { name: '更新' })).toBeNull()
+  })
+
+  it('紧凑模式没有新版本时不占用手机顶栏', async () => {
+    vi.mocked(fetchVersion).mockResolvedValue(upToDate)
+    const { container } = render(
+      <VersionBadge compact onUpdateStarted={vi.fn()} onAuthLost={vi.fn()} />,
+    )
+    await waitFor(() => expect(fetchVersion).toHaveBeenCalled())
+    expect(container.innerHTML).toBe('')
   })
 
   it('有新版本时同时给出新旧版本、发布页链接与更新按钮', async () => {
@@ -78,6 +87,15 @@ describe('VersionBadge', () => {
     renderBadge()
     fireEvent.click(await screen.findByRole('button', { name: '更新' }))
     expect(await screen.findByText('更新已在进行中')).toBeDefined()
+  })
+
+  it('更新时登录失效会交给上层返回登录页', async () => {
+    vi.mocked(fetchVersion).mockResolvedValue(outdated)
+    vi.mocked(startUpdate).mockRejectedValue(new AuthError())
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const { onAuthLost } = renderBadge()
+    fireEvent.click(await screen.findByRole('button', { name: '更新' }))
+    await waitFor(() => expect(onAuthLost).toHaveBeenCalledOnce())
   })
 
   it('查不到版本时什么都不渲染', async () => {

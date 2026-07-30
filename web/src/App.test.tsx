@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { App } from './App'
-import { checkAuth, fetchSessions } from './api'
+import { checkAuth, fetchSessions, fetchVersion } from './api'
 
 vi.mock('./api', () => ({
   AuthError: class AuthError extends Error {},
@@ -43,5 +43,23 @@ describe('App 无 session 时', () => {
     render(<App />)
     expect(await screen.findByTestId('term')).toBeDefined()
     expect(screen.getByLabelText('切换 session 列表')).toBeDefined()
+  })
+
+  it('新版提示也渲染在顶栏，手机侧栏关闭时仍可见', async () => {
+    vi.mocked(checkAuth).mockResolvedValue(true)
+    vi.mocked(fetchSessions).mockResolvedValue([])
+    vi.mocked(fetchVersion).mockResolvedValue({
+      current: '3.1.3',
+      latest: '3.1.4',
+      url: 'https://example.test/v3.1.4',
+      updateAvailable: true,
+      canUpdate: true,
+    })
+    const { container } = render(<App />)
+    await screen.findByLabelText('切换 session 列表')
+    const header = within(container.querySelector('.main-header') as HTMLElement)
+
+    expect(await header.findByRole('link', { name: '新版 v3.1.4' })).toBeDefined()
+    expect(header.getByRole('button', { name: '更新' })).toBeDefined()
   })
 })

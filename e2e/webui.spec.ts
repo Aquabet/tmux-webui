@@ -49,3 +49,35 @@ test('终端可向上滚动查看较早输出', async ({ page }) => {
   await page.mouse.wheel(0, -10_000)
   await expect(page.locator('.xterm-screen')).toContainText('scrollback-1')
 })
+
+test('新版提示只在手机顶栏显示，侧栏关闭时仍可见', async ({ page }) => {
+  await page.route('**/api/version', async (route) => {
+    await route.fulfill({
+      json: {
+        success: true,
+        data: {
+          current: '3.1.3',
+          latest: '3.1.4',
+          url: 'https://example.test/v3.1.4',
+          updateAvailable: true,
+          canUpdate: true,
+        },
+      },
+    })
+  })
+  await page.goto('/')
+  await page.getByPlaceholder('密码').fill('secret')
+  await page.getByRole('button', { name: '登录' }).click()
+
+  await expect(page.locator('.mobile-version')).not.toBeVisible()
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.locator('.sidebar')).not.toBeInViewport()
+  const notice = page.locator('.mobile-version')
+  const link = notice.getByRole('link', { name: '新版 v3.1.4' })
+  const button = notice.getByRole('button', { name: '更新' })
+  await expect(link).toBeVisible()
+  await expect(button).toBeVisible()
+  expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(44)
+  expect((await button.boundingBox())?.height).toBeGreaterThanOrEqual(44)
+})

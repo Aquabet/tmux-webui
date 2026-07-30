@@ -4,12 +4,13 @@ import { AuthError, fetchVersion, startUpdate, type VersionInfo } from './api'
 interface Props {
   onUpdateStarted: (session: string) => void
   onAuthLost: () => void
+  compact?: boolean
 }
 
 // 侧栏底部常驻显示当前版本；有新版本时补上提示与更新按钮。
 // 更新不在本进程里跑——脚本会重启服务，等于杀掉发起它的进程；
 // 交给服务端在独立 tmux session 里执行，前端切过去看输出。
-export function VersionBadge({ onUpdateStarted, onAuthLost }: Props) {
+export function VersionBadge({ onUpdateStarted, onAuthLost, compact = false }: Props) {
   const [info, setInfo] = useState<VersionInfo | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | undefined>()
@@ -49,9 +50,11 @@ export function VersionBadge({ onUpdateStarted, onAuthLost }: Props) {
 
   // 版本没取到（离线、旧版服务端）就什么都不显示，别占位报错
   if (!info) return null
+  // 手机顶栏只承担“有新版时提醒”这一件事；当前版本仍在侧栏底部查看。
+  if (compact && !info.updateAvailable) return null
 
   return (
-    <div className="version-badge">
+    <div className={`version-badge${compact ? ' compact' : ''}`}>
       {info.updateAvailable ? (
         <>
           <a
@@ -60,7 +63,7 @@ export function VersionBadge({ onUpdateStarted, onAuthLost }: Props) {
             target="_blank"
             rel="noreferrer noopener"
           >
-            有新版本 v{info.latest}（当前 v{info.current}）
+            {compact ? `新版 v${info.latest}` : `有新版本 v${info.latest}（当前 v${info.current}）`}
           </a>
           {info.canUpdate && (
             <button type="button" onClick={() => void handleUpdate()} disabled={busy}>
