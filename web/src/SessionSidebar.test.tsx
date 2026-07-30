@@ -157,7 +157,7 @@ describe('SessionSidebar agent 状态', () => {
     expect(container.querySelector('.sidebar')?.classList.contains('compact')).toBe(true)
   })
 
-  it('分隔线支持键盘精调宽度和一键收至最窄', () => {
+  it('分隔线支持键盘精调宽度、边界快捷键和 ARIA 数值', () => {
     const onWidthChange = vi.fn()
     render(
       <SessionSidebar
@@ -168,10 +168,18 @@ describe('SessionSidebar agent 状态', () => {
       />,
     )
     const separator = screen.getByRole('separator', { name: '调整 session 侧栏宽度' })
+    expect(separator.getAttribute('aria-valuenow')).toBe('200')
+    expect(separator.getAttribute('aria-valuemin')).toBe(String(MIN_SIDEBAR_WIDTH))
 
     fireEvent.keyDown(separator, { key: 'ArrowRight' })
     expect(onWidthChange).toHaveBeenLastCalledWith(216)
+    fireEvent.keyDown(separator, { key: 'ArrowLeft' })
+    expect(onWidthChange).toHaveBeenLastCalledWith(184)
     fireEvent.keyDown(separator, { key: 'Home' })
     expect(onWidthChange).toHaveBeenLastCalledWith(MIN_SIDEBAR_WIDTH)
+    fireEvent.keyDown(separator, { key: 'End' })
+    expect(onWidthChange).toHaveBeenLastCalledWith(480)
+    fireEvent.keyDown(separator, { key: 'Enter' })
+    expect(onWidthChange).toHaveBeenCalledTimes(4)
   })
 })

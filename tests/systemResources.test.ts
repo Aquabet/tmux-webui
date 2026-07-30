@@ -64,4 +64,25 @@ describe('system resources', () => {
       memoryPercent: 0,
     })
   })
+
+  it('把倒退的 CPU 计数和越界内存值限制在有效范围内', () => {
+    const cpuTimes = vi
+      .fn<() => CpuTimes[]>()
+      .mockReturnValueOnce([{ user: 10, nice: 0, sys: 0, idle: 10, irq: 0 }])
+      .mockReturnValueOnce([{ user: 20, nice: 0, sys: 0, idle: 5, irq: 0 }])
+      .mockReturnValue([{ user: 20, nice: 0, sys: 0, idle: 30, irq: 0 }])
+    const sample = createSystemResourceSampler({
+      cpuTimes,
+      totalMemory: () => 1_000,
+      availableMemory: () => 2_000,
+      cacheMs: 0,
+    })
+
+    expect(sample()).toMatchObject({
+      cpuPercent: 100,
+      memoryUsedBytes: 0,
+      memoryPercent: 0,
+    })
+    expect(sample().cpuPercent).toBe(0)
+  })
 })
