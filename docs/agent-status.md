@@ -317,8 +317,10 @@ The shipped hook handles this by matching the hook's parent-process chain to
 tmux pane root processes; it still exits silently when it is genuinely outside
 tmux.
 
-Before a Codex hook is trusted, the default terminal-title `activity` item is
-used as a limited fallback. A visible spinner means running; a non-empty title
-without the activity spinner means idle. If you customize Codex to remove the
-`activity` title item, configure hooks because tmux can no longer distinguish
-the two states reliably.
+The default Codex terminal-title `activity` item provides a limited fallback
+before hooks are trusted. A visible spinner also overrides a stale idle hook
+state because it is direct evidence of current work; otherwise valid hook state
+keeps priority. A non-empty title without the activity spinner means idle only
+when no valid hook state exists. If you customize Codex to remove the `activity`
+title item, configure hooks because tmux can no longer distinguish the two
+states reliably.
