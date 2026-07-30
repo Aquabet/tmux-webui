@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 import { checkAuth, fetchSessions, fetchVersion } from './api'
@@ -13,7 +13,11 @@ vi.mock('./api', () => ({
   fetchVersion: vi.fn().mockRejectedValue(new Error('无关')),
 }))
 // TerminalView 会拉起 xterm 与 WebSocket，本用例只关心外层布局
-vi.mock('./TerminalView', () => ({ TerminalView: () => <div data-testid="term" /> }))
+vi.mock('./TerminalView', () => ({
+  TerminalView: ({ onForegroundChange }: { onForegroundChange?: () => void }) => (
+    <button data-testid="term" onClick={onForegroundChange} />
+  ),
+}))
 
 describe('App 无 session 时', () => {
   it('仍然渲染侧栏开关——否则手机端抽屉打不开，永远建不了 session', async () => {
@@ -43,6 +47,22 @@ describe('App 无 session 时', () => {
     render(<App />)
     expect(await screen.findByTestId('term')).toBeDefined()
     expect(screen.getByLabelText('切换 session 列表')).toBeDefined()
+  })
+
+  it('终端前台连接变化时立即刷新 session 亮暗状态', async () => {
+    vi.mocked(checkAuth).mockResolvedValue(true)
+    vi.mocked(fetchSessions).mockResolvedValue([
+      { name: 'demo', attached: false, windows: [{ index: 0, name: 'sh', active: true }] },
+    ])
+    render(<App />)
+    const terminal = await screen.findByTestId('term')
+    const callsBeforeForegroundChange = vi.mocked(fetchSessions).mock.calls.length
+
+    fireEvent.click(terminal)
+
+    await waitFor(() =>
+      expect(fetchSessions).toHaveBeenCalledTimes(callsBeforeForegroundChange + 1),
+    )
   })
 
   it('新版提示也渲染在顶栏，手机侧栏关闭时仍可见', async () => {
