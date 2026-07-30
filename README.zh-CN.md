@@ -81,6 +81,10 @@ curl -sb /tmp/c localhost:8090/api/sessions                    # {"success":true
 
 开发模式：`npm run dev`（后端）+ `npm --prefix web run dev`（前端，端口 5173，自动代理）。
 
+桌面端可拖动 session 侧栏右边缘，在 64–480 像素之间调整宽度。拖到最窄时会
+变成仅图标栏，悬停图标仍可查看 session 名称；浏览器会记住所选宽度。手机端抽屉
+保持原来的固定宽度和交互。
+
 ### Coding agent 状态标记
 
 session 名称前的图标表示 pane 里运行的程序：
@@ -116,6 +120,13 @@ tmux ≥ 3.0；agent 类型、前台连接和 Codex 有限的 title 兜底沿用
 ```bash
 node scripts/install-agent-status.mjs codex claude pi kimi opencode
 ```
+
+### 系统资源仪表
+
+session 侧栏最下边缘固定显示两枚主机级仪表：CPU 活跃度和 RAM 占用，每 3 秒
+刷新一次。CPU 按采样窗口内所有逻辑核心的平均值计算；Linux 上 RAM 使用
+`MemAvailable`，不会把可回收的文件缓存误报成已占用内存，其它平台回退到
+Node 提供的可用内存值。`/api/resources` 与 session 列表使用相同的登录鉴权。
 
 ### 想自己写 service 的话
 

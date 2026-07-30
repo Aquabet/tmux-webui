@@ -9,6 +9,17 @@ with patches incrementing the last position (`3.1.1`, `3.1.2`). See
 
 ## [Unreleased]
 
+## [3.1.5] - 2026-07-30
+
+### Added
+
+- The desktop session sidebar can now be resized from 64 to 480 pixels and
+  remembers its width. At its narrowest it becomes an icon-only rail while
+  retaining session names in hover and accessibility labels; the mobile drawer
+  keeps its existing behavior.
+- The session sidebar now shows pinned CPU activity and RAM usage gauges,
+  refreshed every 3 seconds from a new authenticated resource endpoint.
+
 ## [3.1.4] - 2026-07-29
 
 ### Fixed

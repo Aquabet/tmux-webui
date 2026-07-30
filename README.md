@@ -90,6 +90,11 @@ up Tailscale or a TLS reverse proxy if the person needs remote access.
 Development mode: `npm run dev` (backend) + `npm --prefix web run dev`
 (frontend on port 5173, with automatic proxying).
 
+On desktop, drag the session sidebar's right edge to resize it from 64 to
+480 pixels. At its narrowest it becomes an icon-only rail; hover an icon to
+see the session name. The chosen width is remembered in this browser. The
+mobile drawer keeps its fixed width and existing behavior.
+
 ### Coding agent badges
 
 The icon before each session name identifies what is running in its panes:
@@ -127,6 +132,15 @@ status integrations without replacing existing hooks:
 ```bash
 node scripts/install-agent-status.mjs codex claude pi kimi opencode
 ```
+
+### System resource meters
+
+The bottom edge of the session sidebar stays pinned to two host-wide gauges:
+CPU activity and RAM usage. They refresh every 3 seconds while you are logged
+in. CPU is averaged across all logical cores over the sampling window; on
+Linux, RAM uses `MemAvailable` so reclaimable filesystem cache is not reported
+as occupied memory. Other platforms fall back to Node's available-memory
+reading. The `/api/resources` data is protected by the same login as sessions.
 
 ### The service, if you want to write it yourself
 

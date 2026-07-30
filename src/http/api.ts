@@ -16,6 +16,7 @@ import {
   sessionNameError,
 } from '../tmux/manage.js'
 import { canSelfUpdate, startUpdateSession } from '../selfUpdate.js'
+import type { SystemResources } from '../systemResources.js'
 import type { UpdateInfo } from '../update.js'
 import { COOKIE_NAME, requireAuth } from './middleware.js'
 
@@ -25,6 +26,7 @@ export interface ApiDeps {
   limiter: RateLimiter
   exec: TmuxExec
   checkUpdate: () => Promise<UpdateInfo>
+  getSystemResources: () => SystemResources
   repoRoot: string
 }
 
@@ -129,6 +131,11 @@ export function createApiRouter(deps: ApiDeps): Router {
   router.get('/version', requireAuth(deps.store), async (_req, res) => {
     const info = await deps.checkUpdate()
     res.json({ success: true, data: { ...info, canUpdate: canSelfUpdate(deps.repoRoot) } })
+  })
+
+  // 主机资源同样放在鉴权后：它虽不含 shell 内容，仍属于不该公开的运行状态。
+  router.get('/resources', requireAuth(deps.store), (_req, res) => {
+    res.json({ success: true, data: deps.getSystemResources() })
   })
 
   // 一键更新：在独立 tmux session 里跑仓库自带的 update.sh。命令固定，

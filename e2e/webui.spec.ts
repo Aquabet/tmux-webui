@@ -50,6 +50,63 @@ test('终端可向上滚动查看较早输出', async ({ page }) => {
   await expect(page.locator('.xterm-screen')).toContainText('scrollback-1')
 })
 
+test('侧栏底部固定显示 CPU 与 RAM 仪表', async ({ page }) => {
+  await page.goto('/')
+  await page.getByPlaceholder('密码').fill('secret')
+  await page.getByRole('button', { name: '登录' }).click()
+
+  const sidebar = page.locator('.sidebar')
+  const resources = page.getByLabel('系统资源占用')
+  await expect(resources).toBeVisible()
+  await expect(resources.getByLabel(/CPU 使用率/)).toBeVisible()
+  await expect(resources.getByLabel(/RAM 使用率/)).toBeVisible()
+
+  const sidebarBox = await sidebar.boundingBox()
+  const resourcesBox = await resources.boundingBox()
+  expect(sidebarBox).not.toBeNull()
+  expect(resourcesBox).not.toBeNull()
+  expect(
+    Math.abs(
+      (sidebarBox?.y ?? 0) +
+        (sidebarBox?.height ?? 0) -
+        ((resourcesBox?.y ?? 0) + (resourcesBox?.height ?? 0)) -
+        12,
+    ),
+  ).toBeLessThanOrEqual(1)
+})
+
+test('桌面侧栏可拖到图标模式、刷新后保留宽度且不影响手机抽屉', async ({ page }) => {
+  // 服务端按 IP 限制每分钟 5 次登录；给新增用例独立 IP，避免完整套件第 6 次
+  // 登录命中真实限速而让用例顺序互相污染。
+  await page.setExtraHTTPHeaders({ 'X-Forwarded-For': '127.0.0.2' })
+  await page.goto('/')
+  await page.getByPlaceholder('密码').fill('secret')
+  await page.getByRole('button', { name: '登录' }).click()
+
+  const sidebar = page.locator('.sidebar')
+  const resizer = page.getByRole('separator', { name: '调整 session 侧栏宽度' })
+  const box = await resizer.boundingBox()
+  expect(box).not.toBeNull()
+  await page.mouse.move((box?.x ?? 0) + 3, (box?.y ?? 0) + 100)
+  await page.mouse.down()
+  await page.mouse.move(0, (box?.y ?? 0) + 100, { steps: 5 })
+  await page.mouse.up()
+
+  await expect(sidebar).toHaveClass(/compact/)
+  await expect(sidebar).toHaveCSS('width', '64px')
+  await expect(sidebar.locator('.session-name').first()).toBeHidden()
+  expect(await page.evaluate(() => localStorage.getItem('sidebar-width'))).toBe('64')
+
+  await page.reload()
+  await expect(sidebar).toHaveCSS('width', '64px')
+
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.getByRole('button', { name: '切换 session 列表' }).click()
+  await expect(sidebar).toHaveCSS('width', '220px')
+  await expect(sidebar.locator('.session-name').first()).toBeVisible()
+  await expect(resizer).toBeHidden()
+})
+
 test('新版提示只在手机顶栏显示，侧栏关闭时仍可见', async ({ page }) => {
   await page.route('**/api/version', async (route) => {
     await route.fulfill({

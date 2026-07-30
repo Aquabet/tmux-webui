@@ -5,6 +5,7 @@ import {
   createSession,
   deleteSession,
   fetchSessions,
+  fetchSystemResources,
   login,
   renameSession,
   uploadImage,
@@ -89,6 +90,25 @@ describe('fetchSessions', () => {
   it('503 时抛普通 Error（tmux 未运行）', async () => {
     mockFetch(503, { success: false, error: 'tmux server 未运行' })
     await expect(fetchSessions()).rejects.toThrow('tmux server 未运行')
+  })
+})
+
+describe('fetchSystemResources', () => {
+  it('返回 CPU 与 RAM 数据', async () => {
+    const data = {
+      cpuPercent: 25,
+      cpuCount: 4,
+      memoryUsedBytes: 3_000,
+      memoryTotalBytes: 8_000,
+      memoryPercent: 37.5,
+    }
+    mockFetch(200, { success: true, data })
+    await expect(fetchSystemResources()).resolves.toEqual(data)
+  })
+
+  it('401 时抛 AuthError', async () => {
+    mockFetch(401, { success: false })
+    await expect(fetchSystemResources()).rejects.toBeInstanceOf(AuthError)
   })
 })
 

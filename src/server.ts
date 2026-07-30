@@ -12,6 +12,7 @@ import { createApiRouter } from './http/api.js'
 import { spawnNodePty } from './pty.js'
 import { createTmuxExec } from './tmux/exec.js'
 import { createUpdateChecker } from './update.js'
+import { createSystemResourceSampler } from './systemResources.js'
 import { handleTerminalConnection, type SpawnPty } from './ws/terminal.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -38,9 +39,13 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
     current: packageVersion(),
     enabled: config.updateCheck,
   })
+  const getSystemResources = createSystemResourceSampler()
   // dist/ 的上一级即仓库根，update.sh 和 package.json 都在那里
   const repoRoot = path.resolve(__dirname, '..')
-  app.use('/api', createApiRouter({ config, store, limiter, exec, checkUpdate, repoRoot }))
+  app.use(
+    '/api',
+    createApiRouter({ config, store, limiter, exec, checkUpdate, getSystemResources, repoRoot }),
+  )
 
   const staticDir = path.resolve(__dirname, '../web/dist')
   if (existsSync(staticDir)) {

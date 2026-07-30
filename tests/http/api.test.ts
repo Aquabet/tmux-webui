@@ -10,6 +10,7 @@ import { createRateLimiter } from '../../src/auth/rateLimit.js'
 import { createSessionStore } from '../../src/auth/sessions.js'
 import type { Config } from '../../src/config.js'
 import { createApiRouter } from '../../src/http/api.js'
+import type { SystemResources } from '../../src/systemResources.js'
 import { TmuxError, type TmuxExec } from '../../src/tmux/exec.js'
 
 const SESSIONS_OUT = 'demo\t1\n'
@@ -22,7 +23,12 @@ const REPO_ROOT = path.resolve(import.meta.dirname, '../..')
 afterAll(() => rmSync(UPLOAD_DIR, { recursive: true, force: true }))
 
 async function makeApp(
-  overrides: { exec?: TmuxExec; limiterMax?: number; repoRoot?: string } = {},
+  overrides: {
+    exec?: TmuxExec
+    limiterMax?: number
+    repoRoot?: string
+    getSystemResources?: () => SystemResources
+  } = {},
 ) {
   const config: Config = {
     host: '127.0.0.1',
@@ -57,6 +63,15 @@ async function makeApp(
         url: null,
         updateAvailable: false,
       }),
+      getSystemResources:
+        overrides.getSystemResources ??
+        (() => ({
+          cpuPercent: 25,
+          cpuCount: 4,
+          memoryUsedBytes: 3_000,
+          memoryTotalBytes: 8_000,
+          memoryPercent: 37.5,
+        })),
       // 默认指向一个没有 update.sh 的目录：一键更新按不可用处理
       repoRoot: overrides.repoRoot ?? UPLOAD_DIR,
     }),
@@ -124,6 +139,22 @@ describe('GET /api/sessions', () => {
         url: null,
         updateAvailable: false,
         canUpdate: false,
+      },
+    })
+  })
+
+  it('/resources 需要登录，认证后返回系统 CPU 与 RAM 占用', async () => {
+    const app = await makeApp()
+    expect((await request(app).get('/api/resources')).status).toBe(401)
+    const agent = await loginAgent(app)
+    expect((await agent.get('/api/resources')).body).toEqual({
+      success: true,
+      data: {
+        cpuPercent: 25,
+        cpuCount: 4,
+        memoryUsedBytes: 3_000,
+        memoryTotalBytes: 8_000,
+        memoryPercent: 37.5,
       },
     })
   })

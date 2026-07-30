@@ -3,6 +3,7 @@ import { AuthError, checkAuth, createSession, deleteSession, renameSession } fro
 import { Login } from './Login'
 import { SessionSidebar } from './SessionSidebar'
 import { loadSidebarCollapsed, toggleSidebarCollapsed } from './sidebarState'
+import { loadSidebarWidth, saveSidebarWidth } from './sidebarSize'
 import { TerminalView } from './TerminalView'
 import { VersionBadge } from './VersionBadge'
 import { WindowTabs } from './WindowTabs'
@@ -15,6 +16,7 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
   const [actionError, setActionError] = useState<string | undefined>()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(loadSidebarCollapsed)
+  const [sidebarWidth, setSidebarWidth] = useState(loadSidebarWidth)
 
   // 同一个 ☰ 按钮：桌面端切换折叠（持久化），窄屏切换抽屉
   function handleToggleSidebar() {
@@ -23,6 +25,10 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
     } else {
       setSidebarOpen((o) => !o)
     }
+  }
+
+  function handleSidebarWidthChange(width: number) {
+    setSidebarWidth(saveSidebarWidth(width))
   }
 
   const current = sessions.find((s) => s.name === selectedSession) ?? sessions[0]
@@ -94,6 +100,8 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
         onDelete={handleDelete}
         onUpdateStarted={handleUpdateStarted}
         onAuthLost={onAuthLost}
+        width={sidebarWidth}
+        onWidthChange={handleSidebarWidthChange}
       />
       <div className="backdrop" onClick={() => setSidebarOpen(false)} />
       <main className="main">

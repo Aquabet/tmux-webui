@@ -1,8 +1,12 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { SessionSidebar } from './SessionSidebar'
+import { MIN_SIDEBAR_WIDTH } from './sidebarSize'
 
 vi.mock('./VersionBadge', () => ({ VersionBadge: () => null }))
+vi.mock('./ResourceUsage', () => ({
+  ResourceUsage: () => <div data-testid="resource-usage" />,
+}))
 
 const handlers = {
   selected: undefined,
@@ -12,9 +16,22 @@ const handlers = {
   onDelete: vi.fn(),
   onUpdateStarted: vi.fn(),
   onAuthLost: vi.fn(),
+  width: 200,
+  onWidthChange: vi.fn(),
 }
 
 describe('SessionSidebar agent 状态', () => {
+  it('把系统资源仪表固定在侧栏 footer 的最下面', () => {
+    const { container } = render(<SessionSidebar {...handlers} sessions={[]} />)
+    const scroll = container.querySelector('.session-scroll') as HTMLElement
+    const footer = container.querySelector('.sidebar-footer') as HTMLElement
+
+    expect(scroll.firstElementChild?.tagName).toBe('UL')
+    expect(scroll.lastElementChild).toBe(screen.getByRole('button', { name: '＋ 新建 session' }))
+    expect(footer).toBeDefined()
+    expect(footer.lastElementChild).toBe(screen.getByTestId('resource-usage'))
+  })
+
   it('用不同图标展示各 coding agent 的精确状态', () => {
     render(
       <SessionSidebar
@@ -115,5 +132,54 @@ describe('SessionSidebar agent 状态', () => {
     expect(screen.getByLabelText('Terminal：无活跃前台').getAttribute('data-attached')).toBe(
       'false',
     )
+  })
+
+  it('最窄时进入只显示图标的紧凑状态，同时保留 session 名称提示', () => {
+    const { container } = render(
+      <SessionSidebar
+        {...handlers}
+        width={MIN_SIDEBAR_WIDTH}
+        sessions={[{ name: 'production', attached: true, windows: [] }]}
+      />,
+    )
+
+    expect(container.querySelector('.sidebar')?.classList.contains('compact')).toBe(true)
+    expect(screen.getByRole('button', { name: 'production' }).getAttribute('title')).toBe(
+      'production',
+    )
+  })
+
+  it('接近最窄时保持紧凑，避免完整内容在过窄空间里挤坏', () => {
+    const { container } = render(
+      <SessionSidebar {...handlers} width={96} sessions={[]} />,
+    )
+
+    expect(container.querySelector('.sidebar')?.classList.contains('compact')).toBe(true)
+  })
+
+  it('分隔线支持键盘精调宽度、边界快捷键和 ARIA 数值', () => {
+    const onWidthChange = vi.fn()
+    render(
+      <SessionSidebar
+        {...handlers}
+        width={200}
+        onWidthChange={onWidthChange}
+        sessions={[]}
+      />,
+    )
+    const separator = screen.getByRole('separator', { name: '调整 session 侧栏宽度' })
+    expect(separator.getAttribute('aria-valuenow')).toBe('200')
+    expect(separator.getAttribute('aria-valuemin')).toBe(String(MIN_SIDEBAR_WIDTH))
+
+    fireEvent.keyDown(separator, { key: 'ArrowRight' })
+    expect(onWidthChange).toHaveBeenLastCalledWith(216)
+    fireEvent.keyDown(separator, { key: 'ArrowLeft' })
+    expect(onWidthChange).toHaveBeenLastCalledWith(184)
+    fireEvent.keyDown(separator, { key: 'Home' })
+    expect(onWidthChange).toHaveBeenLastCalledWith(MIN_SIDEBAR_WIDTH)
+    fireEvent.keyDown(separator, { key: 'End' })
+    expect(onWidthChange).toHaveBeenLastCalledWith(480)
+    fireEvent.keyDown(separator, { key: 'Enter' })
+    expect(onWidthChange).toHaveBeenCalledTimes(4)
   })
 })
