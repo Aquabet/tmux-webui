@@ -25,7 +25,7 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-u
 .error { color: #f7768e; margin: 0; font-size: 13px; }
 
 .app { display: flex; height: 100vh; height: 100dvh; height: var(--app-height, 100dvh); }
-.sidebar { width: 200px; background: var(--bg-alt); border-right: 1px solid var(--border); padding: 12px; overflow: hidden; flex-shrink: 0; display: flex; flex-direction: column; min-height: 0; }
+.sidebar { position: relative; width: var(--sidebar-width, 200px); background: var(--bg-alt); border-right: 1px solid var(--border); padding: 12px; overflow: hidden; flex-shrink: 0; display: flex; flex-direction: column; min-height: 0; }
 .sidebar h2 { font-size: 12px; text-transform: uppercase; opacity: 0.6; margin: 0 0 8px; }
 .session-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 .sidebar ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -64,6 +64,10 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-u
 .new-session:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
 .sidebar-footer { flex-shrink: 0; margin-top: 10px; }
 .sidebar-footer .version-badge { margin: 0 0 10px; }
+.sidebar-resizer { position: absolute; z-index: 2; top: 0; right: 0; bottom: 0; width: 7px; cursor: col-resize; touch-action: none; outline: none; }
+.sidebar-resizer::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 2px; background: transparent; transition: background-color 0.15s ease; }
+.sidebar-resizer:hover::after, .sidebar-resizer:focus-visible::after, body.sidebar-resizing .sidebar-resizer::after { background: var(--accent); }
+body.sidebar-resizing { cursor: col-resize; user-select: none; }
 .resource-usage { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); }
 .resource-meter { min-width: 0; display: grid; justify-items: center; color: var(--fg); }
 .resource-ring { --meter-color: var(--cpu); position: relative; width: 50px; height: 50px; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(var(--meter-color) var(--usage), var(--meter-track) 0); }
@@ -118,6 +122,7 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-u
 /* 窄屏：侧栏折叠为抽屉，汉堡按钮开合 */
 @media (max-width: 700px) {
   .sidebar { position: fixed; top: 0; bottom: 0; left: 0; width: 220px; z-index: 30; transform: translateX(-100%); transition: transform 0.2s ease; box-shadow: 2px 0 12px #0006; }
+  .sidebar-resizer { display: none; }
   .app.sidebar-open .sidebar { transform: translateX(0); }
   .app.sidebar-open .backdrop { display: block; position: fixed; inset: 0; z-index: 20; background: #00000088; }
   .mobile-version { display: flex; }
@@ -126,4 +131,12 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-u
 /* 桌面端：☰ 切换侧栏折叠 */
 @media (min-width: 701px) {
   .app.sidebar-collapsed .sidebar { display: none; }
+  .sidebar.compact { padding: 8px; }
+  .sidebar.compact h2, .sidebar.compact .session-name, .sidebar.compact .session-action,
+  .sidebar.compact .new-session-label, .sidebar.compact .sidebar-footer { display: none; }
+  .sidebar.compact .session-scroll { overflow-x: hidden; }
+  .sidebar.compact li { justify-content: center; }
+  .sidebar.compact .session { flex: 0 0 auto; justify-content: center; padding: 8px; }
+  .sidebar.compact .agent-badge:not(:first-child) { display: none; }
+  .sidebar.compact .new-session { display: grid; place-items: center; width: 37px; height: 37px; margin: 10px auto 0; padding: 0; font-size: 18px; }
 }

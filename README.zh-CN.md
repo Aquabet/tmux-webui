@@ -81,6 +81,10 @@ curl -sb /tmp/c localhost:8090/api/sessions                    # {"success":true
 
 开发模式：`npm run dev`（后端）+ `npm --prefix web run dev`（前端，端口 5173，自动代理）。
 
+桌面端可拖动 session 侧栏右边缘，在 64–480 像素之间调整宽度。拖到最窄时会
+变成仅图标栏，悬停图标仍可查看 session 名称；浏览器会记住所选宽度。手机端抽屉
+保持原来的固定宽度和交互。
+
 ### Coding agent 状态标记
 
 session 名称前的图标表示 pane 里运行的程序：

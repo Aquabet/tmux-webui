@@ -90,6 +90,11 @@ up Tailscale or a TLS reverse proxy if the person needs remote access.
 Development mode: `npm run dev` (backend) + `npm --prefix web run dev`
 (frontend on port 5173, with automatic proxying).
 
+On desktop, drag the session sidebar's right edge to resize it from 64 to
+480 pixels. At its narrowest it becomes an icon-only rail; hover an icon to
+see the session name. The chosen width is remembered in this browser. The
+mobile drawer keeps its fixed width and existing behavior.
+
 ### Coding agent badges
 
 The icon before each session name identifies what is running in its panes:
