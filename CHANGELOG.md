@@ -9,6 +9,25 @@ with patches incrementing the last position (`3.1.1`, `3.1.2`). See
 
 ## [Unreleased]
 
+## [3.1.7] - 2026-07-31
+
+### Added
+
+- The Sessions header now opens appearance settings with six terminal themes,
+  local font choices, a 10–24 px font-size control, line-height presets, and
+  block, bar, or underline cursors. Changes apply immediately without
+  reconnecting the terminal and persist in the current browser.
+- Theme colors now cover the whole interface as well as xterm, with compact
+  terminal previews, keyboard focus handling, and a mobile settings sheet.
+- Agent integrations can explicitly report permission and question prompts as
+  waiting for a user response across Codex, Claude Code, and OpenCode.
+
+### Changed
+
+- Agent lights now pulse green only while work is running, show steady amber
+  only for an explicit user-response prompt, and disappear after a completed
+  turn, a stopped agent, or an unknown status.
+
 ## [3.1.6] - 2026-07-30
 
 ### Fixed
@@ -130,7 +149,8 @@ First public release.
   once every 6 hours, behind auth) and links to it from the sidebar. It never
   installs anything; `TMUX_WEBUI_UPDATE_CHECK=false` disables the check.
 
-[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.6...HEAD
+[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.7...HEAD
+[3.1.7]: https://github.com/Aquabet/tmux-webui/compare/v3.1.6...v3.1.7
 [3.1.6]: https://github.com/Aquabet/tmux-webui/compare/v3.1.5...v3.1.6
 [3.1.5]: https://github.com/Aquabet/tmux-webui/compare/v3.1.4...v3.1.5
 [3.1.4]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.4

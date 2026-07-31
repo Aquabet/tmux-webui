@@ -1,6 +1,6 @@
 {
   "name": "tmux-webui",
-  "version": "3.1.6",
+  "version": "3.1.7",
   "description": "tmux in your browser: session sidebar, window tabs, fully interactive terminal, mobile-friendly",
   "keywords": [
     "tmux",
