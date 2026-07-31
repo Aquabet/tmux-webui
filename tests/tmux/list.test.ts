@@ -128,12 +128,12 @@ describe('parseSessions', () => {
     ])
   })
 
-  it('Codex activity spinner 覆盖过期的 idle hook 状态', () => {
+  it('Codex 有效 idle hook 优先于等待输入时仍残留的 activity spinner', () => {
     const sessions = 'codex\t0\n'
     const panes = 'codex\t%9\tcodex\tcodex\tidle\t309\t⠹ project\tidle'
 
     expect(parseSessions(sessions, '', panes)[0]?.agents).toEqual([
-      { kind: 'codex', status: 'running' },
+      { kind: 'codex', status: 'waiting' },
     ])
   })
 

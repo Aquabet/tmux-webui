@@ -318,9 +318,9 @@ tmux pane root processes; it still exits silently when it is genuinely outside
 tmux.
 
 The default Codex terminal-title `activity` item provides a limited fallback
-before hooks are trusted. A visible spinner also overrides a stale idle hook
-state because it is direct evidence of current work; otherwise valid hook state
-keeps priority. A non-empty title without the activity spinner means waiting only
-when no valid hook state exists. If you customize Codex to remove the `activity`
-title item, configure hooks because tmux can no longer distinguish the two
-states reliably.
+before hooks are trusted. Once a valid hook state exists it takes priority,
+because Codex may keep animating the spinner while waiting for input. An
+explicit `Action Required` title still overrides a stale running hook. A
+non-empty title without the activity spinner means waiting only when no valid
+hook state exists. If you customize Codex to remove the `activity` title item,
+configure hooks because tmux can no longer distinguish the two states reliably.

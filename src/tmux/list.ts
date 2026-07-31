@@ -129,10 +129,10 @@ function parsePaneAgents(
         : parsedStatus.success && statusMatchesKind
           ? normalizeStatus(parsedStatus.data)
           : undefined
-      // spinner 和 Action Required 都是当前 terminal 的直接证据；它们应覆盖可能过期的 hook。
-      const titleIsDirectEvidence =
-        titleStatus === 'running' || /\bAction Required\b/i.test(paneTitle)
-      const status = titleIsDirectEvidence ? titleStatus : (hookStatus ?? titleStatus)
+      // Codex 等待输入时 title 仍可能保留 spinner，所以有效 hook 比 spinner 可靠；
+      // Action Required 是明确的人机交互状态，仍应覆盖可能未及时刷新的 running hook。
+      const titleRequiresInput = /\bAction Required\b/i.test(paneTitle)
+      const status = titleRequiresInput ? 'waiting' : (hookStatus ?? titleStatus)
       return [
         {
           session,

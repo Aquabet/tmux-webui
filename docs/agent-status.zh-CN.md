@@ -301,7 +301,8 @@ wrapper 脚本也能识别：tmux-webui 会检查 pane shell 下方的进程名�
 静默退出。
 
 Codex 默认 terminal title 的 `activity` 项会在 hook 尚未信任时提供有限兜底。
-出现 spinner 也会覆盖过期的 idle hook 状态，因为它是当前仍在工作的直接证据；
-其它情况下仍优先使用有效 hook 状态。只有不存在有效 hook 状态时，非空标题里
-没有 activity spinner 才表示等待用户输入。如果你自定义 Codex、从 title 中移除了
-`activity` 项，需要配置 hooks，因为 tmux 本身已经无法可靠区分这两个状态。
+一旦存在有效 hook 状态就以 hook 为准，因为 Codex 等待输入时 spinner 仍可能继续
+变化；明确的 `Action Required` title 仍会覆盖过期的 running hook。只有不存在有效
+hook 状态时，非空标题里没有 activity spinner 才表示等待用户输入。如果你自定义
+Codex、从 title 中移除了 `activity` 项，需要配置 hooks，因为 tmux 本身已经无法可靠
+区分这两个状态。
