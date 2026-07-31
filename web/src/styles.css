@@ -37,8 +37,8 @@
 }
 :root[data-theme='solarized-dark'] {
   --bg: #002b36; --bg-alt: #073642; --surface: #0b3c47; --surface-raised: #104550;
-  --fg: #93a1a1; --muted: #a7b5b5; --accent: #5eb7f7; --border: #16434c;
-  --success: #859900; --warning: #b58900; --danger: #dc322f; --cpu: #2aa198;
+  --fg: #b8c4c4; --muted: #a7b5b5; --accent: #5eb7f7; --border: #16434c;
+  --success: #859900; --warning: #b58900; --danger: #ff7b72; --cpu: #2aa198;
   --ram: #6c71c4; --meter-track: #16434c; --overlay: #001a21c4; --shadow: #00121780;
 }
 :root[data-theme='gruvbox-dark'] {
