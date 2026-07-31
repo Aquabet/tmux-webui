@@ -121,6 +121,14 @@ describe('agent-status-hook.sh', () => {
     expect(log).toContain(`@tmux_webui_agent ${provider}`)
   })
 
+  it('接受 waiting，并与一轮结束的 idle 保持不同原始状态', () => {
+    const fake = fakeTmux()
+    expect(
+      runHook(['claude', 'waiting'], { pane: '%9', pathDir: fake.dir, log: fake.log }).status,
+    ).toBe(0)
+    expect(readFileSync(fake.log, 'utf8')).toContain('@tmux_webui_status_claude waiting')
+  })
+
   it('SessionEnd 能清掉状态，避免 pane 被复用时出现幽灵 badge', () => {
     const fake = fakeTmux()
     const result = runHook(['claude', 'clear'], {

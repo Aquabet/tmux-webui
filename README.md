@@ -95,6 +95,13 @@ On desktop, drag the session sidebar's right edge to resize it from 64 to
 see the session name. The chosen width is remembered in this browser. The
 mobile drawer keeps its fixed width and existing behavior.
 
+The settings button beside **Sessions** opens terminal appearance controls.
+Choose from Tokyo Night, Catppuccin Mocha, Dracula, Nord, Solarized Dark, or
+Gruvbox Dark; you can also change the terminal font, font size, line height,
+and cursor shape. Changes apply immediately and are stored only in this
+browser. Font choices use locally installed fonts and fall back to the system
+monospace stack rather than downloading font files.
+
 ### Coding agent badges
 
 The icon before each session name identifies what is running in its panes:
@@ -115,11 +122,12 @@ The badge carries two independent signals:
   no active frontend. Neutral Codex and Terminal marks use the same blue
   outline and background glow instead of changing their brand color.
 - **Bottom-right dot:** green/pulsing (`#9ece6a`) means **running**; amber
-  (`#e0af68`) means **waiting for user input**. A stopped agent, or an agent
-  whose exact status is unknown, has no status dot.
+  (`#e0af68`) means **explicitly waiting for a user response**, such as a
+  permission or elicitation prompt. A normally completed turn, a stopped
+  agent, or an agent whose exact status is unknown has no status dot.
 
 These signals can differ: a detached agent can still be running, and an agent
-visible in a browser can be waiting for user input. The sidebar refreshes both
+visible in a browser can be waiting for a response. The sidebar refreshes both
 within 5 seconds. Hovering a badge shows its agent, work status, and frontend
 presence.
 

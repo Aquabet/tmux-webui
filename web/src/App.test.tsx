@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 import { checkAuth, fetchSessions, fetchVersion } from './api'
 
@@ -18,6 +18,11 @@ vi.mock('./TerminalView', () => ({
     <button data-testid="term" onClick={onForegroundChange} />
   ),
 }))
+
+afterEach(() => {
+  localStorage.clear()
+  delete document.documentElement.dataset.theme
+})
 
 describe('App 无 session 时', () => {
   it('仍然渲染侧栏开关——否则手机端抽屉打不开，永远建不了 session', async () => {
@@ -47,6 +52,50 @@ describe('App 无 session 时', () => {
     render(<App />)
     expect(await screen.findByTestId('term')).toBeDefined()
     expect(screen.getByLabelText('切换 session 列表')).toBeDefined()
+  })
+
+  it('Sessions 标题右侧可打开外观设置', async () => {
+    vi.mocked(checkAuth).mockResolvedValue(true)
+    vi.mocked(fetchSessions).mockResolvedValue([])
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: '外观设置' }))
+
+    expect(screen.getByRole('dialog', { name: '外观设置' })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Tokyo Night/ })).toBeDefined()
+    expect(screen.getByLabelText('终端字体')).toBeDefined()
+  })
+
+  it('切换主题时即时应用并保存到当前浏览器', async () => {
+    vi.mocked(checkAuth).mockResolvedValue(true)
+    vi.mocked(fetchSessions).mockResolvedValue([])
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: '外观设置' }))
+    fireEvent.click(screen.getByRole('button', { name: /Nord/ }))
+
+    expect(document.documentElement.dataset.theme).toBe('nord')
+    expect(JSON.parse(localStorage.getItem('tmux-webui.appearance.v1') ?? '{}').theme).toBe(
+      'nord',
+    )
+  })
+
+  it('启动时恢复浏览器保存的主题', async () => {
+    localStorage.setItem(
+      'tmux-webui.appearance.v1',
+      JSON.stringify({
+        theme: 'gruvbox-dark',
+        font: 'system-mono',
+        fontSize: 14,
+        lineHeight: 1,
+        cursorStyle: 'block',
+      }),
+    )
+    vi.mocked(checkAuth).mockResolvedValue(false)
+    render(<App />)
+
+    await screen.findByRole('button', { name: '登录' })
+    expect(document.documentElement.dataset.theme).toBe('gruvbox-dark')
   })
 
   it('终端前台连接变化时立即刷新 session 亮暗状态', async () => {

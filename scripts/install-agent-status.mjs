@@ -106,6 +106,8 @@ function installCodex(configHome) {
   mergeJsonHooks(path.join(configHome, '.codex', 'hooks.json'), 'codex', [
     ['SessionStart', 'idle'],
     ['UserPromptSubmit', 'running'],
+    ['PermissionRequest', 'waiting'],
+    ['PostToolUse', 'running'],
     ['Stop', 'idle'],
     ['SessionEnd', 'clear'],
   ])
@@ -115,6 +117,11 @@ function installClaude(configHome) {
   mergeJsonHooks(path.join(configHome, '.claude', 'settings.json'), 'claude', [
     ['SessionStart', 'idle'],
     ['UserPromptSubmit', 'running'],
+    ['PermissionRequest', 'waiting'],
+    ['Elicitation', 'waiting'],
+    ['ElicitationResult', 'running'],
+    ['PostToolUse', 'running'],
+    ['PostToolUseFailure', 'running'],
     ['Stop', 'idle'],
     ['StopFailure', 'idle'],
     ['SessionEnd', 'clear'],

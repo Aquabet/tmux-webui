@@ -52,8 +52,8 @@ Codex 和 Terminal 是黑白灰中性色图标。有活跃前台时用与其它 
 | 小灯 | 颜色 | 含义 |
 |---|---|---|
 | 绿色呼吸灯 | `#9ece6a` | **运行中：**agent 正在处理一轮任务、重试或执行其它已上报的工作 |
-| 琥珀色常亮 | `#e0af68` | **等待输入：**agent 正在等待用户输入 |
-| 无小灯 | — | agent 已停止、精确状态未知，或当前是 Terminal fallback |
+| 琥珀色常亮 | `#e0af68` | **等待回应：**agent 明确需要用户回应，例如权限确认或提问 |
+| 无小灯 | — | 一轮正常结束、agent 已停止、精确状态未知，或当前是 Terminal fallback |
 
 没有活跃前台时，只会压暗图标本身；右下角状态灯的颜色和动画保持不变。因此即使
 session 无人查看，后台运行的 agent 仍会清楚显示绿色呼吸灯。
@@ -64,9 +64,9 @@ session 无人查看，后台运行的 agent 仍会清楚显示绿色呼吸灯�
 |---|---|---|
 | 明亮 | 绿色呼吸灯 | 有人正在查看，agent 也正在工作 |
 | 暗灰 | 绿色呼吸灯 | 无人查看，但 agent 仍在后台工作 |
-| 明亮 | 琥珀灯 | 有人正在查看，agent 正在等待用户输入 |
-| 暗灰 | 琥珀灯 | 无人查看，agent 也正在等待用户输入 |
-| 明亮或暗灰 | 无小灯 | agent 已停止或精确工作状态未知 |
+| 明亮 | 琥珀灯 | 有人正在查看，agent 明确需要用户回应 |
+| 暗灰 | 琥珀灯 | 无人查看，agent 也明确需要用户回应 |
+| 明亮或暗灰 | 无小灯 | 一轮正常结束、agent 已停止或精确工作状态未知 |
 
 鼠标停在 badge 上会显示 agent 名称、工作状态和是否有活跃前台。
 
@@ -129,6 +129,26 @@ event 数组，不要覆盖整个文件。
         ]
       }
     ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /absolute/path/to/tmux-webui/scripts/agent-status-hook.sh codex waiting"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /absolute/path/to/tmux-webui/scripts/agent-status-hook.sh codex running"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
@@ -174,6 +194,46 @@ event 数组，不要覆盖整个文件。
       }
     ],
     "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /absolute/path/to/tmux-webui/scripts/agent-status-hook.sh claude running"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /absolute/path/to/tmux-webui/scripts/agent-status-hook.sh claude waiting"
+          }
+        ]
+      }
+    ],
+    "Elicitation": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /absolute/path/to/tmux-webui/scripts/agent-status-hook.sh claude waiting"
+          }
+        ]
+      }
+    ],
+    "ElicitationResult": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /absolute/path/to/tmux-webui/scripts/agent-status-hook.sh claude running"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
       {
         "hooks": [
           {
@@ -262,8 +322,10 @@ cp /absolute/path/to/tmux-webui/integrations/pi-status.js \
   ~/.pi/agent/extensions/tmux-webui-status.js
 ```
 
-extension 在 `agent_start` 时上报 running，并等到 `agent_settled` 才上报 idle，
-因此自动重试、自动 compact 和排队中的 follow-up 都会算在运行时间内。
+extension 在 `agent_start` 时上报 running，并等到 `agent_settled` 才上报 idle
+（无灯），因此自动重试、自动 compact 和排队中的 follow-up 都会算在运行时间内。
+Pi 没有覆盖所有 extension 自定义 UI 提示的全局 lifecycle event，因此只有集成
+明确上报 `waiting` 时才会显示琥珀灯。
 
 ## OpenCode
 
@@ -276,15 +338,15 @@ cp /absolute/path/to/tmux-webui/integrations/opencode-status.js \
   ~/.config/opencode/plugins/tmux-webui-status.js
 ```
 
-插件会聚合 OpenCode 的 `session.status`、`session.idle` 和 `session.error` 事件；
-只要同一个 OpenCode 实例里任一 session 正在执行或重试，侧栏就显示运行中。
+插件会聚合 OpenCode 的 `session.status`、`session.idle`、`session.error`、
+`permission.asked` 和 `permission.replied` 事件；执行或重试显示运行中，待处理的
+权限确认/提问显示等待回应，session 空闲或一轮完成时不显示小灯。
 
 ## 边界情况
 
 一个 session 里可以有多个 agent pane。侧栏会按 agent 类型各显示一个图标；
-只要同类任一 pane 在运行，就显示**运行中**。只有所有已识别的同类 pane 都明确
-上报 idle，才显示**等待用户输入**。`idle` 保留为旧 hook 的兼容值，API 会统一
-转换成 `waiting`。
+只要同类任一 pane 在运行，就显示**运行中**。没有同类 pane 运行时，明确上报
+`waiting` 才显示琥珀灯。`idle` 表示一轮结束，API 会刻意省略 status，从而不亮灯。
 
 如果一个 agent 在自己的 pane 内启动另一个受支持的 agent，该 pane 的 badge
 和状态归外层 agent；内层 lifecycle hook 会被忽略，不能留下另一种 agent 的
@@ -300,9 +362,7 @@ wrapper 脚本也能识别：tmux-webui 会检查 pane shell 下方的进程名�
 会用父进程链匹配 tmux pane 的根进程来找回 pane；确实在 tmux 外运行时仍会
 静默退出。
 
-Codex 默认 terminal title 的 `activity` 项会在 hook 尚未信任时提供有限兜底。
-一旦存在有效 hook 状态就以 hook 为准，因为 Codex 等待输入时 spinner 仍可能继续
-变化；明确的 `Action Required` title 仍会覆盖过期的 running hook。只有不存在有效
-hook 状态时，非空标题里没有 activity spinner 才表示等待用户输入。如果你自定义
-Codex、从 title 中移除了 `activity` 项，需要配置 hooks，因为 tmux 本身已经无法可靠
-区分这两个状态。
+Codex 和 Claude Code 默认 terminal title 的 activity spinner 会提供有限的运行中
+兜底。Codex 的 `Action Required` 是明确等待回应的信号；静态标题只代表 idle，
+绝不会点亮琥珀灯。如果你自定义 title，需要配置 hooks，因为 tmux 本身已经无法
+可靠区分这些状态。

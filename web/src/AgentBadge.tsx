@@ -10,7 +10,7 @@ const LABELS = {
 
 const STATUS_LABELS = {
   running: '运行中',
-  waiting: '等待用户输入',
+  waiting: '等待用户回应',
   unknown: '状态未知',
 } as const
 

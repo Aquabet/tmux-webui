@@ -39,6 +39,18 @@ describe('createTouchScroll', () => {
     expect(emit).toHaveBeenLastCalledWith(25)
   })
 
+  it('字号变化后读取新的动态步长，不必重建手势处理器', () => {
+    const emit = vi.fn()
+    let stepPx = 20
+    const s = createTouchScroll(emit, () => stepPx)
+    s.start(100)
+    stepPx = 30
+    s.move(75)
+    expect(emit).not.toHaveBeenCalled()
+    s.move(65)
+    expect(emit).toHaveBeenCalledWith(35)
+  })
+
   it('未 start 时 move 不发', () => {
     const emit = vi.fn()
     const s = createTouchScroll(emit, 20)

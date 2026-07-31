@@ -13,7 +13,7 @@ const FLING_PAUSE_MS = 100
 
 export function createTouchScroll(
   emitWheel: (deltaY: number) => void,
-  stepPx: number,
+  stepPx: number | (() => number),
   clock: () => number = () => performance.now(),
 ): TouchScroll {
   // anchorY：距上次发射的累积锚点；prevY/prevT：上一次 move，用于瞬时速度
@@ -39,7 +39,8 @@ export function createTouchScroll(
       }
       // 手指上滑（y 变小）= 正 deltaY = 向下滚看更晚内容，与原生滚动方向一致
       const delta = anchorY - y
-      if (Math.abs(delta) >= stepPx) {
+      const currentStepPx = typeof stepPx === 'function' ? stepPx() : stepPx
+      if (Math.abs(delta) >= currentStepPx) {
         emitWheel(delta)
         anchorY = y
       }

@@ -16,6 +16,7 @@ const handlers = {
   onDelete: vi.fn(),
   onUpdateStarted: vi.fn(),
   onAuthLost: vi.fn(),
+  onOpenSettings: vi.fn(),
   width: 200,
   onWidthChange: vi.fn(),
 }
@@ -56,7 +57,7 @@ describe('SessionSidebar agent 状态', () => {
     expect(
       screen.getByLabelText('Codex：运行中；无活跃前台').getAttribute('data-agent'),
     ).toBe('codex')
-    const claudeBadge = screen.getByLabelText('Claude Code：等待用户输入；无活跃前台')
+    const claudeBadge = screen.getByLabelText('Claude Code：等待用户回应；无活跃前台')
     expect(claudeBadge.getAttribute('data-agent')).toBe('claude')
     expect(claudeBadge.querySelector('.agent-status-dot')).not.toBeNull()
     const piBadge = screen.getByLabelText('Pi：运行中；无活跃前台')
@@ -64,7 +65,7 @@ describe('SessionSidebar agent 状态', () => {
     expect(piBadge.getAttribute('data-attached')).toBe('false')
     expect(piBadge.querySelector('svg')?.getAttribute('data-logo')).toBe('official')
     expect(
-      screen.getByLabelText('Kimi Code：等待用户输入；无活跃前台').getAttribute('data-agent'),
+      screen.getByLabelText('Kimi Code：等待用户回应；无活跃前台').getAttribute('data-agent'),
     ).toBe('kimi')
     expect(screen.getByLabelText('OpenCode：状态未知；无活跃前台').getAttribute('data-agent')).toBe(
       'opencode',

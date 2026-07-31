@@ -11,6 +11,7 @@ const observedCodexActivity = new Set<string>()
 
 export type AgentKind = z.infer<typeof agentKindSchema>
 export type AgentStatus = 'running' | 'waiting'
+type PaneAgentStatus = AgentStatus | 'idle'
 
 export interface TmuxAgent {
   kind: AgentKind
@@ -34,7 +35,7 @@ interface PaneAgent {
   session: string
   pane: string
   kind: AgentKind
-  status?: AgentStatus
+  status?: PaneAgentStatus
 }
 
 function kindFromCommand(command: string): AgentKind | undefined {
@@ -47,9 +48,8 @@ function kindFromCommand(command: string): AgentKind | undefined {
   return undefined
 }
 
-function normalizeStatus(status: z.infer<typeof rawAgentStatusSchema>): AgentStatus {
-  // 已安装的旧 hook 仍会上报 idle；在线协议保持兼容，对 UI 统一表达为等待输入。
-  return status === 'running' ? 'running' : 'waiting'
+function normalizeStatus(status: z.infer<typeof rawAgentStatusSchema>): PaneAgentStatus {
+  return status
 }
 
 function statusFromTitle(
@@ -57,24 +57,20 @@ function statusFromTitle(
   pane: string,
   title: string,
   codexActivitySeen: Set<string>,
-): AgentStatus | undefined {
-  if (kind !== 'codex') return undefined
-  // Codex 默认 title 包含 spinner；等待人工操作时会显示 Action Required。
-  // 只在已由进程确认是 Codex、且没有 hook 状态时使用，避免把残留标题当事实。
+): PaneAgentStatus | undefined {
+  if (kind !== 'codex' && kind !== 'claude') return undefined
+  // Codex 与 Claude Code 的默认 title 都用 Braille spinner 表示当前仍在执行。
+  // 只在已由进程确认是对应 agent 后使用，避免把普通 shell 的标题当状态。
   if (/^[\u2800-\u28ff](?:\s|$)/u.test(title.trim())) {
-    codexActivitySeen.add(pane)
+    if (kind === 'codex') codexActivitySeen.add(pane)
     return 'running'
   }
-  if (/\bAction Required\b/i.test(title)) {
+  if (kind === 'codex' && /\bAction Required\b/i.test(title)) {
     codexActivitySeen.add(pane)
     return 'waiting'
   }
-  // 默认 title 是 activity + project；activity 不输出时会只剩静态 project。
-  // 自定义移除 activity 的用户应配置 hook，否则无法从 tmux 区分生成状态。
-  if (title.trim() !== '') return 'waiting'
-  // activity item 工作时显示 spinner、停下时不输出；必须先见过 spinner 才能
-  // 在空 title 场景用它的消失推断等待输入。
-  if (codexActivitySeen.has(pane)) return 'waiting'
+  // 静态标题只说明当前没有活动；除非明确出现交互提示，正常结束不能冒充等待回应。
+  if (title.trim() !== '' || codexActivitySeen.has(pane)) return 'idle'
   return undefined
 }
 
@@ -129,10 +125,9 @@ function parsePaneAgents(
         : parsedStatus.success && statusMatchesKind
           ? normalizeStatus(parsedStatus.data)
           : undefined
-      // Codex 等待输入时 title 仍可能保留 spinner，所以有效 hook 比 spinner 可靠；
-      // Action Required 是明确的人机交互状态，仍应覆盖可能未及时刷新的 running hook。
-      const titleRequiresInput = /\bAction Required\b/i.test(paneTitle)
-      const status = titleRequiresInput ? 'waiting' : (hookStatus ?? titleStatus)
+      // hook 是 agent 主动上报的精确信号；标题只在 hook 缺失时兜底。
+      // Codex 的 Action Required 是标题解析出的显式 waiting，因此仍可立即覆盖旧 hook。
+      const status = titleStatus === 'waiting' ? 'waiting' : (hookStatus ?? titleStatus)
       return [
         {
           session,
@@ -173,7 +168,7 @@ function agentsBySession(
           const status =
             panes.some((pane) => pane.status === 'running')
               ? 'running'
-              : panes.every((pane) => pane.status === 'waiting')
+              : panes.some((pane) => pane.status === 'waiting')
                 ? 'waiting'
                 : undefined
           return { kind, ...(status ? { status } : {}) }

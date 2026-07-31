@@ -215,7 +215,7 @@ describe('GET /api/sessions', () => {
           name: 'demo',
           attached: true,
           windows: [{ index: 0, name: 'claude', active: true }],
-          agents: [{ kind: 'claude', status: 'waiting' }],
+          agents: [{ kind: 'claude' }],
         },
       ],
     })
