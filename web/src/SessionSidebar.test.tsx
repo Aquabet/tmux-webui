@@ -16,6 +16,7 @@ const handlers = {
   onDelete: vi.fn(),
   onUpdateStarted: vi.fn(),
   onAuthLost: vi.fn(),
+  onOpenSettings: vi.fn(),
   width: 200,
   onWidthChange: vi.fn(),
 }
@@ -43,9 +44,9 @@ describe('SessionSidebar agent 状态', () => {
             windows: [],
             agents: [
               { kind: 'codex', status: 'running' },
-              { kind: 'claude', status: 'idle' },
+              { kind: 'claude', status: 'waiting' },
               { kind: 'pi', status: 'running' },
-              { kind: 'kimi', status: 'idle' },
+              { kind: 'kimi', status: 'waiting' },
               { kind: 'opencode' },
             ],
           },
@@ -56,15 +57,15 @@ describe('SessionSidebar agent 状态', () => {
     expect(
       screen.getByLabelText('Codex：运行中；无活跃前台').getAttribute('data-agent'),
     ).toBe('codex')
-    expect(screen.getByLabelText('Claude Code：已停下；无活跃前台').getAttribute('data-agent')).toBe(
-      'claude',
-    )
+    const claudeBadge = screen.getByLabelText('Claude Code：等待用户回应；无活跃前台')
+    expect(claudeBadge.getAttribute('data-agent')).toBe('claude')
+    expect(claudeBadge.querySelector('.agent-status-dot')).not.toBeNull()
     const piBadge = screen.getByLabelText('Pi：运行中；无活跃前台')
     expect(piBadge.getAttribute('data-agent')).toBe('pi')
     expect(piBadge.getAttribute('data-attached')).toBe('false')
     expect(piBadge.querySelector('svg')?.getAttribute('data-logo')).toBe('official')
     expect(
-      screen.getByLabelText('Kimi Code：已停下；无活跃前台').getAttribute('data-agent'),
+      screen.getByLabelText('Kimi Code：等待用户回应；无活跃前台').getAttribute('data-agent'),
     ).toBe('kimi')
     expect(screen.getByLabelText('OpenCode：状态未知；无活跃前台').getAttribute('data-agent')).toBe(
       'opencode',
@@ -86,9 +87,9 @@ describe('SessionSidebar agent 状态', () => {
       />,
     )
 
-    expect(
-      screen.getByLabelText('Codex：状态未知；有活跃前台').getAttribute('data-status'),
-    ).toBe('unknown')
+    const badge = screen.getByLabelText('Codex：状态未知；有活跃前台')
+    expect(badge.getAttribute('data-status')).toBe('unknown')
+    expect(badge.querySelector('.agent-status-dot')).toBeNull()
   })
 
   it('普通 shell session 显示 Terminal 图标且不伪造 agent 状态', () => {

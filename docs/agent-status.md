@@ -18,11 +18,11 @@ processes. It does not inspect process arguments or terminal content.
 
 | Badge | Command names | Icon | Exact status source | Without status integration |
 |---|---|---|---|---|
-| Codex | `codex`, `codex-*` | Codex mark | Codex lifecycle hooks; default terminal-title activity fallback | Usually running/idle from the default title; otherwise gray-blue unknown |
-| Claude Code | `claude`, `claude-*` | Claude mark | Claude lifecycle hooks | Gray-blue unknown |
-| Pi | `pi` | Official Pi compact badge | Shipped Pi extension | Gray-blue unknown |
-| Kimi Code | `kimi`, `kimi-code`, `kimi-cli` | Kimi mark | Kimi lifecycle hooks | Gray-blue unknown |
-| OpenCode | `opencode`, `opencode-*` | OpenCode mark | Shipped OpenCode plugin | Gray-blue unknown |
+| Codex | `codex`, `codex-*` | Codex mark | Codex lifecycle hooks; default terminal-title activity fallback | Usually running/waiting from the default title; otherwise no status dot |
+| Claude Code | `claude`, `claude-*` | Claude mark | Claude lifecycle hooks | No status dot |
+| Pi | `pi` | Official Pi compact badge | Shipped Pi extension | No status dot |
+| Kimi Code | `kimi`, `kimi-code`, `kimi-cli` | Kimi mark | Kimi lifecycle hooks | No status dot |
+| OpenCode | `opencode`, `opencode-*` | OpenCode mark | Shipped OpenCode plugin | No status dot |
 | Terminal | No supported agent found | Terminal window | Not applicable | No work-status dot |
 
 A session can show several badges when different agent kinds are present in
@@ -57,9 +57,8 @@ icon remains bright or dim according to frontend presence.
 | Dot | Color | Meaning |
 |---|---|---|
 | Green, pulsing | `#9ece6a` | **Running:** the agent is processing a turn, retrying, or doing other reported work |
-| Amber, steady | `#e0af68` | **Stopped:** the agent has finished and is waiting for input |
-| Gray-blue, steady | `#565f89` | **Unknown:** the agent was identified, but no valid status report is available |
-| No dot | — | Terminal fallback; there is no supported agent work state to report |
+| Amber, steady | `#e0af68` | **Waiting:** the agent explicitly needs a user response, such as permission or elicitation |
+| No dot | — | A turn completed normally, the agent stopped, its exact state is unknown, or this is a Terminal fallback |
 
 Only the icon itself is dimmed when there is no frontend. The bottom-right dot
 keeps its normal color and animation, so a detached session can still clearly
@@ -71,9 +70,9 @@ Common combinations:
 |---|---|---|
 | Bright | Green/pulsing | Someone is viewing the session and the agent is working |
 | Dim gray | Green/pulsing | Nobody is viewing the session, but the agent is still working in the background |
-| Bright | Amber | Someone is viewing the session and the agent is waiting for input |
-| Dim gray | Amber | Nobody is viewing the session and the agent is waiting for input |
-| Bright or dim | Gray-blue | Frontend presence is known, but agent work status is not |
+| Bright | Amber | Someone is viewing the session and the agent needs a user response |
+| Dim gray | Amber | Nobody is viewing the session and the agent needs a user response |
+| Bright or dim | No dot | The turn completed, the agent stopped, or its exact work status is unavailable |
 
 Hovering the badge shows its agent name, work status, and whether it has an
 active frontend.
@@ -141,6 +140,26 @@ Add these hooks to `~/.codex/hooks.json`:
         ]
       }
     ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /absolute/path/to/tmux-webui/scripts/agent-status-hook.sh codex waiting"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /absolute/path/to/tmux-webui/scripts/agent-status-hook.sh codex running"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
@@ -186,6 +205,46 @@ Merge the following into `~/.claude/settings.json`:
       }
     ],
     "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /absolute/path/to/tmux-webui/scripts/agent-status-hook.sh claude running"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /absolute/path/to/tmux-webui/scripts/agent-status-hook.sh claude waiting"
+          }
+        ]
+      }
+    ],
+    "Elicitation": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /absolute/path/to/tmux-webui/scripts/agent-status-hook.sh claude waiting"
+          }
+        ]
+      }
+    ],
+    "ElicitationResult": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /absolute/path/to/tmux-webui/scripts/agent-status-hook.sh claude running"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
       {
         "hooks": [
           {
@@ -275,8 +334,10 @@ cp /absolute/path/to/tmux-webui/integrations/pi-status.js \
 ```
 
 It reports `running` on `agent_start` and waits for `agent_settled` before
-reporting idle, so automatic retry, compaction, and queued follow-up work are
-included in the running period.
+reporting idle (no dot), so automatic retry, compaction, and queued follow-up
+work are included in the running period. Pi has no global lifecycle event for
+arbitrary extension-owned UI prompts, so amber appears only when an integration
+explicitly reports `waiting`.
 
 ## OpenCode
 
@@ -290,16 +351,18 @@ cp /absolute/path/to/tmux-webui/integrations/opencode-status.js \
   ~/.config/opencode/plugins/tmux-webui-status.js
 ```
 
-The plugin aggregates OpenCode's `session.status`, `session.idle`, and
-`session.error` events. If any session in that OpenCode instance is busy or
-retrying, the sidebar reports it as running.
+The plugin aggregates OpenCode's `session.status`, `session.idle`,
+`session.error`, `permission.asked`, and `permission.replied` events. Busy or
+retrying is running, a pending permission/question is waiting, and an idle or
+completed session has no dot.
 
 ## Edge cases
 
 A session may contain several agent panes. The sidebar shows one icon per agent
-kind; a kind is **running** if any of its panes is running. It only reports
-**stopped / waiting for input** when every detected pane of that kind has explicitly
-reported idle.
+kind; a kind is **running** if any of its panes is running. An explicit
+`waiting` report is amber only when no same-kind pane is running. `idle` means
+the turn completed and is intentionally omitted from the API status, producing
+no dot.
 
 If an agent launches another supported agent inside its own pane, the outer
 agent owns that pane's badge and status. Inner lifecycle hooks are ignored so
@@ -317,10 +380,7 @@ The shipped hook handles this by matching the hook's parent-process chain to
 tmux pane root processes; it still exits silently when it is genuinely outside
 tmux.
 
-The default Codex terminal-title `activity` item provides a limited fallback
-before hooks are trusted. A visible spinner also overrides a stale idle hook
-state because it is direct evidence of current work; otherwise valid hook state
-keeps priority. A non-empty title without the activity spinner means idle only
-when no valid hook state exists. If you customize Codex to remove the `activity`
-title item, configure hooks because tmux can no longer distinguish the two
-states reliably.
+The default Codex and Claude Code terminal-title activity spinner provides a
+limited running fallback. Codex `Action Required` is an explicit waiting signal;
+a static title is only idle and never turns amber. If you customize the title,
+configure hooks because tmux can no longer distinguish these states reliably.

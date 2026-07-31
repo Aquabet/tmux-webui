@@ -15,9 +15,9 @@ case "$provider" in
 esac
 
 case "$status" in
-  running | idle | clear) ;;
+  running | waiting | idle | clear) ;;
   *)
-    echo "agent status 必须是 running、idle 或 clear" >&2
+    echo "agent status 必须是 running、waiting、idle 或 clear" >&2
     exit 2
     ;;
 esac

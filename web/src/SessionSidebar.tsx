@@ -20,6 +20,7 @@ interface Props {
   onDelete: (name: string) => void
   onUpdateStarted: (session: string) => void
   onAuthLost: () => void
+  onOpenSettings: () => void
   width: number
   onWidthChange: (width: number) => void
 }
@@ -33,6 +34,7 @@ export function SessionSidebar({
   onDelete,
   onUpdateStarted,
   onAuthLost,
+  onOpenSettings,
   width,
   onWidthChange,
 }: Props) {
@@ -86,7 +88,21 @@ export function SessionSidebar({
       className={`sidebar${compact ? ' compact' : ''}`}
       style={{ '--sidebar-width': `${width}px` } as CSSProperties}
     >
-      <h2>Sessions</h2>
+      <div className="sidebar-heading">
+        <h2>Sessions</h2>
+        <button
+          className="settings-trigger"
+          type="button"
+          onClick={onOpenSettings}
+          aria-label="外观设置"
+          title="外观设置"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+            <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.94 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3.08 14H3v-4h.08A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7l2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3.08V3h4v.08A1.7 1.7 0 0 0 15.06 4.6a1.7 1.7 0 0 0 1.88-.34L17 4.2 19.83 7l-.06.06A1.7 1.7 0 0 0 19.4 9c.14.59.65 1 1.25 1H21v4h-.35c-.6 0-1.11.41-1.25 1Z" />
+          </svg>
+        </button>
+      </div>
       <div className="session-scroll">
         <ul>
           {sessions.map((s) => (

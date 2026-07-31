@@ -10,7 +10,7 @@ const LABELS = {
 
 const STATUS_LABELS = {
   running: '运行中',
-  idle: '已停下',
+  waiting: '等待用户回应',
   unknown: '状态未知',
 } as const
 
@@ -115,7 +115,7 @@ export function AgentBadge({ agent, attached }: { agent: ApiAgent; attached: boo
       title={label}
     >
       <AgentIcon kind={agent.kind} />
-      <span className="agent-status-dot" />
+      {status !== 'unknown' && <span className="agent-status-dot" />}
     </span>
   )
 }

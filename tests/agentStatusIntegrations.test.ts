@@ -36,7 +36,7 @@ afterEach(() => {
 })
 
 describe('agent 状态 integrations', () => {
-  it('Pi extension 用 agent_settled 表示真正回到等待状态', () => {
+  it('Pi extension 用 agent_settled 表示一轮结束', () => {
     const fake = fakeTmux()
     const url = pathToFileURL(PI_PLUGIN).href
     const result = runPlugin(
@@ -61,7 +61,7 @@ describe('agent 状态 integrations', () => {
     expect(log).toContain('-u -t %12 @tmux_webui_agent')
   })
 
-  it('OpenCode plugin 聚合 busy 与 idle session', () => {
+  it('OpenCode plugin 区分 busy、等待权限回应与一轮结束', () => {
     const fake = fakeTmux()
     const url = pathToFileURL(OPENCODE_PLUGIN).href
     const result = runPlugin(
@@ -75,6 +75,14 @@ describe('agent 状态 integrations', () => {
         await hooks.event({ event: {
           type: 'session.status',
           properties: { sessionID: 'b', status: { type: 'idle' } },
+        } })
+        await hooks.event({ event: {
+          type: 'permission.asked',
+          properties: { sessionID: 'a', id: 'permission-1' },
+        } })
+        await hooks.event({ event: {
+          type: 'permission.replied',
+          properties: { sessionID: 'a', requestID: 'permission-1' },
         } })
         await hooks.event({ event: {
           type: 'session.idle',
@@ -92,7 +100,34 @@ describe('agent 状态 integrations', () => {
       expect.stringContaining('idle'),
       expect.stringContaining('running'),
       expect.stringContaining('running'),
+      expect.stringContaining('waiting'),
+      expect.stringContaining('running'),
       expect.stringContaining('idle'),
+    ])
+  })
+
+  it('OpenCode plugin 将 retry 保持为运行中', () => {
+    const fake = fakeTmux()
+    const url = pathToFileURL(OPENCODE_PLUGIN).href
+    const result = runPlugin(
+      `
+        const { TmuxWebuiStatusPlugin } = await import(${JSON.stringify(url)})
+        const hooks = await TmuxWebuiStatusPlugin()
+        await hooks.event({ event: {
+          type: 'session.status',
+          properties: { sessionID: 'retrying', status: { type: 'retry' } },
+        } })
+      `,
+      fake,
+    )
+
+    expect(result.status).toBe(0)
+    const statuses = readFileSync(fake.log, 'utf8')
+      .split('\n')
+      .filter((line) => line.includes('@tmux_webui_status_opencode'))
+    expect(statuses).toEqual([
+      expect.stringContaining('idle'),
+      expect.stringContaining('running'),
     ])
   })
 })

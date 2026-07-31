@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process'
 
 const pane = process.env.TMUX_PANE
 
-// OpenCode 会广播同一实例中的 session 状态；任一 session 活跃就保持 running。
+// OpenCode 会广播同一实例中的 session 状态；running 优先，其次是明确等待权限回应。
 function writeStatus(status) {
   if (!pane || !/^%[0-9]+$/.test(pane)) return
   try {
@@ -28,8 +28,16 @@ function writeStatus(status) {
 
 export const TmuxWebuiStatusPlugin = async () => {
   const sessions = new Map()
-  const refresh = () =>
-    writeStatus([...sessions.values()].some((status) => status !== 'idle') ? 'running' : 'idle')
+  const refresh = () => {
+    const statuses = [...sessions.values()]
+    writeStatus(
+      statuses.some((status) => status === 'running' || status === 'busy' || status === 'retry')
+        ? 'running'
+        : statuses.some((status) => status === 'waiting')
+          ? 'waiting'
+          : 'idle',
+    )
+  }
 
   writeStatus('idle')
   return {
@@ -39,6 +47,16 @@ export const TmuxWebuiStatusPlugin = async () => {
 
       if (event.type === 'session.status') {
         sessions.set(sessionID, event.properties.status?.type ?? 'busy')
+        refresh()
+      } else if (event.type === 'permission.asked' || event.type === 'question.asked') {
+        sessions.set(sessionID, 'waiting')
+        refresh()
+      } else if (
+        event.type === 'permission.replied' ||
+        event.type === 'question.replied' ||
+        event.type === 'question.rejected'
+      ) {
+        sessions.set(sessionID, 'running')
         refresh()
       } else if (event.type === 'session.idle' || event.type === 'session.error') {
         sessions.set(sessionID, 'idle')

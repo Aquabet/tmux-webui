@@ -62,7 +62,7 @@ describe('parseSessions', () => {
         windows: [{ index: 0, name: 'claude', active: true }],
         agents: [
           { kind: 'codex', status: 'running' },
-          { kind: 'claude', status: 'idle' },
+          { kind: 'claude' },
         ],
       },
       {
@@ -74,7 +74,7 @@ describe('parseSessions', () => {
         ],
         agents: [
           { kind: 'codex', status: 'running' },
-          { kind: 'claude', status: 'idle' },
+          { kind: 'claude' },
         ],
       },
     ])
@@ -88,10 +88,10 @@ describe('parseSessions', () => {
   })
 
   it('Codex 默认 terminal title 可在 hook 未生效前区分运行与等待操作', () => {
-    const sessions = 'running\t0\nstopped\t0\n'
+    const sessions = 'running\t0\nwaiting\t0\n'
     const panes = [
       'running\t%0\tcodex\t\t\t300\t⠙ project',
-      'stopped\t%1\tcodex\t\t\t301\t[ . ] Action Required | project',
+      'waiting\t%1\tcodex\t\t\t301\t[ . ] Action Required | project',
     ].join('\n')
 
     expect(parseSessions(sessions, '', panes)).toEqual([
@@ -102,24 +102,40 @@ describe('parseSessions', () => {
         agents: [{ kind: 'codex', status: 'running' }],
       },
       {
-        name: 'stopped',
+        name: 'waiting',
         attached: false,
         windows: [],
-        agents: [{ kind: 'codex', status: 'idle' }],
+        agents: [{ kind: 'codex', status: 'waiting' }],
       },
     ])
   })
 
-  it('Codex activity spinner 覆盖过期的 idle hook 状态', () => {
+  it('Codex 明确等待用户操作时覆盖过期的 running hook 状态', () => {
     const sessions = 'codex\t0\n'
-    const panes = 'codex\t%9\tcodex\tcodex\tidle\t309\t⠹ project\tidle'
+    const panes = [
+      'codex',
+      '%9',
+      'codex',
+      'codex',
+      'running',
+      '309',
+      '[ . ] Action Required | project',
+      'running',
+    ].join('\t')
 
     expect(parseSessions(sessions, '', panes)[0]?.agents).toEqual([
-      { kind: 'codex', status: 'running' },
+      { kind: 'codex', status: 'waiting' },
     ])
   })
 
-  it('Codex running hook 在静态标题下仍保持运行中', () => {
+  it('Codex 的精确 idle hook 覆盖 activity spinner', () => {
+    const sessions = 'codex\t0\n'
+    const panes = 'codex\t%9\tcodex\tcodex\tidle\t309\t⠹ project\tidle'
+
+    expect(parseSessions(sessions, '', panes)[0]?.agents).toEqual([{ kind: 'codex' }])
+  })
+
+  it('Codex 的精确 running hook 覆盖静态标题', () => {
     const sessions = 'codex\t0\n'
     const panes = 'codex\t%9\tcodex\tcodex\trunning\t309\tproject\trunning'
 
@@ -128,7 +144,62 @@ describe('parseSessions', () => {
     ])
   })
 
-  it('同一 Codex pane 的 activity spinner 消失后判定为已停下', () => {
+  it('Claude Code 的精确 running hook 覆盖静态标题', () => {
+    const sessions = 'claude\t0\n'
+    const panes = 'claude\t%9\tclaude\tclaude\trunning\t309\t✳ project\t\trunning'
+
+    expect(parseSessions(sessions, '', panes)[0]?.agents).toEqual([
+      { kind: 'claude', status: 'running' },
+    ])
+  })
+
+  it('Claude Code 静态标题下保留明确的 waiting hook', () => {
+    const sessions = 'claude\t0\n'
+    const panes = 'claude\t%9\tclaude\tclaude\twaiting\t309\tpermission prompt\t\twaiting'
+
+    expect(parseSessions(sessions, '', panes)[0]?.agents).toEqual([
+      { kind: 'claude', status: 'waiting' },
+    ])
+  })
+
+  it('Claude Code 默认 activity spinner 可在无 hook 时报告运行中', () => {
+    const sessions = 'claude\t0\n'
+    const panes = 'claude\t%9\tclaude\t\t\t309\t⠹ project'
+
+    expect(parseSessions(sessions, '', panes)[0]?.agents).toEqual([
+      { kind: 'claude', status: 'running' },
+    ])
+  })
+
+  it('Codex 的 waiting hook 不会被 activity spinner 降级为 running', () => {
+    const sessions = 'codex\t0\n'
+    const panes = 'codex\t%9\tcodex\tcodex\twaiting\t309\t⠹ project\twaiting'
+
+    expect(parseSessions(sessions, '', panes)[0]?.agents).toEqual([
+      { kind: 'codex', status: 'waiting' },
+    ])
+  })
+
+  it('非 Codex agent 的 Action Required 标题不会误报 waiting', () => {
+    const sessions = 'claude\t0\n'
+    const panes = 'claude\t%9\tclaude\t\t\t309\tAction Required'
+
+    expect(parseSessions(sessions, '', panes)[0]?.agents).toEqual([{ kind: 'claude' }])
+  })
+
+  it('同类 pane 同时 running 与 waiting 时优先报告 running', () => {
+    const sessions = 'agents\t0\n'
+    const panes = [
+      'agents\t%0\tclaude\tclaude\twaiting\t100\tpermission prompt\t\twaiting',
+      'agents\t%1\tclaude\tclaude\trunning\t101\t⠹ project\t\trunning',
+    ].join('\n')
+
+    expect(parseSessions(sessions, '', panes)[0]?.agents).toEqual([
+      { kind: 'claude', status: 'running' },
+    ])
+  })
+
+  it('同一 Codex pane 的 activity spinner 消失后判定为一轮结束', () => {
     const activitySeen = new Set<string>()
     const sessions = 'codex\t0\n'
 
@@ -144,9 +215,9 @@ describe('parseSessions', () => {
     expect(
       parseSessions(sessions, '', 'codex\t%7\tcodex\t\t\t307\tproject', '', activitySeen)[0]
         ?.agents,
-    ).toEqual([{ kind: 'codex', status: 'idle' }])
+    ).toEqual([{ kind: 'codex' }])
 
-    // 服务重启时可能首次看到的就是静态 project title；默认 activity 已消失即 idle。
+    // 服务重启时可能首次看到的就是静态 project title；没有明确交互提示时不能冒充等待回应。
     expect(
       parseSessions(
         sessions,
@@ -155,7 +226,7 @@ describe('parseSessions', () => {
         '',
         new Set(),
       )[0]?.agents,
-    ).toEqual([{ kind: 'codex', status: 'idle' }])
+    ).toEqual([{ kind: 'codex' }])
   })
 
   it('识别 Pi、Kimi Code、OpenCode 及 Kimi 的常见命令名', () => {
@@ -173,7 +244,7 @@ describe('parseSessions', () => {
         name: 'kimi',
         attached: false,
         windows: [],
-        agents: [{ kind: 'kimi', status: 'idle' }],
+        agents: [{ kind: 'kimi' }],
       },
       {
         name: 'kimi-legacy',
@@ -190,9 +261,32 @@ describe('parseSessions', () => {
     ])
   })
 
-  it('同类 pane 有未上报状态时不误报全部 idle', () => {
+  it('同类 pane 有未上报状态时不误报全部 waiting', () => {
     const panes = 'admin\t%0\tcodex\tcodex\tidle\t100\nadmin\t%1\tcodex\t\t\t101\n'
     expect(parseSessions(SESSIONS, WINDOWS, panes)[0]?.agents).toEqual([{ kind: 'codex' }])
+  })
+
+  it('只有显式 waiting 状态才显示等待回应，idle 表示一轮结束', () => {
+    const sessions = 'waiting\t0\nidle\t0\n'
+    const panes = [
+      'waiting\t%0\tclaude\tclaude\twaiting\t100\t\t\twaiting',
+      'idle\t%1\tclaude\tclaude\tidle\t101\t\t\tidle',
+    ].join('\n')
+
+    expect(parseSessions(sessions, '', panes)).toEqual([
+      {
+        name: 'waiting',
+        attached: false,
+        windows: [],
+        agents: [{ kind: 'claude', status: 'waiting' }],
+      },
+      {
+        name: 'idle',
+        attached: false,
+        windows: [],
+        agents: [{ kind: 'claude' }],
+      },
+    ])
   })
 
   it('沿 pane shell 的进程树识别 wrapper 内运行的 Claude Code', () => {

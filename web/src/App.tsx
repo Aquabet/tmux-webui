@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
+import { AppearanceSettingsDialog } from './AppearanceSettings'
 import { AuthError, checkAuth, createSession, deleteSession, renameSession } from './api'
+import {
+  applyAppearance,
+  loadAppearance,
+  saveAppearance,
+  type AppearanceSettings,
+} from './appearance'
 import { Login } from './Login'
 import { SessionSidebar } from './SessionSidebar'
 import { loadSidebarCollapsed, toggleSidebarCollapsed } from './sidebarState'
@@ -9,7 +16,13 @@ import { VersionBadge } from './VersionBadge'
 import { WindowTabs } from './WindowTabs'
 import { useSessions } from './useSessions'
 
-function Main({ onAuthLost }: { onAuthLost: () => void }) {
+interface MainProps {
+  onAuthLost: () => void
+  appearance: AppearanceSettings
+  onAppearanceChange: (appearance: AppearanceSettings) => void
+}
+
+function Main({ onAuthLost, appearance, onAppearanceChange }: MainProps) {
   const { sessions, error, refresh } = useSessions(onAuthLost)
   const [selectedSession, setSelectedSession] = useState<string | undefined>()
   const [selectedWindow, setSelectedWindow] = useState(0)
@@ -17,6 +30,7 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(loadSidebarCollapsed)
   const [sidebarWidth, setSidebarWidth] = useState(loadSidebarWidth)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   // 同一个 ☰ 按钮：桌面端切换折叠（持久化），窄屏切换抽屉
   function handleToggleSidebar() {
@@ -88,76 +102,95 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
   }
 
   return (
-    <div
-      className={`app${sidebarOpen ? ' sidebar-open' : ''}${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}
-    >
-      <SessionSidebar
-        sessions={sessions}
-        selected={current?.name}
-        onSelect={handleSelectSession}
-        onCreate={handleCreate}
-        onRename={handleRename}
-        onDelete={handleDelete}
-        onUpdateStarted={handleUpdateStarted}
-        onAuthLost={onAuthLost}
-        width={sidebarWidth}
-        onWidthChange={handleSidebarWidthChange}
-      />
-      <div className="backdrop" onClick={() => setSidebarOpen(false)} />
-      <main className="main">
-        {(error ?? actionError) && <div className="banner-error">{error ?? actionError}</div>}
-        {/* 表头始终渲染：没有 session 时它也得在，否则窄屏下抽屉式侧栏
-            没有任何入口可打开，用户被锁死在空状态里，连 session 都建不了 */}
-        <div className="main-header">
-          <button
-            className="sidebar-toggle"
-            aria-label="切换 session 列表"
-            onClick={handleToggleSidebar}
-          >
-            ☰
-          </button>
-          {current && currentWindow && (
-            <WindowTabs
-              windows={current.windows}
-              selected={currentWindow.index}
-              onSelect={setSelectedWindow}
-            />
+    <>
+      <div
+        className={`app${sidebarOpen ? ' sidebar-open' : ''}${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}
+      >
+        <SessionSidebar
+          sessions={sessions}
+          selected={current?.name}
+          onSelect={handleSelectSession}
+          onCreate={handleCreate}
+          onRename={handleRename}
+          onDelete={handleDelete}
+          onUpdateStarted={handleUpdateStarted}
+          onAuthLost={onAuthLost}
+          onOpenSettings={() => setSettingsOpen(true)}
+          width={sidebarWidth}
+          onWidthChange={handleSidebarWidthChange}
+        />
+        <div className="backdrop" onClick={() => setSidebarOpen(false)} />
+        <main className="main">
+          {(error ?? actionError) && (
+            <div className="banner-error">{error ?? actionError}</div>
           )}
-          <div className="mobile-version">
-            <VersionBadge
-              compact
-              onUpdateStarted={handleUpdateStarted}
-              onAuthLost={onAuthLost}
-            />
-          </div>
-        </div>
-        {current && currentWindow ? (
-          <TerminalView
-            session={current.name}
-            windowIndex={currentWindow.index}
-            onAuthLost={onAuthLost}
-            onForegroundChange={refresh}
-          />
-        ) : (
-          <div className="empty">
-            <p>没有可用的 tmux session</p>
-            <button className="new-session" onClick={handleCreate}>
-              ＋ 新建 session
+          {/* 表头始终渲染：没有 session 时它也得在，否则窄屏下抽屉式侧栏
+              没有任何入口可打开，用户被锁死在空状态里，连 session 都建不了 */}
+          <div className="main-header">
+            <button
+              className="sidebar-toggle"
+              aria-label="切换 session 列表"
+              onClick={handleToggleSidebar}
+            >
+              ☰
             </button>
+            {current && currentWindow && (
+              <WindowTabs
+                windows={current.windows}
+                selected={currentWindow.index}
+                onSelect={setSelectedWindow}
+              />
+            )}
+            <div className="mobile-version">
+              <VersionBadge
+                compact
+                onUpdateStarted={handleUpdateStarted}
+                onAuthLost={onAuthLost}
+              />
+            </div>
           </div>
-        )}
-      </main>
-    </div>
+          {current && currentWindow ? (
+            <TerminalView
+              session={current.name}
+              windowIndex={currentWindow.index}
+              appearance={appearance}
+              onAuthLost={onAuthLost}
+              onForegroundChange={refresh}
+            />
+          ) : (
+            <div className="empty">
+              <p>没有可用的 tmux session</p>
+              <button className="new-session" onClick={handleCreate}>
+                ＋ 新建 session
+              </button>
+            </div>
+          )}
+        </main>
+      </div>
+      {settingsOpen && (
+        <AppearanceSettingsDialog
+          settings={appearance}
+          onChange={onAppearanceChange}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
+    </>
   )
 }
 
 export function App() {
   // null = 正在探测 cookie 是否仍有效，避免闪现登录页
   const [authed, setAuthed] = useState<boolean | null>(null)
+  const [appearance, setAppearance] = useState(loadAppearance)
   const onAuthLost = useCallback(() => setAuthed(false), [])
+  const handleAppearanceChange = useCallback((next: AppearanceSettings) => {
+    saveAppearance(next)
+    setAppearance(next)
+  }, [])
   useEffect(() => {
     checkAuth().then(setAuthed)
   }, [])
+  useEffect(() => applyAppearance(appearance), [appearance])
 
   // 软键盘弹出时把布局收缩到可视区高度：viewport meta 的 resizes-content
   // 部分浏览器（iOS Safari 等）不支持，改用 visualViewport 兜底；
@@ -178,5 +211,11 @@ export function App() {
   }, [])
   if (authed === null) return null
   if (!authed) return <Login onSuccess={() => setAuthed(true)} />
-  return <Main onAuthLost={onAuthLost} />
+  return (
+    <Main
+      onAuthLost={onAuthLost}
+      appearance={appearance}
+      onAppearanceChange={handleAppearanceChange}
+    />
+  )
 }

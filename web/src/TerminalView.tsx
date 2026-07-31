@@ -3,7 +3,8 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { Unicode11Addon } from '@xterm/addon-unicode11'
 import { InputBar } from './InputBar'
-import { TERMINAL_OPTIONS } from './terminalOptions'
+import type { AppearanceSettings } from './appearance'
+import { terminalOptionsForAppearance } from './terminalOptions'
 import { createTouchScroll } from './touchScroll'
 
 const FATAL_CLOSE_CODES = new Set([4400, 4403, 4404, 4500])
@@ -12,23 +13,35 @@ const SESSIONS_CHANGED_MESSAGE = '\0tmux-webui:sessions-changed'
 interface Props {
   session: string
   windowIndex: number
+  appearance: AppearanceSettings
   onAuthLost?: () => void
   onForegroundChange?: () => void
 }
 
 type Status = 'connecting' | 'connected' | 'reconnecting' | 'closed'
 
-export function TerminalView({ session, windowIndex, onAuthLost, onForegroundChange }: Props) {
+export function TerminalView({
+  session,
+  windowIndex,
+  appearance,
+  onAuthLost,
+  onForegroundChange,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const wsRef = useRef<WebSocket | undefined>(undefined)
+  const termRef = useRef<Terminal | undefined>(undefined)
+  const fitRef = useRef<FitAddon | undefined>(undefined)
   const winIndexRef = useRef(windowIndex)
+  const appearanceRef = useRef(appearance)
+  appearanceRef.current = appearance
+  const touchStepRef = useRef(Math.ceil(appearance.fontSize * appearance.lineHeight * 1.2))
   const onAuthLostRef = useRef(onAuthLost)
   onAuthLostRef.current = onAuthLost
   const onForegroundChangeRef = useRef(onForegroundChange)
   onForegroundChangeRef.current = onForegroundChange
   const [status, setStatus] = useState<Status>('connecting')
 
-  // session 变化：重建 xterm + WS
+  // session 变化：重建 xterm + WS；外观设置在下面单独热更新，避免拖字号时反复重连。
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
@@ -36,8 +49,10 @@ export function TerminalView({ session, windowIndex, onAuthLost, onForegroundCha
     // 重新同步到本次渲染时的 windowIndex，避免与下面的 windowIndex effect 出现执行顺序竞争
     winIndexRef.current = windowIndex
 
-    const term = new Terminal(TERMINAL_OPTIONS)
+    const term = new Terminal(terminalOptionsForAppearance(appearanceRef.current))
     const fit = new FitAddon()
+    termRef.current = term
+    fitRef.current = fit
     term.loadAddon(fit)
     // xterm 默认按 Unicode 6 宽度表把 emoji 算作 1 列，而 tmux（现代 wcwidth）
     // 算 2 列，emoji 之后的内容会整体错位一格；切到 Unicode 11 宽度表对齐两边
@@ -117,7 +132,6 @@ export function TerminalView({ session, windowIndex, onAuthLost, onForegroundCha
     // 滚动（幅度被丢弃），快速滑动的大位移必须拆成多个单行事件才滚得动。
     // deltaMode 用 DOM_DELTA_LINE：pixel 模式按设备像素行高换算，高 DPR 下
     // CSS 像素增量不足一行会被 floor 掉。
-    const stepPx = Math.ceil(TERMINAL_OPTIONS.fontSize! * 1.2)
     // 合成事件必须带手指真实坐标：mouse tracking 下 wheel 会连同格子坐标
     // 上报给应用，(0,0) 落在内容区外会被按区域处理滚动的 TUI 忽略
     let touchX = 0
@@ -125,7 +139,7 @@ export function TerminalView({ session, windowIndex, onAuthLost, onForegroundCha
     const emitLines = (deltaY: number) => {
       const screen = container.querySelector('.xterm-screen')
       if (!screen) return
-      const lines = Math.round(Math.abs(deltaY) / stepPx)
+      const lines = Math.round(Math.abs(deltaY) / touchStepRef.current)
       const dir = deltaY > 0 ? 1 : -1
       // 应用开了 mouse tracking：绕开 xterm 的 wheel→mouse 管线（内部
       // 活跃态/坐标换算时机不可控，真机上会随机吞事件），自己算格子坐标
@@ -147,7 +161,7 @@ export function TerminalView({ session, windowIndex, onAuthLost, onForegroundCha
       // 打断 Chrome 后续的 touchmove 派发（滑一两行就断流的根因）
       term.scrollLines(dir * lines)
     }
-    const touchScroll = createTouchScroll(emitLines, stepPx)
+    const touchScroll = createTouchScroll(emitLines, () => touchStepRef.current)
 
     // 惯性滚动：抬手后按末速度衰减继续滚，接近原生滚动手感
     let flingFrame = 0
@@ -159,9 +173,9 @@ export function TerminalView({ session, windowIndex, onAuthLost, onForegroundCha
         acc += v * (now - last)
         v *= 0.95 ** ((now - last) / 16)
         last = now
-        if (Math.abs(acc) >= stepPx) {
+        if (Math.abs(acc) >= touchStepRef.current) {
           emitLines(acc)
-          acc = acc % stepPx
+          acc = acc % touchStepRef.current
         }
         if (Math.abs(v) > 0.05) flingFrame = requestAnimationFrame(tick)
       }
@@ -216,11 +230,27 @@ export function TerminalView({ session, windowIndex, onAuthLost, onForegroundCha
       resizeSub.dispose()
       dataSub.dispose()
       wsRef.current?.close()
+      termRef.current = undefined
+      fitRef.current = undefined
       term.dispose()
     }
-    // windowIndex 故意不在依赖里：切 window 走下面的 effect，不重连
+    // windowIndex 故意不在依赖里：切 window 走下面的 effect，不重连。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
+
+  useEffect(() => {
+    touchStepRef.current = Math.ceil(appearance.fontSize * appearance.lineHeight * 1.2)
+    const term = termRef.current
+    if (!term) return
+    const options = terminalOptionsForAppearance(appearance)
+    term.options.fontFamily = options.fontFamily
+    term.options.fontSize = options.fontSize
+    term.options.lineHeight = options.lineHeight
+    term.options.cursorStyle = options.cursorStyle
+    term.options.theme = options.theme
+    const fitFrame = requestAnimationFrame(() => fitRef.current?.fit())
+    return () => cancelAnimationFrame(fitFrame)
+  }, [appearance])
 
   // windowIndex 变化：只发 w 帧，不重连
   useEffect(() => {
