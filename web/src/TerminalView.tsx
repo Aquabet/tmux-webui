@@ -7,21 +7,25 @@ import { TERMINAL_OPTIONS } from './terminalOptions'
 import { createTouchScroll } from './touchScroll'
 
 const FATAL_CLOSE_CODES = new Set([4400, 4403, 4404, 4500])
+const SESSIONS_CHANGED_MESSAGE = '\0tmux-webui:sessions-changed'
 
 interface Props {
   session: string
   windowIndex: number
   onAuthLost?: () => void
+  onForegroundChange?: () => void
 }
 
 type Status = 'connecting' | 'connected' | 'reconnecting' | 'closed'
 
-export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
+export function TerminalView({ session, windowIndex, onAuthLost, onForegroundChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const wsRef = useRef<WebSocket | undefined>(undefined)
   const winIndexRef = useRef(windowIndex)
   const onAuthLostRef = useRef(onAuthLost)
   onAuthLostRef.current = onAuthLost
+  const onForegroundChangeRef = useRef(onForegroundChange)
+  onForegroundChangeRef.current = onForegroundChange
   const [status, setStatus] = useState<Status>('connecting')
 
   // session 变化：重建 xterm + WS
@@ -71,8 +75,15 @@ export function TerminalView({ session, windowIndex, onAuthLost }: Props) {
         fit.fit()
         ws.send(`r${JSON.stringify({ cols: term.cols, rows: term.rows })}`)
       }
-      ws.onmessage = (ev) => term.write(typeof ev.data === 'string' ? ev.data : '')
+      ws.onmessage = (ev) => {
+        if (ev.data === SESSIONS_CHANGED_MESSAGE) {
+          onForegroundChangeRef.current?.()
+          return
+        }
+        term.write(typeof ev.data === 'string' ? ev.data : '')
+      }
       ws.onclose = (ev) => {
+        onForegroundChangeRef.current?.()
         if (disposed) return
         if (ev.code === 4401) {
           setStatus('closed')

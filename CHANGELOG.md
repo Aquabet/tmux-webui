@@ -9,6 +9,23 @@ with patches incrementing the last position (`3.1.1`, `3.1.2`). See
 
 ## [Unreleased]
 
+## [3.1.6] - 2026-07-30
+
+### Fixed
+
+- Codex sessions now stay visibly active while their terminal activity spinner
+  is running, even when an older hook event still says idle.
+- Switching browser terminals refreshes foreground indicators immediately when
+  the new tmux attachment starts or the old connection closes, instead of
+  waiting for the session polling interval.
+- One-click updates now recover the Node.js path from the running systemd
+  service, rebuild an already-checked-out release after an interrupted update,
+  choose only current stable tags from the remote, and report dependency,
+  build, or restart failures instead of claiming success.
+- Completed update sessions retain their output without blocking the next
+  update. The next click safely replaces a finished updater while preserving
+  unrelated user sessions with the same name.
+
 ## [3.1.5] - 2026-07-30
 
 ### Added
@@ -113,7 +130,9 @@ First public release.
   once every 6 hours, behind auth) and links to it from the sidebar. It never
   installs anything; `TMUX_WEBUI_UPDATE_CHECK=false` disables the check.
 
-[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.4...HEAD
+[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.6...HEAD
+[3.1.6]: https://github.com/Aquabet/tmux-webui/compare/v3.1.5...v3.1.6
+[3.1.5]: https://github.com/Aquabet/tmux-webui/compare/v3.1.4...v3.1.5
 [3.1.4]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.4
 [3.1.3]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.3
 [3.1.2]: https://github.com/Aquabet/tmux-webui/releases/tag/v3.1.2

@@ -7,6 +7,8 @@ import { captureHistory } from '../tmux/history.js'
 import { createAltScreenFilter } from './altScreenFilter.js'
 import { createView, destroyView, selectWindow, type View } from '../tmux/view.js'
 
+const SESSIONS_CHANGED_MESSAGE = '\0tmux-webui:sessions-changed'
+
 export interface PtyLike {
   onData(cb: (d: string) => void): void
   onExit(cb: () => void): void
@@ -133,7 +135,14 @@ export async function handleTerminalConnection(
 
   // 滤掉 tmux 的 alt screen 切换，xterm 留在 normal buffer 积累 scrollback
   const filterAltScreen = createAltScreenFilter()
+  let foregroundNotified = false
   pty.onData((data) => {
+    // 第一批 tmux 输出证明 attach 已完成；通知浏览器立即刷新前台状态，
+    // 不必等 session 列表的 5 秒轮询。
+    if (!foregroundNotified && ws.readyState === ws.OPEN) {
+      foregroundNotified = true
+      ws.send(SESSIONS_CHANGED_MESSAGE)
+    }
     const filtered = filterAltScreen(data)
     if (filtered && ws.readyState === ws.OPEN) ws.send(filtered)
   })

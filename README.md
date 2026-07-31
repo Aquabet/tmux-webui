@@ -191,6 +191,11 @@ server starts the update in a separate tmux session (`tmux-webui-update`) and
 the UI switches to it, so you watch it run. It has to be a separate session —
 the update restarts the service, which would otherwise kill the process
 performing it.
+The completed output is retained; the server automatically replaces that
+finished session on the next update, so you do not need to delete it manually.
+**One-click updates require a service installed by this checkout's
+`install.sh --systemd`.** If the unit is missing or points at another clone,
+the update fails explicitly before changing the checkout.
 
 The same thing from a shell:
 
@@ -199,9 +204,16 @@ The same thing from a shell:
 ```
 
 It fetches, shows you the commits you are about to get, asks for confirmation,
-checks out the **latest release tag**, reinstalls, rebuilds, and restarts the
-systemd service if one points at this directory. Add `--yes` to skip the prompt
-(required when there is no terminal).
+checks out the latest **stable release tag from the remote**, reinstalls,
+rebuilds, and restarts the systemd service for this directory. Even when the
+checkout is already at the target tag, it reinstalls, rebuilds, and restarts to
+recover from an interrupted previous update. It prints “complete” only after
+the restarted service has remained active across consecutive checks.
+
+Add `--yes` to skip the prompt (required when there is no terminal). Automated
+mode requires a systemd service that points at this checkout. Interactive mode
+can still build without one, but clearly reports that the current process has
+not been restarted instead of claiming a complete update.
 
 Tracking releases is deliberate: the sidebar notice compares your version
 against the latest GitHub release, so updating to anything else would leave the

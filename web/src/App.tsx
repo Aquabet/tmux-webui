@@ -136,6 +136,7 @@ function Main({ onAuthLost }: { onAuthLost: () => void }) {
             session={current.name}
             windowIndex={currentWindow.index}
             onAuthLost={onAuthLost}
+            onForegroundChange={refresh}
           />
         ) : (
           <div className="empty">

@@ -110,6 +110,24 @@ describe('parseSessions', () => {
     ])
   })
 
+  it('Codex activity spinner 覆盖过期的 idle hook 状态', () => {
+    const sessions = 'codex\t0\n'
+    const panes = 'codex\t%9\tcodex\tcodex\tidle\t309\t⠹ project\tidle'
+
+    expect(parseSessions(sessions, '', panes)[0]?.agents).toEqual([
+      { kind: 'codex', status: 'running' },
+    ])
+  })
+
+  it('Codex running hook 在静态标题下仍保持运行中', () => {
+    const sessions = 'codex\t0\n'
+    const panes = 'codex\t%9\tcodex\tcodex\trunning\t309\tproject\trunning'
+
+    expect(parseSessions(sessions, '', panes)[0]?.agents).toEqual([
+      { kind: 'codex', status: 'running' },
+    ])
+  })
+
   it('同一 Codex pane 的 activity spinner 消失后判定为已停下', () => {
     const activitySeen = new Set<string>()
     const sessions = 'codex\t0\n'

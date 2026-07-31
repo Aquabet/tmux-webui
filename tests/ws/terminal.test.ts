@@ -131,12 +131,17 @@ describe('handleTerminalConnection', () => {
     const received: string[] = []
     ws.on('message', (d) => received.push(d.toString()))
     pty.emitData('hello from tmux')
+    pty.emitData('second frame')
     ws.send('iecho hi\r')
     ws.send('r{"cols":120,"rows":40}')
     ws.send('w{"index":2}')
     await flush()
 
-    expect(received).toEqual(['hello from tmux'])
+    expect(received).toEqual([
+      '\0tmux-webui:sessions-changed',
+      'hello from tmux',
+      'second frame',
+    ])
     expect(pty.written).toEqual(['echo hi\r'])
     expect(pty.resizes).toEqual([[120, 40]])
     const selectCalls = execCalls.filter((c) => c[0] === 'select-window')

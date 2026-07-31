@@ -191,8 +191,13 @@ describe('GET /api/sessions', () => {
   })
 
   it('/update 在更新已在进行时返回 409', async () => {
-    // has-session 成功 = 会话已存在
-    const agent = await loginAgent(await makeApp({ exec: async () => '', repoRoot: REPO_ROOT }))
+    const exec: TmuxExec = async (args) => {
+      if (args[0] === 'list-panes') return '0\tif ./scripts/update.sh --yes; then ...\n'
+      if (args[0] === 'show-options') return 'managed\n'
+      // has-session 成功 = 会话已存在
+      return ''
+    }
+    const agent = await loginAgent(await makeApp({ exec, repoRoot: REPO_ROOT }))
     const res = await agent.post('/api/update')
     expect(res.status).toBe(409)
     expect(res.body.error).toMatch(/已在进行/)

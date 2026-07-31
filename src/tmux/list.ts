@@ -118,12 +118,14 @@ function parsePaneAgents(
       const parsedScopedStatus = agentStatusSchema.safeParse(scopedStatuses[kind])
       const parsedStatus = agentStatusSchema.safeParse(rawStatus)
       const statusMatchesKind = !hookKind.success || hookKind.data === kind
-      const status =
-        parsedScopedStatus.success
-          ? parsedScopedStatus.data
-          : parsedStatus.success && statusMatchesKind
+      const titleStatus = statusFromTitle(kind, pane, paneTitle, codexActivitySeen)
+      const hookStatus = parsedScopedStatus.success
+        ? parsedScopedStatus.data
+        : parsedStatus.success && statusMatchesKind
           ? parsedStatus.data
-          : statusFromTitle(kind, pane, paneTitle, codexActivitySeen)
+          : undefined
+      // Codex 的 spinner 是当前正在工作的直接证据，应覆盖可能未触发 running hook 的旧 idle。
+      const status = titleStatus === 'running' ? titleStatus : (hookStatus ?? titleStatus)
       return [
         {
           session,
