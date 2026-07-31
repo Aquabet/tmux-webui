@@ -16,11 +16,11 @@ agent 类型不需要配置即可识别。tmux-webui 会检查每个 pane 的前
 
 | Badge | 命令名 | 图标 | 精确状态来源 | 未安装状态集成时 |
 |---|---|---|---|---|
-| Codex | `codex`、`codex-*` | Codex 标记 | Codex lifecycle hooks；默认 terminal title 的 activity 兜底 | 通常可从默认 title 判断运行/停下，否则显示灰蓝未知灯 |
-| Claude Code | `claude`、`claude-*` | Claude 标记 | Claude lifecycle hooks | 显示灰蓝未知灯 |
-| Pi | `pi` | Pi 官方 compact badge | 项目附带的 Pi extension | 显示灰蓝未知灯 |
-| Kimi Code | `kimi`、`kimi-code`、`kimi-cli` | Kimi 标记 | Kimi lifecycle hooks | 显示灰蓝未知灯 |
-| OpenCode | `opencode`、`opencode-*` | OpenCode 标记 | 项目附带的 OpenCode plugin | 显示灰蓝未知灯 |
+| Codex | `codex`、`codex-*` | Codex 标记 | Codex lifecycle hooks；默认 terminal title 的 activity 兜底 | 通常可从默认 title 判断运行/等待，否则不显示状态灯 |
+| Claude Code | `claude`、`claude-*` | Claude 标记 | Claude lifecycle hooks | 不显示状态灯 |
+| Pi | `pi` | Pi 官方 compact badge | 项目附带的 Pi extension | 不显示状态灯 |
+| Kimi Code | `kimi`、`kimi-code`、`kimi-cli` | Kimi 标记 | Kimi lifecycle hooks | 不显示状态灯 |
+| OpenCode | `opencode`、`opencode-*` | OpenCode 标记 | 项目附带的 OpenCode plugin | 不显示状态灯 |
 | Terminal | 没有识别到以上 agent | 终端窗口 | 不适用 | 不显示工作状态灯 |
 
 不同 pane 里存在不同类型的 agent 时，一个 session 可以显示多个 badge。同类型
@@ -52,9 +52,8 @@ Codex 和 Terminal 是黑白灰中性色图标。有活跃前台时用与其它 
 | 小灯 | 颜色 | 含义 |
 |---|---|---|
 | 绿色呼吸灯 | `#9ece6a` | **运行中：**agent 正在处理一轮任务、重试或执行其它已上报的工作 |
-| 琥珀色常亮 | `#e0af68` | **已停下：**agent 已完成任务，正在等待输入 |
-| 灰蓝色常亮 | `#565f89` | **状态未知：**已识别 agent，但没有收到有效的精确状态 |
-| 无小灯 | — | Terminal fallback，没有可上报的 agent 工作状态 |
+| 琥珀色常亮 | `#e0af68` | **等待输入：**agent 正在等待用户输入 |
+| 无小灯 | — | agent 已停止、精确状态未知，或当前是 Terminal fallback |
 
 没有活跃前台时，只会压暗图标本身；右下角状态灯的颜色和动画保持不变。因此即使
 session 无人查看，后台运行的 agent 仍会清楚显示绿色呼吸灯。
@@ -65,9 +64,9 @@ session 无人查看，后台运行的 agent 仍会清楚显示绿色呼吸灯�
 |---|---|---|
 | 明亮 | 绿色呼吸灯 | 有人正在查看，agent 也正在工作 |
 | 暗灰 | 绿色呼吸灯 | 无人查看，但 agent 仍在后台工作 |
-| 明亮 | 琥珀灯 | 有人正在查看，agent 已停下等待输入 |
-| 暗灰 | 琥珀灯 | 无人查看，agent 也已停下等待输入 |
-| 明亮或暗灰 | 灰蓝灯 | 前台连接状态已知，但 agent 工作状态未知 |
+| 明亮 | 琥珀灯 | 有人正在查看，agent 正在等待用户输入 |
+| 暗灰 | 琥珀灯 | 无人查看，agent 也正在等待用户输入 |
+| 明亮或暗灰 | 无小灯 | agent 已停止或精确工作状态未知 |
 
 鼠标停在 badge 上会显示 agent 名称、工作状态和是否有活跃前台。
 
@@ -284,7 +283,8 @@ cp /absolute/path/to/tmux-webui/integrations/opencode-status.js \
 
 一个 session 里可以有多个 agent pane。侧栏会按 agent 类型各显示一个图标；
 只要同类任一 pane 在运行，就显示**运行中**。只有所有已识别的同类 pane 都明确
-上报 idle，才显示**已停下**。
+上报 idle，才显示**等待用户输入**。`idle` 保留为旧 hook 的兼容值，API 会统一
+转换成 `waiting`。
 
 如果一个 agent 在自己的 pane 内启动另一个受支持的 agent，该 pane 的 badge
 和状态归外层 agent；内层 lifecycle hook 会被忽略，不能留下另一种 agent 的
@@ -303,5 +303,5 @@ wrapper 脚本也能识别：tmux-webui 会检查 pane shell 下方的进程名�
 Codex 默认 terminal title 的 `activity` 项会在 hook 尚未信任时提供有限兜底。
 出现 spinner 也会覆盖过期的 idle hook 状态，因为它是当前仍在工作的直接证据；
 其它情况下仍优先使用有效 hook 状态。只有不存在有效 hook 状态时，非空标题里
-没有 activity spinner 才表示已停下。如果你自定义 Codex、从 title 中移除了
+没有 activity spinner 才表示等待用户输入。如果你自定义 Codex、从 title 中移除了
 `activity` 项，需要配置 hooks，因为 tmux 本身已经无法可靠区分这两个状态。

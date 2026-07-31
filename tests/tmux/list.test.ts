@@ -62,7 +62,7 @@ describe('parseSessions', () => {
         windows: [{ index: 0, name: 'claude', active: true }],
         agents: [
           { kind: 'codex', status: 'running' },
-          { kind: 'claude', status: 'idle' },
+          { kind: 'claude', status: 'waiting' },
         ],
       },
       {
@@ -74,7 +74,7 @@ describe('parseSessions', () => {
         ],
         agents: [
           { kind: 'codex', status: 'running' },
-          { kind: 'claude', status: 'idle' },
+          { kind: 'claude', status: 'waiting' },
         ],
       },
     ])
@@ -88,10 +88,10 @@ describe('parseSessions', () => {
   })
 
   it('Codex 默认 terminal title 可在 hook 未生效前区分运行与等待操作', () => {
-    const sessions = 'running\t0\nstopped\t0\n'
+    const sessions = 'running\t0\nwaiting\t0\n'
     const panes = [
       'running\t%0\tcodex\t\t\t300\t⠙ project',
-      'stopped\t%1\tcodex\t\t\t301\t[ . ] Action Required | project',
+      'waiting\t%1\tcodex\t\t\t301\t[ . ] Action Required | project',
     ].join('\n')
 
     expect(parseSessions(sessions, '', panes)).toEqual([
@@ -102,11 +102,29 @@ describe('parseSessions', () => {
         agents: [{ kind: 'codex', status: 'running' }],
       },
       {
-        name: 'stopped',
+        name: 'waiting',
         attached: false,
         windows: [],
-        agents: [{ kind: 'codex', status: 'idle' }],
+        agents: [{ kind: 'codex', status: 'waiting' }],
       },
+    ])
+  })
+
+  it('Codex 明确等待用户操作时覆盖过期的 running hook 状态', () => {
+    const sessions = 'codex\t0\n'
+    const panes = [
+      'codex',
+      '%9',
+      'codex',
+      'codex',
+      'running',
+      '309',
+      '[ . ] Action Required | project',
+      'running',
+    ].join('\t')
+
+    expect(parseSessions(sessions, '', panes)[0]?.agents).toEqual([
+      { kind: 'codex', status: 'waiting' },
     ])
   })
 
@@ -128,7 +146,7 @@ describe('parseSessions', () => {
     ])
   })
 
-  it('同一 Codex pane 的 activity spinner 消失后判定为已停下', () => {
+  it('同一 Codex pane 的 activity spinner 消失后判定为等待输入', () => {
     const activitySeen = new Set<string>()
     const sessions = 'codex\t0\n'
 
@@ -144,9 +162,9 @@ describe('parseSessions', () => {
     expect(
       parseSessions(sessions, '', 'codex\t%7\tcodex\t\t\t307\tproject', '', activitySeen)[0]
         ?.agents,
-    ).toEqual([{ kind: 'codex', status: 'idle' }])
+    ).toEqual([{ kind: 'codex', status: 'waiting' }])
 
-    // 服务重启时可能首次看到的就是静态 project title；默认 activity 已消失即 idle。
+    // 服务重启时可能首次看到的就是静态 project title；默认 activity 已消失即等待输入。
     expect(
       parseSessions(
         sessions,
@@ -155,7 +173,7 @@ describe('parseSessions', () => {
         '',
         new Set(),
       )[0]?.agents,
-    ).toEqual([{ kind: 'codex', status: 'idle' }])
+    ).toEqual([{ kind: 'codex', status: 'waiting' }])
   })
 
   it('识别 Pi、Kimi Code、OpenCode 及 Kimi 的常见命令名', () => {
@@ -173,7 +191,7 @@ describe('parseSessions', () => {
         name: 'kimi',
         attached: false,
         windows: [],
-        agents: [{ kind: 'kimi', status: 'idle' }],
+        agents: [{ kind: 'kimi', status: 'waiting' }],
       },
       {
         name: 'kimi-legacy',
@@ -190,7 +208,7 @@ describe('parseSessions', () => {
     ])
   })
 
-  it('同类 pane 有未上报状态时不误报全部 idle', () => {
+  it('同类 pane 有未上报状态时不误报全部 waiting', () => {
     const panes = 'admin\t%0\tcodex\tcodex\tidle\t100\nadmin\t%1\tcodex\t\t\t101\n'
     expect(parseSessions(SESSIONS, WINDOWS, panes)[0]?.agents).toEqual([{ kind: 'codex' }])
   })

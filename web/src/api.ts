@@ -5,7 +5,7 @@ export interface ApiWindow {
 }
 
 export type ApiAgentKind = 'codex' | 'claude' | 'pi' | 'kimi' | 'opencode'
-export type ApiAgentStatus = 'running' | 'idle'
+export type ApiAgentStatus = 'running' | 'waiting'
 
 export interface ApiAgent {
   kind: ApiAgentKind

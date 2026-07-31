@@ -99,7 +99,7 @@ mobile drawer keeps its fixed width and existing behavior.
 
 The icon before each session name identifies what is running in its panes:
 
-| Icon | Automatically recognized commands | Exact running/stopped status |
+| Icon | Automatically recognized commands | Exact running/waiting status |
 |---|---|---|
 | Codex | `codex`, including wrapper processes | Lifecycle hooks; default terminal-title activity is also used as a fallback |
 | Claude Code | `claude`, including wrapper processes | Lifecycle hooks |
@@ -115,11 +115,11 @@ The badge carries two independent signals:
   no active frontend. Neutral Codex and Terminal marks use the same blue
   outline and background glow instead of changing their brand color.
 - **Bottom-right dot:** green/pulsing (`#9ece6a`) means **running**; amber
-  (`#e0af68`) means **stopped and waiting for input**; gray-blue (`#565f89`)
-  means the agent was detected but exact status is unknown.
+  (`#e0af68`) means **waiting for user input**. A stopped agent, or an agent
+  whose exact status is unknown, has no status dot.
 
 These signals can differ: a detached agent can still be running, and an agent
-visible in a browser can be waiting for input. The sidebar refreshes both
+visible in a browser can be waiting for user input. The sidebar refreshes both
 within 5 seconds. Hovering a badge shows its agent, work status, and frontend
 presence.
 

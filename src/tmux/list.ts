@@ -5,12 +5,12 @@ import { descendantCommands, listProcesses, type ProcessList } from './processes
 export const VIEW_PREFIX = 'webui-'
 const AGENT_KINDS = ['codex', 'claude', 'pi', 'kimi', 'opencode'] as const
 const agentKindSchema = z.enum(AGENT_KINDS)
-const agentStatusSchema = z.enum(['running', 'idle'])
+const rawAgentStatusSchema = z.enum(['running', 'idle', 'waiting'])
 const SHELL_COMMANDS = new Set(['bash', 'csh', 'dash', 'fish', 'ksh', 'sh', 'tcsh', 'zsh'])
 const observedCodexActivity = new Set<string>()
 
 export type AgentKind = z.infer<typeof agentKindSchema>
-export type AgentStatus = z.infer<typeof agentStatusSchema>
+export type AgentStatus = 'running' | 'waiting'
 
 export interface TmuxAgent {
   kind: AgentKind
@@ -47,6 +47,11 @@ function kindFromCommand(command: string): AgentKind | undefined {
   return undefined
 }
 
+function normalizeStatus(status: z.infer<typeof rawAgentStatusSchema>): AgentStatus {
+  // 已安装的旧 hook 仍会上报 idle；在线协议保持兼容，对 UI 统一表达为等待输入。
+  return status === 'running' ? 'running' : 'waiting'
+}
+
 function statusFromTitle(
   kind: AgentKind,
   pane: string,
@@ -62,14 +67,14 @@ function statusFromTitle(
   }
   if (/\bAction Required\b/i.test(title)) {
     codexActivitySeen.add(pane)
-    return 'idle'
+    return 'waiting'
   }
   // 默认 title 是 activity + project；activity 不输出时会只剩静态 project。
   // 自定义移除 activity 的用户应配置 hook，否则无法从 tmux 区分生成状态。
-  if (title.trim() !== '') return 'idle'
+  if (title.trim() !== '') return 'waiting'
   // activity item 工作时显示 spinner、停下时不输出；必须先见过 spinner 才能
-  // 在空 title 场景用它的消失推断 idle。
-  if (codexActivitySeen.has(pane)) return 'idle'
+  // 在空 title 场景用它的消失推断等待输入。
+  if (codexActivitySeen.has(pane)) return 'waiting'
   return undefined
 }
 
@@ -115,17 +120,19 @@ function parsePaneAgents(
         kimi: rawKimiStatus,
         opencode: rawOpenCodeStatus,
       }
-      const parsedScopedStatus = agentStatusSchema.safeParse(scopedStatuses[kind])
-      const parsedStatus = agentStatusSchema.safeParse(rawStatus)
+      const parsedScopedStatus = rawAgentStatusSchema.safeParse(scopedStatuses[kind])
+      const parsedStatus = rawAgentStatusSchema.safeParse(rawStatus)
       const statusMatchesKind = !hookKind.success || hookKind.data === kind
       const titleStatus = statusFromTitle(kind, pane, paneTitle, codexActivitySeen)
       const hookStatus = parsedScopedStatus.success
-        ? parsedScopedStatus.data
+        ? normalizeStatus(parsedScopedStatus.data)
         : parsedStatus.success && statusMatchesKind
-          ? parsedStatus.data
+          ? normalizeStatus(parsedStatus.data)
           : undefined
-      // Codex 的 spinner 是当前正在工作的直接证据，应覆盖可能未触发 running hook 的旧 idle。
-      const status = titleStatus === 'running' ? titleStatus : (hookStatus ?? titleStatus)
+      // spinner 和 Action Required 都是当前 terminal 的直接证据；它们应覆盖可能过期的 hook。
+      const titleIsDirectEvidence =
+        titleStatus === 'running' || /\bAction Required\b/i.test(paneTitle)
+      const status = titleIsDirectEvidence ? titleStatus : (hookStatus ?? titleStatus)
       return [
         {
           session,
@@ -166,8 +173,8 @@ function agentsBySession(
           const status =
             panes.some((pane) => pane.status === 'running')
               ? 'running'
-              : panes.every((pane) => pane.status === 'idle')
-                ? 'idle'
+              : panes.every((pane) => pane.status === 'waiting')
+                ? 'waiting'
                 : undefined
           return { kind, ...(status ? { status } : {}) }
         }),

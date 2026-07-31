@@ -89,7 +89,7 @@ curl -sb /tmp/c localhost:8090/api/sessions                    # {"success":true
 
 session 名称前的图标表示 pane 里运行的程序：
 
-| 图标 | 自动识别的命令 | 精确区分运行中/已停下 |
+| 图标 | 自动识别的命令 | 精确区分运行中/等待输入 |
 |---|---|---|
 | Codex | `codex`，包括 wrapper 进程内的 Codex | Lifecycle hooks；默认 terminal title 的 activity 也可作兜底 |
 | Claude Code | `claude`，包括 wrapper 进程内的 Claude | Lifecycle hooks |
@@ -105,11 +105,10 @@ session 名称前的图标表示 pane 里运行的程序：
   Terminal 本身是中性色图标，因此用同样的蓝色轮廓和底光表达“有前台”，
   不修改图标品牌色。
 - **右下角小灯：**绿色呼吸灯（`#9ece6a`）表示**运行中**；琥珀灯
-  （`#e0af68`）表示**已停下、等待输入**；灰蓝灯（`#565f89`）表示已识别
-  agent，但精确状态未知。
+  （`#e0af68`）表示**等待用户输入**。agent 已停止或精确状态未知时不显示小灯。
 
 两条状态可以不同：无人查看的 agent 仍可在后台运行；浏览器正在查看的 agent
-也可能已经停下等待输入。侧栏最多 5 秒刷新一次；鼠标停在 badge 上会显示 agent
+也可能正在等待用户输入。侧栏最多 5 秒刷新一次；鼠标停在 badge 上会显示 agent
 名称、工作状态和前台连接状态。
 
 完整组合、检测边界和配置方法见
