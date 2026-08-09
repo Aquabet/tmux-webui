@@ -218,7 +218,8 @@ release tag**、重装依赖、重新构建，并重启指向本目录的 system
   输入都可靠。`⌫` 可长按连删；`Mode` 发送 Shift+Tab，切换 Claude Code 的 mode。
 - **图片上传**：`Img` 按钮拉起相册，图片上传到服务器
   （`TMUX_WEBUI_UPLOAD_DIR`）并把文件路径插入输入框——消息里带上路径，
-  Claude Code 会自行读取该图片。
+  Claude Code 会自行读取该图片。受管理的上传文件仅服务账号可读，默认保留 7 天，
+  并共用可配置的 512 MiB 总配额。
 - 软键盘弹出时布局自动收缩，侧栏开关与 window tabs 始终可见可点。
 
 ## 配置
@@ -243,6 +244,8 @@ release tag**、重装依赖、重新构建，并重启指向本目录的 system
 | `TMUX_WEBUI_COOKIE_SECURE` | `false` | HTTPS 反代后设为 `true` |
 | `TMUX_WEBUI_SESSION_FILE` | `~/.tmux-webui/sessions.json` | 登录 token 落盘路径（重启不掉登录），留空禁用 |
 | `TMUX_WEBUI_UPLOAD_DIR` | `~/.tmux-webui/uploads` | 手机上传图片的保存目录 |
+| `TMUX_WEBUI_UPLOAD_RETENTION_MS` | 7 天 | 接收新图片前，清理超过该时长的受管理上传文件 |
+| `TMUX_WEBUI_UPLOAD_MAX_BYTES` | 512 MiB | 受管理上传文件的总配额；配额已满时新上传返回 HTTP 507 |
 | `TMUX_WEBUI_UPDATE_CHECK` | `true` | 设为 `false` 则完全不访问 GitHub 查版本 |
 
 ### 更新提示
@@ -258,6 +261,11 @@ release tag**、重装依赖、重新构建，并重启指向本目录的 system
 
 - 保持默认只监听 `127.0.0.1`，通过 Tailscale 或带 HTTPS 的反向代理访问
 - 反代 TLS 后设置 `TMUX_WEBUI_COOKIE_SECURE=true`
+- 应用会发送严格的 CSP，以及防点击劫持、禁止 MIME 猜测和限制 Referrer 的响应头。
+  HSTS 应由终止 TLS 的反向代理设置，因为应用默认只提供回环地址上的明文 HTTP
+- WebSocket 消息大小、终端建立前的缓冲和慢客户端输出都有上限；超限连接会被关闭，
+  不会无界占用内存
+- 上传目录和受管理文件分别强制为 `0700`、`0600`；过期清理会忽略符号链接和无关文件
 - 更新按钮执行的是服务启动目录下的 `scripts/update.sh`。命令是固定的，
   不接受请求里的任何内容（分支、ref、路径都不行），已登录的客户端也无法让它
   跑别的东西；脚本不存在时该功能不出现
@@ -283,14 +291,22 @@ release tag**、重装依赖、重新构建，并重启指向本目录的 system
 ## 测试
 
 ```bash
-npm test                  # 后端单元 + 集成（独立 tmux socket）
-npm --prefix web test     # 前端单元
-npm run test:e2e          # Playwright 全流程
+npm run typecheck              # 后端与测试 TypeScript 工程
+npm run lint                   # Biome lint
+npm run format:check           # 格式检查
+npm run check:deadcode         # 未使用文件、导出和依赖检查
+npm run check:shell            # ShellCheck（需已安装 shellcheck）
+npm run build                  # 后端测试前必须先构建
+npm run test:coverage          # 后端单元/集成测试 + 覆盖率门禁
+npm --prefix web run test:coverage # 前端单元测试 + 覆盖率门禁
+npm run test:e2e               # Playwright 全流程
 ```
 
 ## 参与开发
 
-分支流程与代码规范见 [Development Guide](docs/development.md)（英文）。
+分支流程与代码规范见 [Development Guide](docs/development.md)（英文）。维护者还可以
+查看[项目现状与路线图](docs/project-roadmap.zh-CN.md)，了解当前工程基线、产品定位与
+建议执行顺序。
 
 ## 许可证
 

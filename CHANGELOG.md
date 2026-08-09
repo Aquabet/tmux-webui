@@ -9,6 +9,33 @@ with patches incrementing the last position (`3.1.1`, `3.1.2`). See
 
 ## [Unreleased]
 
+## [3.1.8] - 2026-08-09
+
+### Added
+
+- CI now runs browser end-to-end tests, Biome lint and formatting checks,
+  ShellCheck, dead-code detection, dependency audits, and backend/frontend
+  coverage floors in clean jobs.
+- Image uploads now have configurable retention and total-storage limits via
+  `TMUX_WEBUI_UPLOAD_RETENTION_MS` and `TMUX_WEBUI_UPLOAD_MAX_BYTES`.
+
+### Changed
+
+- Runtime and test dependencies were updated while retaining Node.js 20
+  compatibility; both production dependency trees now audit with zero known
+  vulnerabilities.
+
+### Security
+
+- Upload directories and files are restricted to modes `0700` and `0600`.
+  Cleanup is serialized with quota checks and ignores symlinks and unrelated
+  files.
+- WebSocket payloads, pre-terminal input queues, and slow-client output buffers
+  are bounded; abusive or stalled connections are closed before memory use can
+  grow without limit.
+- HTTP responses now include a restrictive Content Security Policy,
+  clickjacking protection, MIME-sniffing protection, and a no-referrer policy.
+
 ## [3.1.7] - 2026-07-31
 
 ### Added
@@ -149,7 +176,8 @@ First public release.
   once every 6 hours, behind auth) and links to it from the sidebar. It never
   installs anything; `TMUX_WEBUI_UPDATE_CHECK=false` disables the check.
 
-[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.7...HEAD
+[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.8...HEAD
+[3.1.8]: https://github.com/Aquabet/tmux-webui/compare/v3.1.7...v3.1.8
 [3.1.7]: https://github.com/Aquabet/tmux-webui/compare/v3.1.6...v3.1.7
 [3.1.6]: https://github.com/Aquabet/tmux-webui/compare/v3.1.5...v3.1.6
 [3.1.5]: https://github.com/Aquabet/tmux-webui/compare/v3.1.4...v3.1.5

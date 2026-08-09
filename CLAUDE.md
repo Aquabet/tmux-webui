@@ -9,15 +9,19 @@
 
 ```bash
 npm run typecheck                # tsc --noEmit + 测试工程
+npm run lint                     # Biome lint
+npm run format:check             # 格式门禁
+npm run check:deadcode           # 未使用文件、导出和依赖
+npm run check:shell              # ShellCheck（本机需安装 shellcheck）
 npm run build                    # tsc + 前端 vite build
-npm test                         # 后端：会真起 tmux（独立 socket）
-npm --prefix web test            # 前端
+npm run test:coverage            # 后端测试 + 覆盖率门禁，会真起 tmux
+npm --prefix web run test:coverage # 前端测试 + 覆盖率门禁
 npm run test:e2e                 # Playwright，需要另外装浏览器
 ```
 
 **`npm run build` 必须在 `npm test` 之前跑。** 服务只在 `web/dist` 存在时才挂载
-静态资源，`tests/server.test.ts` 的缓存头用例依赖构建产物。CI 里两个 workflow
-都是这个顺序，本地别图省事跳过——工作区残留的旧 `web/dist` 会让你在本地看到
+静态资源，`tests/server.test.ts` 的缓存头用例依赖构建产物。CI 也按这个顺序，
+本地别图省事跳过——工作区残留的旧 `web/dist` 会让你在本地看到
 假的绿灯。
 
 ## 分支与提交
