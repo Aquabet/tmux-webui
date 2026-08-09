@@ -1,11 +1,15 @@
 import { createServer, type Server } from 'node:http'
-import { AddressInfo } from 'node:net'
+import type { AddressInfo } from 'node:net'
 import { WebSocket, WebSocketServer } from 'ws'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createSessionStore } from '../../src/auth/sessions.js'
 import type { TmuxExec } from '../../src/tmux/exec.js'
 import {
   handleTerminalConnection,
+  MAX_WS_BUFFERED_BYTES,
+  MAX_WS_MESSAGE_BYTES,
+  MAX_PENDING_MESSAGES,
+  sendTerminalMessage,
   type PtyLike,
   type SpawnPty,
   type TerminalDeps,
@@ -58,7 +62,8 @@ async function startServer(deps: TerminalDeps): Promise<number> {
       void handleTerminalConnection(ws, req, deps)
     })
   })
-  await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))
+  const activeServer = server
+  await new Promise<void>((resolve) => activeServer.listen(0, '127.0.0.1', resolve))
   return (server.address() as AddressInfo).port
 }
 
@@ -95,6 +100,22 @@ function waitOpen(ws: WebSocket): Promise<void> {
 const flush = () => new Promise((r) => setTimeout(r, 50))
 
 describe('handleTerminalConnection', () => {
+  it('慢客户端超过输出缓冲上限时关闭连接', () => {
+    const send = vi.fn()
+    const close = vi.fn()
+    const ws = {
+      OPEN: 1,
+      readyState: 1,
+      bufferedAmount: MAX_WS_BUFFERED_BYTES,
+      send,
+      close,
+    } as unknown as WebSocket
+
+    expect(sendTerminalMessage(ws, 'x')).toBe(false)
+    expect(send).not.toHaveBeenCalled()
+    expect(close).toHaveBeenCalledWith(4413, 'client too slow')
+  })
+
   it('无认证 cookie 时以 4401 关闭', async () => {
     const { deps } = makeDeps(makeFakePty())
     const port = await startServer(deps)
@@ -137,11 +158,7 @@ describe('handleTerminalConnection', () => {
     ws.send('w{"index":2}')
     await flush()
 
-    expect(received).toEqual([
-      '\0tmux-webui:sessions-changed',
-      'hello from tmux',
-      'second frame',
-    ])
+    expect(received).toEqual(['\0tmux-webui:sessions-changed', 'hello from tmux', 'second frame'])
     expect(pty.written).toEqual(['echo hi\r'])
     expect(pty.resizes).toEqual([[120, 40]])
     const selectCalls = execCalls.filter((c) => c[0] === 'select-window')
@@ -255,6 +272,81 @@ describe('handleTerminalConnection', () => {
     expect(pty.written).toEqual(['echo early\r'])
     ws.close()
     await flush()
+  })
+
+  it('PTY 初始化前排队帧超过上限时关闭连接并清理视图', async () => {
+    const pty = makeFakePty()
+    const { deps, token, execCalls } = makeDeps(pty)
+    const innerExec = deps.exec
+    deps.exec = async (args) => {
+      await new Promise((r) => setTimeout(r, 100))
+      return innerExec(args)
+    }
+    const ws = connect(await startServer(deps), token, 'session=demo')
+    const closed = waitClose(ws)
+    await waitOpen(ws)
+    for (let i = 0; i <= MAX_PENDING_MESSAGES; i++) ws.send('ix')
+    expect(await closed).toBe(4409)
+    await new Promise((r) => setTimeout(r, 300))
+    expect(pty.written).toEqual([])
+    expect(execCalls.some((c) => c[0] === 'kill-session')).toBe(true)
+  })
+
+  it('PTY 初始化前排队内容超过字节上限时关闭连接', async () => {
+    const pty = makeFakePty()
+    const { deps, token } = makeDeps(pty)
+    const innerExec = deps.exec
+    deps.exec = async (args) => {
+      await new Promise((r) => setTimeout(r, 100))
+      return innerExec(args)
+    }
+    const ws = connect(await startServer(deps), token, 'session=demo')
+    const closed = waitClose(ws)
+    await waitOpen(ws)
+    // 前缀 i 也计入队列字节数，因此单帧即可单独触发字节上限而非消息数上限。
+    ws.send(`i${'x'.repeat(MAX_WS_MESSAGE_BYTES)}`)
+
+    expect(await closed).toBe(4409)
+    expect(pty.written).toEqual([])
+  })
+
+  it('读取历史期间断开时不启动 PTY，并销毁已创建视图', async () => {
+    const pty = makeFakePty()
+    const { deps, token, execCalls } = makeDeps(pty)
+    const innerExec = deps.exec
+    let releaseHistory: () => void = () => undefined
+    const historyBlocked = new Promise<void>((resolve) => {
+      releaseHistory = resolve
+    })
+    let markHistoryStarted: () => void = () => undefined
+    const historyStarted = new Promise<void>((resolve) => {
+      markHistoryStarted = resolve
+    })
+    deps.exec = async (args) => {
+      if (args[0] === 'display-message' && args.at(-1) === '#{alternate_on} #{history_size}') {
+        markHistoryStarted()
+        await historyBlocked
+        return '0 0'
+      }
+      return innerExec(args)
+    }
+    let spawnCalls = 0
+    deps.spawnPty = () => {
+      spawnCalls += 1
+      return pty
+    }
+
+    const ws = connect(await startServer(deps), token, 'session=demo')
+    await waitOpen(ws)
+    await historyStarted
+    const closed = waitClose(ws)
+    ws.close()
+    await closed
+    releaseHistory()
+    await flush()
+
+    expect(spawnCalls).toBe(0)
+    expect(execCalls.some((c) => c[0] === 'kill-session')).toBe(true)
   })
 
   it('ws error 事件不会抛出未捕获异常', async () => {
