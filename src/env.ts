@@ -12,8 +12,7 @@ export function parseEnvFile(content: string): Record<string, string> {
       const raw = line.slice(eq + 1).trim()
       const isQuoted =
         raw.length >= 2 &&
-        ((raw.startsWith("'") && raw.endsWith("'")) ||
-          (raw.startsWith('"') && raw.endsWith('"')))
+        ((raw.startsWith("'") && raw.endsWith("'")) || (raw.startsWith('"') && raw.endsWith('"')))
       const value = isQuoted ? raw.slice(1, -1) : raw
       return [[key, value]]
     })

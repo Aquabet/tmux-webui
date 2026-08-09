@@ -1,0 +1,38 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      frontend-tooling:
+        patterns:
+          - vite
+          - vitest
+          - '@vitejs/*'
+          - '@vitest/*'
+          - postcss
+          - nanoid
+      quality-tooling:
+        dependency-type: development
+        patterns:
+          - '@biomejs/*'
+          - '@playwright/*'
+          - knip
+          - tsx
+          - typescript
+
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    groups:
+      frontend-tooling:
+        patterns:
+          - vite
+          - vitest
+          - '@vitejs/*'
+          - '@vitest/*'
+          - postcss
+          - nanoid

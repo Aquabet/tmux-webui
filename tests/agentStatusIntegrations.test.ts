@@ -125,9 +125,6 @@ describe('agent 状态 integrations', () => {
     const statuses = readFileSync(fake.log, 'utf8')
       .split('\n')
       .filter((line) => line.includes('@tmux_webui_status_opencode'))
-    expect(statuses).toEqual([
-      expect.stringContaining('idle'),
-      expect.stringContaining('running'),
-    ])
+    expect(statuses).toEqual([expect.stringContaining('idle'), expect.stringContaining('running')])
   })
 })

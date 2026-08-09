@@ -18,13 +18,7 @@ export async function createView(
   // tmux 会立即把它判定为"未挂载"并销毁。正确做法是挂一个 client-attached 钩子，
   // 只有真正有浏览器客户端连接过之后，再打开 destroy-unattached，
   // 这样断开连接时才会自动销毁视图，而"尚未被任何人打开"的视图能存活。
-  await exec([
-    'set-hook',
-    '-t',
-    viewName,
-    'client-attached',
-    'set-option destroy-unattached on',
-  ])
+  await exec(['set-hook', '-t', viewName, 'client-attached', 'set-option destroy-unattached on'])
   if (windowIndex !== undefined) {
     await exec(['select-window', '-t', `${viewName}:${windowIndex}`])
   }

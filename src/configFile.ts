@@ -4,7 +4,7 @@ import path from 'node:path'
 
 // 全局配置文件：npx 场景下没有项目目录，.env 的「相对启动目录」定位不适用。
 // 键名与环境变量一致，省掉一层映射，文档也只需维护一份名字表。
-export const CONFIG_DIR = path.join(homedir(), '.tmux-webui')
+const CONFIG_DIR = path.join(homedir(), '.tmux-webui')
 export const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json')
 
 export function parseConfigJson(content: string): Record<string, string> {

@@ -1,10 +1,5 @@
 import type { ITerminalOptions } from '@xterm/xterm'
-import {
-  DEFAULT_APPEARANCE,
-  fontById,
-  themeById,
-  type AppearanceSettings,
-} from './appearance'
+import { DEFAULT_APPEARANCE, fontById, themeById, type AppearanceSettings } from './appearance'
 
 const BASE_TERMINAL_OPTIONS: ITerminalOptions = {
   // Keep enough output for long-running CLI sessions such as Codex.

@@ -13,6 +13,7 @@ export function useSessions(onAuthLost: () => void): {
   const [tick, setTick] = useState(0)
   const refresh = useCallback(() => setTick((t) => t + 1), [])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: tick intentionally restarts polling after mutations
   useEffect(() => {
     let stopped = false
     async function poll() {

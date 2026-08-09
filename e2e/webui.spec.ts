@@ -41,7 +41,7 @@ test('终端可向上滚动查看较早输出', async ({ page }) => {
 
   const term = page.locator('.terminal')
   await term.click()
-  await page.keyboard.type("for i in $(seq 1 100); do echo scrollback-$i; done")
+  await page.keyboard.type('for i in $(seq 1 100); do echo scrollback-$i; done')
   await page.keyboard.press('Enter')
   await expect(page.locator('.xterm-screen')).toContainText('scrollback-100')
 

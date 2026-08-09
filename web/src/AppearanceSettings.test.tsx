@@ -68,7 +68,7 @@ describe('AppearanceSettingsDialog', () => {
 
   it('关闭按钮、完成按钮和背景点击都能关闭', () => {
     const onClose = vi.fn()
-    const { container } = render(
+    render(
       <AppearanceSettingsDialog
         settings={DEFAULT_APPEARANCE}
         onChange={vi.fn()}
@@ -78,7 +78,7 @@ describe('AppearanceSettingsDialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '关闭设置' }))
     fireEvent.click(screen.getByRole('button', { name: '完成' }))
-    fireEvent.mouseDown(container.querySelector('.settings-backdrop') as HTMLElement)
+    fireEvent.click(screen.getByRole('button', { name: '关闭设置（背景）' }))
     expect(onClose).toHaveBeenCalledTimes(3)
   })
 

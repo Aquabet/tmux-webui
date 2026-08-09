@@ -49,7 +49,10 @@ function fixture(): Fixture {
   mkdirSync(path.join(repo, 'scripts'), { recursive: true })
   mkdirSync(tools)
   mkdirSync(nodeBin)
-  copyFileSync(path.join(projectRoot, 'scripts', 'update.sh'), path.join(repo, 'scripts', 'update.sh'))
+  copyFileSync(
+    path.join(projectRoot, 'scripts', 'update.sh'),
+    path.join(repo, 'scripts', 'update.sh'),
+  )
   chmodSync(path.join(repo, 'scripts', 'update.sh'), 0o755)
   writeFileSync(path.join(repo, 'package.json'), '{"version":"3.1.5"}\n')
 
@@ -198,22 +201,16 @@ describe('scripts/update.sh', () => {
   it('只从远端 release namespace 选择稳定 tag，忽略本地更高 tag', () => {
     const f = fixture()
     run('git', ['tag', 'v99.0.0'], f.repo)
-    run(
-      'git',
-      ['update-ref', 'refs/tmux-webui-update/tags/v98.0.0', 'HEAD'],
-      f.repo,
-    )
+    run('git', ['update-ref', 'refs/tmux-webui-update/tags/v98.0.0', 'HEAD'], f.repo)
     const result = runUpdate(f)
 
     expect(result.status).toBe(0)
     expect(result.stdout).toContain('release v3.1.5')
     expect(result.stdout).not.toContain('release v99.0.0')
     expect(
-      spawnSync(
-        'git',
-        ['show-ref', '--verify', '--quiet', 'refs/tmux-webui-update/tags/v98.0.0'],
-        { cwd: f.repo },
-      ).status,
+      spawnSync('git', ['show-ref', '--verify', '--quiet', 'refs/tmux-webui-update/tags/v98.0.0'], {
+        cwd: f.repo,
+      }).status,
     ).not.toBe(0)
   })
 
@@ -260,21 +257,21 @@ describe('scripts/update.sh', () => {
   it.each(['18', '22'])(
     'tmux PATH 中 Node %s 与服务不一致时改用 systemd 服务的 Node',
     (pathNodeMajor) => {
-    const f = fixture()
-    executable(
-      path.join(f.tools, 'node'),
-      `#!/bin/sh
+      const f = fixture()
+      executable(
+        path.join(f.tools, 'node'),
+        `#!/bin/sh
 case "$*" in
   *"process.versions.node"*) printf '${pathNodeMajor}\\n' ;;
   *) printf 'old-node-used\\n'; exit 9 ;;
 esac
 `,
-    )
-    executable(path.join(f.tools, 'npm'), '#!/bin/sh\nexit 9\n')
-    const result = runUpdate(f)
+      )
+      executable(path.join(f.tools, 'npm'), '#!/bin/sh\nexit 9\n')
+      const result = runUpdate(f)
 
-    expect(result.status).toBe(0)
-    expect(result.stdout).toContain('当前版本 3.1.5')
+      expect(result.status).toBe(0)
+      expect(result.stdout).toContain('当前版本 3.1.5')
     },
   )
 })

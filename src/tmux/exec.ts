@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process'
 
 export type TmuxExec = (args: string[]) => Promise<string>
 
-export const TMUX_MISSING_MESSAGE =
+const TMUX_MISSING_MESSAGE =
   '未找到 tmux 命令。请先安装 tmux（Debian/Ubuntu: apt install tmux，' +
   'macOS: brew install tmux，Fedora: dnf install tmux）后重启本服务。'
 

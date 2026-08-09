@@ -54,9 +54,9 @@ describe('SessionSidebar agent 状态', () => {
       />,
     )
 
-    expect(
-      screen.getByLabelText('Codex：运行中；无活跃前台').getAttribute('data-agent'),
-    ).toBe('codex')
+    expect(screen.getByLabelText('Codex：运行中；无活跃前台').getAttribute('data-agent')).toBe(
+      'codex',
+    )
     const claudeBadge = screen.getByLabelText('Claude Code：等待用户回应；无活跃前台')
     expect(claudeBadge.getAttribute('data-agent')).toBe('claude')
     expect(claudeBadge.querySelector('.agent-status-dot')).not.toBeNull()
@@ -151,23 +151,14 @@ describe('SessionSidebar agent 状态', () => {
   })
 
   it('接近最窄时保持紧凑，避免完整内容在过窄空间里挤坏', () => {
-    const { container } = render(
-      <SessionSidebar {...handlers} width={96} sessions={[]} />,
-    )
+    const { container } = render(<SessionSidebar {...handlers} width={96} sessions={[]} />)
 
     expect(container.querySelector('.sidebar')?.classList.contains('compact')).toBe(true)
   })
 
   it('分隔线支持键盘精调宽度、边界快捷键和 ARIA 数值', () => {
     const onWidthChange = vi.fn()
-    render(
-      <SessionSidebar
-        {...handlers}
-        width={200}
-        onWidthChange={onWidthChange}
-        sessions={[]}
-      />,
-    )
+    render(<SessionSidebar {...handlers} width={200} onWidthChange={onWidthChange} sessions={[]} />)
     const separator = screen.getByRole('separator', { name: '调整 session 侧栏宽度' })
     expect(separator.getAttribute('aria-valuenow')).toBe('200')
     expect(separator.getAttribute('aria-valuemin')).toBe(String(MIN_SIDEBAR_WIDTH))

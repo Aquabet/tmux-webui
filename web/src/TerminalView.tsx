@@ -41,13 +41,18 @@ export function TerminalView({
   onForegroundChangeRef.current = onForegroundChange
   const [status, setStatus] = useState<Status>('connecting')
 
+  // 先同步 ref，再让 session effect 建立连接；切 window 只发 w 帧，不重连。
+  useEffect(() => {
+    winIndexRef.current = windowIndex
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(`w${JSON.stringify({ index: windowIndex })}`)
+    }
+  }, [windowIndex])
+
   // session 变化：重建 xterm + WS；外观设置在下面单独热更新，避免拖字号时反复重连。
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
-
-    // 重新同步到本次渲染时的 windowIndex，避免与下面的 windowIndex effect 出现执行顺序竞争
-    winIndexRef.current = windowIndex
 
     const term = new Terminal(terminalOptionsForAppearance(appearanceRef.current))
     const fit = new FitAddon()
@@ -234,8 +239,6 @@ export function TerminalView({
       fitRef.current = undefined
       term.dispose()
     }
-    // windowIndex 故意不在依赖里：切 window 走下面的 effect，不重连。
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
   useEffect(() => {
@@ -251,14 +254,6 @@ export function TerminalView({
     const fitFrame = requestAnimationFrame(() => fitRef.current?.fit())
     return () => cancelAnimationFrame(fitFrame)
   }, [appearance])
-
-  // windowIndex 变化：只发 w 帧，不重连
-  useEffect(() => {
-    winIndexRef.current = windowIndex
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(`w${JSON.stringify({ index: windowIndex })}`)
-    }
-  }, [windowIndex])
 
   const sendInput = useCallback((data: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.send(`i${data}`)

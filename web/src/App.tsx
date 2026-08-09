@@ -119,16 +119,20 @@ function Main({ onAuthLost, appearance, onAppearanceChange }: MainProps) {
           width={sidebarWidth}
           onWidthChange={handleSidebarWidthChange}
         />
-        <div className="backdrop" onClick={() => setSidebarOpen(false)} />
+        <button
+          className="backdrop"
+          type="button"
+          aria-label="关闭 session 列表"
+          onClick={() => setSidebarOpen(false)}
+        />
         <main className="main">
-          {(error ?? actionError) && (
-            <div className="banner-error">{error ?? actionError}</div>
-          )}
+          {(error ?? actionError) && <div className="banner-error">{error ?? actionError}</div>}
           {/* 表头始终渲染：没有 session 时它也得在，否则窄屏下抽屉式侧栏
               没有任何入口可打开，用户被锁死在空状态里，连 session 都建不了 */}
           <div className="main-header">
             <button
               className="sidebar-toggle"
+              type="button"
               aria-label="切换 session 列表"
               onClick={handleToggleSidebar}
             >
@@ -142,11 +146,7 @@ function Main({ onAuthLost, appearance, onAppearanceChange }: MainProps) {
               />
             )}
             <div className="mobile-version">
-              <VersionBadge
-                compact
-                onUpdateStarted={handleUpdateStarted}
-                onAuthLost={onAuthLost}
-              />
+              <VersionBadge compact onUpdateStarted={handleUpdateStarted} onAuthLost={onAuthLost} />
             </div>
           </div>
           {current && currentWindow ? (
@@ -160,7 +160,7 @@ function Main({ onAuthLost, appearance, onAppearanceChange }: MainProps) {
           ) : (
             <div className="empty">
               <p>没有可用的 tmux session</p>
-              <button className="new-session" onClick={handleCreate}>
+              <button className="new-session" type="button" onClick={handleCreate}>
                 ＋ 新建 session
               </button>
             </div>

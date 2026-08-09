@@ -9,22 +9,22 @@ const rawAgentStatusSchema = z.enum(['running', 'idle', 'waiting'])
 const SHELL_COMMANDS = new Set(['bash', 'csh', 'dash', 'fish', 'ksh', 'sh', 'tcsh', 'zsh'])
 const observedCodexActivity = new Set<string>()
 
-export type AgentKind = z.infer<typeof agentKindSchema>
-export type AgentStatus = 'running' | 'waiting'
+type AgentKind = z.infer<typeof agentKindSchema>
+type AgentStatus = 'running' | 'waiting'
 type PaneAgentStatus = AgentStatus | 'idle'
 
-export interface TmuxAgent {
+interface TmuxAgent {
   kind: AgentKind
   status?: AgentStatus
 }
 
-export interface TmuxWindow {
+interface TmuxWindow {
   index: number
   name: string
   active: boolean
 }
 
-export interface TmuxSession {
+interface TmuxSession {
   name: string
   attached: boolean
   windows: TmuxWindow[]
@@ -165,12 +165,11 @@ function agentsBySession(
       [...byKind]
         .sort(([a], [b]) => AGENT_KINDS.indexOf(a) - AGENT_KINDS.indexOf(b))
         .map(([kind, panes]) => {
-          const status =
-            panes.some((pane) => pane.status === 'running')
-              ? 'running'
-              : panes.some((pane) => pane.status === 'waiting')
-                ? 'waiting'
-                : undefined
+          const status = panes.some((pane) => pane.status === 'running')
+            ? 'running'
+            : panes.some((pane) => pane.status === 'waiting')
+              ? 'waiting'
+              : undefined
           return { kind, ...(status ? { status } : {}) }
         }),
     ]),

@@ -11,16 +11,12 @@ function writeStatus(status) {
       ['set-option', '-p', '-q', '-t', pane, '@tmux_webui_status_opencode', status],
       { stdio: 'ignore' },
     )
-    execFileSync(
-      'tmux',
-      ['set-option', '-p', '-q', '-t', pane, '@tmux_webui_agent', 'opencode'],
-      { stdio: 'ignore' },
-    )
-    execFileSync(
-      'tmux',
-      ['set-option', '-p', '-q', '-t', pane, '@tmux_webui_status', status],
-      { stdio: 'ignore' },
-    )
+    execFileSync('tmux', ['set-option', '-p', '-q', '-t', pane, '@tmux_webui_agent', 'opencode'], {
+      stdio: 'ignore',
+    })
+    execFileSync('tmux', ['set-option', '-p', '-q', '-t', pane, '@tmux_webui_status', status], {
+      stdio: 'ignore',
+    })
   } catch {
     // 状态标记是可选功能，tmux 过旧或不可用时不能打断 OpenCode。
   }

@@ -44,7 +44,9 @@ async function initFromStdin(): Promise<number> {
   const chunks: Buffer[] = []
   for await (const chunk of process.stdin) chunks.push(chunk as Buffer)
   // 只剥掉结尾换行（echo/printf 常见），密码本身的空白保留
-  const password = Buffer.concat(chunks).toString('utf8').replace(/\r?\n$/, '')
+  const password = Buffer.concat(chunks)
+    .toString('utf8')
+    .replace(/\r?\n$/, '')
 
   if (password.length < MIN_PASSWORD_LENGTH) {
     console.error(`密码至少 ${MIN_PASSWORD_LENGTH} 个字符——它是这个服务唯一的认证。`)
@@ -63,7 +65,7 @@ async function init(): Promise<number> {
   if (!process.stdin.isTTY) {
     console.error(
       'init 需要交互式终端。非交互环境请用: ' +
-        "printf '%s' \"$PASSWORD\" | tmux-webui init --password-stdin",
+        'printf \'%s\' "$PASSWORD" | tmux-webui init --password-stdin',
     )
     return 1
   }

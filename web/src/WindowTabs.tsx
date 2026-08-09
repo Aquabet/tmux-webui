@@ -11,6 +11,7 @@ export function WindowTabs({ windows, selected, onSelect }: Props) {
     <nav className="window-tabs">
       {windows.map((w) => (
         <button
+          type="button"
           key={w.index}
           className={`tab${w.index === selected ? ' selected' : ''}`}
           onClick={() => onSelect(w.index)}

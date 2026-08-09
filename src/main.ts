@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { HELP_TEXT, parseArgs } from './cli.js'
-import { bindWarnings, loadConfig } from './config.js'
+import { bindWarnings, loadConfig, type Config } from './config.js'
 import { CONFIG_FILE, loadConfigFile } from './configFile.js'
 import { loadEnvFile } from './env.js'
 import { runInit } from './init.js'
@@ -19,7 +19,7 @@ function version(): string {
 // 优先级：环境变量 > 启动目录 .env > 全局 config.json
 // （.env 相对启动目录，npx 场景下多半不存在，此时全局配置兜底）
 async function serve(): Promise<void> {
-  let config
+  let config: Config
   try {
     config = loadConfig({
       ...loadConfigFile(CONFIG_FILE),

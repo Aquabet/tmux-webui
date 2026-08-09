@@ -38,36 +38,51 @@
   "engines": {
     "node": ">=20"
   },
+  "overrides": {
+    "body-parser": "1.20.6",
+    "vite": "6.4.3",
+    "postcss": "8.5.26",
+    "nanoid": "3.3.18"
+  },
   "scripts": {
     "prepublishOnly": "npm run build",
     "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json && npm --prefix web run build",
     "start": "node dist/main.js",
     "test": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage --passWithNoTests",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check:deadcode": "knip",
+    "check:shell": "shellcheck scripts/*.sh e2e/*.sh",
     "hash-password": "tsx scripts/hash-password.ts",
     "test:e2e": "bash e2e/setup-tmux.sh && playwright test"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
-    "express": "^4.19.2",
+    "express": "^4.22.2",
     "node-pty": "^1.0.0",
-    "ws": "^8.18.0",
+    "ws": "^8.21.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.1",
+    "@biomejs/biome": "^2.5.7",
+    "@playwright/test": "^1.62.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.7",
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.0",
     "@types/supertest": "^6.0.2",
     "@types/ws": "^8.5.10",
+    "@vitest/coverage-v8": "^4.1.10",
+    "knip": "^5.88.1",
     "supertest": "^7.0.0",
-    "tsx": "^4.16.0",
+    "tsx": "^4.23.11",
     "typescript": "^5.5.0",
-    "vitest": "^2.0.0"
+    "vitest": "^4.1.10"
   }
 }

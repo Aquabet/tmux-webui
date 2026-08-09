@@ -33,12 +33,7 @@ function ClaudeIcon() {
 
 function PiIcon() {
   return (
-    <svg
-      className="agent-logo-fill"
-      viewBox="0 0 800 800"
-      data-logo="official"
-      aria-hidden="true"
-    >
+    <svg className="agent-logo-fill" viewBox="0 0 800 800" data-logo="official" aria-hidden="true">
       {/* Pi 官方 press kit 的 compact badge；方块轮廓在 15px 下仍然清楚。 */}
       <path
         fillRule="evenodd"
@@ -91,6 +86,7 @@ export function TerminalBadge({ attached }: { attached: boolean }) {
   const label = `Terminal：${foregroundLabel(attached)}`
   return (
     <span
+      role="img"
       className="agent-badge"
       data-agent="terminal"
       data-attached={attached}
@@ -107,6 +103,7 @@ export function AgentBadge({ agent, attached }: { agent: ApiAgent; attached: boo
   const label = `${LABELS[agent.kind]}：${STATUS_LABELS[status]}；${foregroundLabel(attached)}`
   return (
     <span
+      role="img"
       className="agent-badge"
       data-agent={agent.kind}
       data-status={status}

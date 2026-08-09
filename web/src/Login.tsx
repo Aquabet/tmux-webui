@@ -29,7 +29,6 @@ export function Login({ onSuccess }: { onSuccess: () => void }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="密码"
-          autoFocus
         />
         <button type="submit" disabled={busy || password.length === 0}>
           {busy ? '登录中…' : '登录'}
