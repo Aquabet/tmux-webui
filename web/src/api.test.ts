@@ -49,7 +49,10 @@ describe('checkAuth', () => {
   })
 
   it('网络错误返回 false', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new Error('offline'))))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Promise.reject(new Error('offline'))),
+    )
     await expect(checkAuth()).resolves.toBe(false)
   })
 })
@@ -77,9 +80,7 @@ describe('uploadImage', () => {
 describe('fetchSessions', () => {
   it('返回 data 数组', async () => {
     mockFetch(200, { success: true, data: [{ name: 'demo', attached: true, windows: [] }] })
-    await expect(fetchSessions()).resolves.toEqual([
-      { name: 'demo', attached: true, windows: [] },
-    ])
+    await expect(fetchSessions()).resolves.toEqual([{ name: 'demo', attached: true, windows: [] }])
   })
 
   it('401 时抛 AuthError', async () => {

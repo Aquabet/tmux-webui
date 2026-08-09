@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 import type { TmuxExec } from '../../src/tmux/exec.js'
 import { captureHistory } from '../../src/tmux/history.js'
 
-function makeExec(alt: string, historySize: string, captured: string): { exec: TmuxExec; calls: string[][] } {
+function makeExec(
+  alt: string,
+  historySize: string,
+  captured: string,
+): { exec: TmuxExec; calls: string[][] } {
   const calls: string[][] = []
   const exec: TmuxExec = async (args) => {
     calls.push(args)
@@ -18,7 +22,8 @@ describe('captureHistory', () => {
     const { exec, calls } = makeExec('0', '78', 'line1\nline2\n')
     const out = await captureHistory(exec, 'webui-x:1')
     expect(out).toBe('line1\r\nline2\r\n\x1b[0m')
-    const capture = calls.find((c) => c[0] === 'capture-pane')!
+    const capture = calls.find((c) => c[0] === 'capture-pane')
+    if (!capture) throw new Error('capture-pane was not called')
     expect(capture).toContain('-e')
     expect(capture).toContain('webui-x:1')
   })

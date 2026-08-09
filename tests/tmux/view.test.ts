@@ -30,13 +30,7 @@ describe('view lifecycle', () => {
 
   it('createView 指定 windowIndex 时视图当前 window 独立于原 session', async () => {
     const view = await createView(exec, 'demo', 1)
-    const out = await exec([
-      'display-message',
-      '-p',
-      '-t',
-      view.viewName,
-      '#{window_index}',
-    ])
+    const out = await exec(['display-message', '-p', '-t', view.viewName, '#{window_index}'])
     expect(out.trim()).toBe('1')
     const orig = await exec(['display-message', '-p', '-t', 'demo', '#{window_index}'])
     expect(orig.trim()).toBe('0')

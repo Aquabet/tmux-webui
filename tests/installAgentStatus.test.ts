@@ -14,11 +14,9 @@ function tempConfigHome() {
 }
 
 function runInstaller(configHome: string, providers: string[]) {
-  return spawnSync(
-    process.execPath,
-    [INSTALLER, '--config-home', configHome, ...providers],
-    { encoding: 'utf8' },
-  )
+  return spawnSync(process.execPath, [INSTALLER, '--config-home', configHome, ...providers], {
+    encoding: 'utf8',
+  })
 }
 
 afterEach(() => {
@@ -57,9 +55,7 @@ describe('install-agent-status.mjs', () => {
     expect(runInstaller(configHome, ['codex', 'claude']).status).toBe(0)
     expect(runInstaller(configHome, ['codex', 'claude']).status).toBe(0)
 
-    const codex = JSON.parse(
-      readFileSync(path.join(configHome, '.codex', 'hooks.json'), 'utf8'),
-    )
+    const codex = JSON.parse(readFileSync(path.join(configHome, '.codex', 'hooks.json'), 'utf8'))
     const claude = JSON.parse(
       readFileSync(path.join(configHome, '.claude', 'settings.json'), 'utf8'),
     )

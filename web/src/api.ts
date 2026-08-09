@@ -73,10 +73,6 @@ export async function checkAuth(): Promise<boolean> {
   }
 }
 
-export async function logout(): Promise<void> {
-  await fetch('/api/logout', { method: 'POST' })
-}
-
 export interface VersionInfo {
   current: string
   latest: string | null
@@ -126,7 +122,12 @@ export async function fetchSessions(): Promise<ApiSession[]> {
   return body.data ?? []
 }
 
-async function mutate(url: string, method: string, payload: unknown, fallback: string): Promise<void> {
+async function mutate(
+  url: string,
+  method: string,
+  payload: unknown,
+  fallback: string,
+): Promise<void> {
   const res = await fetch(url, {
     method,
     headers: payload === undefined ? undefined : { 'content-type': 'application/json' },
@@ -142,7 +143,12 @@ export function createSession(name: string): Promise<void> {
 }
 
 export function deleteSession(name: string): Promise<void> {
-  return mutate(`/api/sessions/${encodeURIComponent(name)}`, 'DELETE', undefined, '删除 session 失败')
+  return mutate(
+    `/api/sessions/${encodeURIComponent(name)}`,
+    'DELETE',
+    undefined,
+    '删除 session 失败',
+  )
 }
 
 export function renameSession(name: string, newName: string): Promise<void> {

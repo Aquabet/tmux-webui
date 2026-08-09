@@ -19,6 +19,8 @@ describe('loadConfig', () => {
       cookieSecure: false,
       sessionFile: path.join(homedir(), '.tmux-webui', 'sessions.json'),
       uploadDir: path.join(homedir(), '.tmux-webui', 'uploads'),
+      uploadRetentionMs: 7 * 24 * 3600 * 1000,
+      uploadMaxBytes: 512 * 1024 * 1024,
       updateCheck: true,
     })
   })
@@ -41,6 +43,8 @@ describe('loadConfig', () => {
       TMUX_WEBUI_COOKIE_SECURE: 'true',
       TMUX_WEBUI_SESSION_FILE: '/tmp/custom-sessions.json',
       TMUX_WEBUI_UPLOAD_DIR: '/tmp/custom-uploads',
+      TMUX_WEBUI_UPLOAD_RETENTION_MS: '2000',
+      TMUX_WEBUI_UPLOAD_MAX_BYTES: '3000',
     })
     expect(c.host).toBe('0.0.0.0')
     expect(c.port).toBe(9000)
@@ -49,18 +53,27 @@ describe('loadConfig', () => {
     expect(c.cookieSecure).toBe(true)
     expect(c.sessionFile).toBe('/tmp/custom-sessions.json')
     expect(c.uploadDir).toBe('/tmp/custom-uploads')
+    expect(c.uploadRetentionMs).toBe(2000)
+    expect(c.uploadMaxBytes).toBe(3000)
   })
 
   it('PORT 非数字时抛错', () => {
-    expect(() =>
-      loadConfig({ TMUX_WEBUI_PASSWORD_HASH: 'h', TMUX_WEBUI_PORT: 'abc' }),
-    ).toThrow(/TMUX_WEBUI_PORT/)
+    expect(() => loadConfig({ TMUX_WEBUI_PASSWORD_HASH: 'h', TMUX_WEBUI_PORT: 'abc' })).toThrow(
+      /TMUX_WEBUI_PORT/,
+    )
   })
 
   it('SESSION_TTL_MS 非正数时抛错', () => {
     expect(() =>
       loadConfig({ TMUX_WEBUI_PASSWORD_HASH: 'h', TMUX_WEBUI_SESSION_TTL_MS: '-1' }),
     ).toThrow(/TMUX_WEBUI_SESSION_TTL_MS/)
+  })
+
+  it.each([
+    ['TMUX_WEBUI_UPLOAD_RETENTION_MS', '0'],
+    ['TMUX_WEBUI_UPLOAD_MAX_BYTES', '-1'],
+  ])('%s 非正数时抛错', (name, value) => {
+    expect(() => loadConfig({ TMUX_WEBUI_PASSWORD_HASH: 'h', [name]: value })).toThrow(name)
   })
 })
 

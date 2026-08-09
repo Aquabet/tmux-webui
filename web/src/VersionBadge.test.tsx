@@ -20,6 +20,7 @@ const outdated = { ...upToDate, latest: '3.14.0', updateAvailable: true }
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.clearAllMocks()
 })
 
 function renderBadge() {

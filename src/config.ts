@@ -10,6 +10,8 @@ export interface Config {
   cookieSecure: boolean
   sessionFile: string
   uploadDir: string
+  uploadRetentionMs: number
+  uploadMaxBytes: number
   updateCheck: boolean
 }
 
@@ -36,11 +38,7 @@ export function bindWarnings(config: Config): string[] {
   return warnings
 }
 
-function parsePositiveInt(
-  name: string,
-  raw: string | undefined,
-  fallback: number,
-): number {
+function parsePositiveInt(name: string, raw: string | undefined, fallback: number): number {
   if (raw === undefined) {
     return fallback
   }
@@ -73,6 +71,16 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     sessionFile:
       env.TMUX_WEBUI_SESSION_FILE ?? path.join(homedir(), '.tmux-webui', 'sessions.json'),
     uploadDir: env.TMUX_WEBUI_UPLOAD_DIR ?? path.join(homedir(), '.tmux-webui', 'uploads'),
+    uploadRetentionMs: parsePositiveInt(
+      'TMUX_WEBUI_UPLOAD_RETENTION_MS',
+      env.TMUX_WEBUI_UPLOAD_RETENTION_MS,
+      7 * 24 * 3600 * 1000,
+    ),
+    uploadMaxBytes: parsePositiveInt(
+      'TMUX_WEBUI_UPLOAD_MAX_BYTES',
+      env.TMUX_WEBUI_UPLOAD_MAX_BYTES,
+      512 * 1024 * 1024,
+    ),
     // 唯一的对外网络请求（查 GitHub 最新 release），设 false 可完全关掉
     updateCheck: env.TMUX_WEBUI_UPDATE_CHECK !== 'false',
   }

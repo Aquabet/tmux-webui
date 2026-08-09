@@ -9,7 +9,7 @@ const SCRIPT_RELATIVE = path.join('scripts', 'update.sh')
 const UPDATE_MARKER = '@tmux_webui_update'
 let updateSessionStarting = false
 
-export function updateScriptPath(repoRoot: string): string {
+function updateScriptPath(repoRoot: string): string {
   return path.join(repoRoot, SCRIPT_RELATIVE)
 }
 
@@ -52,25 +52,18 @@ export async function startUpdateSession(
         '-F',
         '#{pane_dead}\t#{pane_start_command}',
       ]).catch(() => '')
-      const marker = await exec([
-        'show-options',
-        '-t',
-        UPDATE_SESSION,
-        '-v',
-        UPDATE_MARKER,
-      ]).catch(() => '')
+      const marker = await exec(['show-options', '-t', UPDATE_SESSION, '-v', UPDATE_MARKER]).catch(
+        () => '',
+      )
       const panes = paneStates.trim().split('\n').filter(Boolean)
-      const finished =
-        panes.length > 0 && panes.every((pane) => pane.split('\t', 1)[0] === '1')
+      const finished = panes.length > 0 && panes.every((pane) => pane.split('\t', 1)[0] === '1')
       const legacyUpdate = panes.some((pane) => pane.includes(`./${SCRIPT_RELATIVE} --yes`))
 
       if (!finished && marker.trim() === 'managed') {
         throw new Error(`更新已在进行中（session: ${UPDATE_SESSION}）。`)
       }
       if (marker.trim() !== 'managed' && !legacyUpdate) {
-        throw new Error(
-          `session 名称 ${UPDATE_SESSION} 已被占用；请改名或删除该 session 后重试。`,
-        )
+        throw new Error(`session 名称 ${UPDATE_SESSION} 已被占用；请改名或删除该 session 后重试。`)
       }
 
       // v3.1.5 及更早版本会在脚本结束后 exec 一个永久 shell，且没有受管标记；
@@ -83,13 +76,7 @@ export async function startUpdateSession(
     await exec(['new-session', '-d', '-s', UPDATE_SESSION, '-c', repoRoot])
     try {
       await exec(['set-option', '-t', UPDATE_SESSION, UPDATE_MARKER, 'managed'])
-      await exec([
-        'set-window-option',
-        '-t',
-        UPDATE_SESSION,
-        'remain-on-exit',
-        'on',
-      ])
+      await exec(['set-window-option', '-t', UPDATE_SESSION, 'remain-on-exit', 'on'])
       const command =
         `if ./${SCRIPT_RELATIVE} --yes; then ` +
         `printf '\\n=== 更新完成，可关闭本窗口 ===\\n'; ` +

@@ -7,11 +7,9 @@ function setStatus(status) {
   if (!pane || !/^%[0-9]+$/.test(pane)) return
   try {
     if (status === 'clear') {
-      execFileSync(
-        'tmux',
-        ['set-option', '-p', '-q', '-u', '-t', pane, '@tmux_webui_status_pi'],
-        { stdio: 'ignore' },
-      )
+      execFileSync('tmux', ['set-option', '-p', '-q', '-u', '-t', pane, '@tmux_webui_status_pi'], {
+        stdio: 'ignore',
+      })
       execFileSync('tmux', ['set-option', '-p', '-q', '-u', '-t', pane, '@tmux_webui_agent'], {
         stdio: 'ignore',
       })
@@ -20,21 +18,15 @@ function setStatus(status) {
       })
       return
     }
-    execFileSync(
-      'tmux',
-      ['set-option', '-p', '-q', '-t', pane, '@tmux_webui_status_pi', status],
-      { stdio: 'ignore' },
-    )
-    execFileSync(
-      'tmux',
-      ['set-option', '-p', '-q', '-t', pane, '@tmux_webui_agent', 'pi'],
-      { stdio: 'ignore' },
-    )
-    execFileSync(
-      'tmux',
-      ['set-option', '-p', '-q', '-t', pane, '@tmux_webui_status', status],
-      { stdio: 'ignore' },
-    )
+    execFileSync('tmux', ['set-option', '-p', '-q', '-t', pane, '@tmux_webui_status_pi', status], {
+      stdio: 'ignore',
+    })
+    execFileSync('tmux', ['set-option', '-p', '-q', '-t', pane, '@tmux_webui_agent', 'pi'], {
+      stdio: 'ignore',
+    })
+    execFileSync('tmux', ['set-option', '-p', '-q', '-t', pane, '@tmux_webui_status', status], {
+      stdio: 'ignore',
+    })
   } catch {
     // 状态标记是可选功能，tmux 过旧或不可用时不能打断 Pi。
   }

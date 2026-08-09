@@ -137,20 +137,20 @@ describe('startUpdateSession', () => {
   it.each(['set-option', 'set-window-option', 'respawn-pane'])(
     '初始化更新 pane 的 %s 失败时清理半创建的 session',
     async (failingCommand) => {
-    const calls: string[][] = []
-    const exec = vi.fn(async (args: string[]) => {
-      calls.push(args)
-      if (args[0] === 'has-session') return noSession()
-      if (args[0] === failingCommand) {
-        throw new TmuxError('FAILED', `${failingCommand} failed`)
-      }
-      return ''
-    })
+      const calls: string[][] = []
+      const exec = vi.fn(async (args: string[]) => {
+        calls.push(args)
+        if (args[0] === 'has-session') return noSession()
+        if (args[0] === failingCommand) {
+          throw new TmuxError('FAILED', `${failingCommand} failed`)
+        }
+        return ''
+      })
 
-    await expect(startUpdateSession(exec, repoWithScript())).rejects.toThrow(
-      new RegExp(`${failingCommand} failed`),
-    )
-    expect(calls).toContainEqual(['kill-session', '-t', `=${UPDATE_SESSION}`])
+      await expect(startUpdateSession(exec, repoWithScript())).rejects.toThrow(
+        new RegExp(`${failingCommand} failed`),
+      )
+      expect(calls).toContainEqual(['kill-session', '-t', `=${UPDATE_SESSION}`])
     },
   )
 
@@ -184,18 +184,12 @@ describe('startUpdateSession', () => {
       let paneDead = ''
       for (let attempt = 0; attempt < 40 && paneDead.trim() !== '1'; attempt++) {
         await new Promise((resolve) => setTimeout(resolve, 25))
-        paneDead = await exec([
-          'list-panes',
-          '-t',
-          `=${UPDATE_SESSION}`,
-          '-F',
-          '#{pane_dead}',
-        ])
+        paneDead = await exec(['list-panes', '-t', `=${UPDATE_SESSION}`, '-F', '#{pane_dead}'])
       }
       expect(paneDead.trim()).toBe('1')
-      expect(
-        await exec(['capture-pane', '-p', '-t', `${UPDATE_SESSION}:0.0`]),
-      ).toContain('更新完成')
+      expect(await exec(['capture-pane', '-p', '-t', `${UPDATE_SESSION}:0.0`])).toContain(
+        '更新完成',
+      )
 
       await expect(startUpdateSession(exec, root)).resolves.toEqual({ session: UPDATE_SESSION })
     } finally {

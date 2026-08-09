@@ -108,6 +108,7 @@ export function SessionSidebar({
           {sessions.map((s) => (
             <li key={s.name}>
               <button
+                type="button"
                 className={`session${s.name === selected ? ' selected' : ''}`}
                 aria-label={s.name}
                 title={s.name}
@@ -125,6 +126,7 @@ export function SessionSidebar({
                 <span className="session-name">{s.name}</span>
               </button>
               <button
+                type="button"
                 className="session-action"
                 title="重命名"
                 aria-label={`重命名 ${s.name}`}
@@ -133,6 +135,7 @@ export function SessionSidebar({
                 ✎
               </button>
               <button
+                type="button"
                 className="session-action"
                 title="删除"
                 aria-label={`删除 ${s.name}`}
@@ -143,7 +146,12 @@ export function SessionSidebar({
             </li>
           ))}
         </ul>
-        <button className="new-session" aria-label="＋ 新建 session" onClick={onCreate}>
+        <button
+          className="new-session"
+          type="button"
+          aria-label="＋ 新建 session"
+          onClick={onCreate}
+        >
           <span aria-hidden="true">＋</span>
           <span className="new-session-label">新建 session</span>
         </button>
@@ -152,6 +160,8 @@ export function SessionSidebar({
         <VersionBadge onUpdateStarted={onUpdateStarted} onAuthLost={onAuthLost} />
         <ResourceUsage onAuthLost={onAuthLost} />
       </div>
+      {/* 可调 separator 需要 aria-valuenow 和键盘交互，原生 hr 无法表达该控件状态。 */}
+      {/* biome-ignore lint/a11y/useSemanticElements: adjustable separator is an interactive ARIA widget */}
       <div
         className="sidebar-resizer"
         role="separator"

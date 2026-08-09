@@ -54,18 +54,17 @@ export function AppearanceSettingsDialog({
     }
   }, [])
 
-  const update = <Key extends keyof AppearanceSettings>(
-    key: Key,
-    value: AppearanceSettings[Key],
-  ) => onChange({ ...settings, [key]: value })
+  const update = <Key extends keyof AppearanceSettings>(key: Key, value: AppearanceSettings[Key]) =>
+    onChange({ ...settings, [key]: value })
 
   return (
-    <div
-      className="settings-backdrop"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose()
-      }}
-    >
+    <div className="settings-backdrop">
+      <button
+        className="settings-dismiss"
+        type="button"
+        aria-label="关闭设置（背景）"
+        onClick={onClose}
+      />
       <section
         ref={dialogRef}
         className="settings-dialog"
@@ -114,8 +113,14 @@ export function AppearanceSettingsDialog({
                     onClick={() => update('theme', theme.id)}
                   >
                     <span className="theme-preview" aria-hidden="true">
-                      <span className="preview-topbar"><i /><i /><i /></span>
-                      <span className="preview-line"><b>❯</b> npm run dev</span>
+                      <span className="preview-topbar">
+                        <i />
+                        <i />
+                        <i />
+                      </span>
+                      <span className="preview-line">
+                        <b>❯</b> npm run dev
+                      </span>
                       <span className="preview-line preview-muted">
                         ready on :8090 <em>█</em>
                       </span>
@@ -124,7 +129,9 @@ export function AppearanceSettingsDialog({
                       <strong>{theme.label}</strong>
                       <small>{theme.description}</small>
                     </span>
-                    <span className="theme-check" aria-hidden="true">✓</span>
+                    <span className="theme-check" aria-hidden="true">
+                      ✓
+                    </span>
                   </button>
                 )
               })}
@@ -140,14 +147,18 @@ export function AppearanceSettingsDialog({
                 onChange={(event) => update('font', event.target.value as FontId)}
               >
                 {FONT_OPTIONS.map((font) => (
-                  <option key={font.id} value={font.id}>{font.label}</option>
+                  <option key={font.id} value={font.id}>
+                    {font.label}
+                  </option>
                 ))}
               </select>
               <small>字体需已安装在当前设备上，否则自动使用系统等宽字体。</small>
             </label>
 
             <label className="settings-field font-size-field">
-              <span>终端字号 <output>{settings.fontSize}px</output></span>
+              <span>
+                终端字号 <output>{settings.fontSize}px</output>
+              </span>
               <input
                 aria-label="终端字号"
                 type="range"
@@ -158,7 +169,8 @@ export function AppearanceSettingsDialog({
                 onChange={(event) => update('fontSize', Number(event.target.value))}
               />
               <span className="range-labels" aria-hidden="true">
-                <small>紧凑</small><small>宽大</small>
+                <small>紧凑</small>
+                <small>宽大</small>
               </span>
             </label>
 
@@ -204,7 +216,9 @@ export function AppearanceSettingsDialog({
           >
             恢复默认
           </button>
-          <button className="primary-button" type="button" onClick={onClose}>完成</button>
+          <button className="primary-button" type="button" onClick={onClose}>
+            完成
+          </button>
         </footer>
       </section>
     </div>

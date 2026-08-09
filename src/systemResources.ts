@@ -69,11 +69,8 @@ function systemAvailableMemory(): number {
   return freemem()
 }
 
-export function createSystemResourceSampler(
-  options: SamplerOptions = {},
-): () => SystemResources {
-  const cpuTimes =
-    options.cpuTimes ?? (() => cpus().map((cpu) => cpu.times satisfies CpuTimes))
+export function createSystemResourceSampler(options: SamplerOptions = {}): () => SystemResources {
+  const cpuTimes = options.cpuTimes ?? (() => cpus().map((cpu) => cpu.times satisfies CpuTimes))
   const totalMemory = options.totalMemory ?? totalmem
   const availableMemory = options.availableMemory ?? systemAvailableMemory
   const now = options.now ?? Date.now

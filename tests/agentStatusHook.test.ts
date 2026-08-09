@@ -1,11 +1,4 @@
-import {
-  chmodSync,
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
@@ -40,10 +33,7 @@ function fakeTmux(exitCode = 0) {
   return { dir, log }
 }
 
-function fakePs(
-  dir: string,
-  processes: Record<number, { parent: number; command: string }>,
-) {
+function fakePs(dir: string, processes: Record<number, { parent: number; command: string }>) {
   const bin = path.join(dir, 'ps')
   const cases = Object.entries(processes).flatMap(([pid, process]) => [
     `  "-o ppid= -p ${pid}") printf "%s\\n" "${process.parent}" ;;`,

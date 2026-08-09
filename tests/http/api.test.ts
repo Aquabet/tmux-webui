@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import cookieParser from 'cookie-parser'
@@ -28,6 +28,7 @@ async function makeApp(
     limiterMax?: number
     repoRoot?: string
     getSystemResources?: () => SystemResources
+    config?: Partial<Config>
   } = {},
 ) {
   const config: Config = {
@@ -39,7 +40,10 @@ async function makeApp(
     cookieSecure: false,
     sessionFile: '',
     uploadDir: UPLOAD_DIR,
+    uploadRetentionMs: 60_000,
+    uploadMaxBytes: 20 * 1024 * 1024,
     updateCheck: false,
+    ...overrides.config,
   }
   const exec: TmuxExec =
     overrides.exec ??
@@ -178,9 +182,7 @@ describe('GET /api/sessions', () => {
     const res = await agent.post('/api/update')
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ success: true, data: { session: 'tmux-webui-update' } })
-    expect(calls.some((c) => c[0] === 'new-session' && c.includes('tmux-webui-update'))).toBe(
-      true,
-    )
+    expect(calls.some((c) => c[0] === 'new-session' && c.includes('tmux-webui-update'))).toBe(true)
   })
 
   it('/update 在没有 update.sh 的部署里返回 409 而不是 500', async () => {
@@ -366,11 +368,7 @@ describe('POST /api/upload', () => {
 
   it('未登录返回 401', async () => {
     const app = await makeApp()
-    await request(app)
-      .post('/api/upload')
-      .set('content-type', 'image/png')
-      .send(PNG)
-      .expect(401)
+    await request(app).post('/api/upload').set('content-type', 'image/png').send(PNG).expect(401)
   })
 
   it('保存图片到 uploadDir 并返回绝对路径', async () => {
@@ -393,6 +391,17 @@ describe('POST /api/upload', () => {
     expect((res.body.data.path as string).endsWith('.jpg')).toBe(true)
   })
 
+  it.each([
+    ['image/webp', '.webp'],
+    ['image/gif', '.gif'],
+  ])('%s 保持受支持并使用正确扩展名', async (contentType, extension) => {
+    const app = await makeApp()
+    const agent = await loginAgent(app)
+    const res = await agent.post('/api/upload').set('content-type', contentType).send(PNG)
+    expect(res.status).toBe(200)
+    expect((res.body.data.path as string).endsWith(extension)).toBe(true)
+  })
+
   it('非图片类型返回 400', async () => {
     const app = await makeApp()
     const agent = await loginAgent(app)
@@ -404,5 +413,25 @@ describe('POST /api/upload', () => {
     const app = await makeApp()
     const agent = await loginAgent(app)
     await agent.post('/api/upload').set('content-type', 'image/png').expect(400)
+  })
+
+  it('图片总量超过配置配额时返回 507', async () => {
+    const app = await makeApp({ config: { uploadMaxBytes: PNG.length - 1 } })
+    const agent = await loginAgent(app)
+    const res = await agent.post('/api/upload').set('content-type', 'image/png').send(PNG)
+    expect(res.status).toBe(507)
+    expect(res.body.error).toMatch(/存储空间已满/)
+  })
+
+  it('存储路径不可用时返回 500', async () => {
+    const invalidDir = path.join(UPLOAD_DIR, 'upload-path-is-file')
+    writeFileSync(invalidDir, 'not a directory')
+    const app = await makeApp({ config: { uploadDir: invalidDir } })
+    const agent = await loginAgent(app)
+
+    const res = await agent.post('/api/upload').set('content-type', 'image/png').send(PNG)
+
+    expect(res.status).toBe(500)
+    expect(res.body.error).toBe('保存图片失败')
   })
 })

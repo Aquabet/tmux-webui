@@ -15,7 +15,7 @@ vi.mock('./api', () => ({
 // TerminalView 会拉起 xterm 与 WebSocket，本用例只关心外层布局
 vi.mock('./TerminalView', () => ({
   TerminalView: ({ onForegroundChange }: { onForegroundChange?: () => void }) => (
-    <button data-testid="term" onClick={onForegroundChange} />
+    <button type="button" data-testid="term" onClick={onForegroundChange} />
   ),
 }))
 
@@ -75,9 +75,7 @@ describe('App 无 session 时', () => {
     fireEvent.click(screen.getByRole('button', { name: /Nord/ }))
 
     expect(document.documentElement.dataset.theme).toBe('nord')
-    expect(JSON.parse(localStorage.getItem('tmux-webui.appearance.v1') ?? '{}').theme).toBe(
-      'nord',
-    )
+    expect(JSON.parse(localStorage.getItem('tmux-webui.appearance.v1') ?? '{}').theme).toBe('nord')
   })
 
   it('启动时恢复浏览器保存的主题', async () => {

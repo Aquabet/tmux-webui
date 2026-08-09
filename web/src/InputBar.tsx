@@ -36,7 +36,13 @@ export function InputBar({ onSend }: Props) {
   }
 
   // 卸载时若还按着（切换 window / 断连），定时器不能留下来继续发
-  useEffect(() => stopRepeat, [])
+  useEffect(
+    () => () => {
+      window.clearTimeout(repeatRef.current.delay)
+      window.clearInterval(repeatRef.current.interval)
+    },
+    [],
+  )
 
   // 上传图片后把服务器路径插进输入框：Claude Code 等 CLI 会读取消息里的图片路径
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -119,7 +125,11 @@ export function InputBar({ onSend }: Props) {
           ⌫
         </button>
         {/* Shift+Tab（CSI Z）：Claude Code 用它循环切换 mode（plan / auto-accept 等） */}
-        <button type="button" title="Shift+Tab 切换 Claude Code mode" onClick={() => onSend('\x1b[Z')}>
+        <button
+          type="button"
+          title="Shift+Tab 切换 Claude Code mode"
+          onClick={() => onSend('\x1b[Z')}
+        >
           Mode
         </button>
         <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()}>

@@ -1,6 +1,6 @@
 import { CONFIG_FILE } from './configFile.js'
 
-export type Command =
+type Command =
   | { kind: 'serve' }
   | { kind: 'init'; passwordStdin: boolean }
   | { kind: 'help' }
@@ -26,6 +26,11 @@ export const HELP_TEXT = `tmux-webui —— 浏览器里的 tmux
   TMUX_WEBUI_PORT            监听端口，默认 8090
   TMUX_WEBUI_SOCKET          tmux socket 名（-L），默认用默认 socket
   TMUX_WEBUI_COOKIE_SECURE   反代 TLS 后设为 true
+  TMUX_WEBUI_UPLOAD_DIR      图片保存目录，默认 ~/.tmux-webui/uploads
+  TMUX_WEBUI_UPLOAD_RETENTION_MS
+                             图片保留时间，默认 604800000（7 天）
+  TMUX_WEBUI_UPLOAD_MAX_BYTES
+                             图片总配额，默认 536870912（512 MiB）
 
 警告: 这是网页版 shell，切勿直接暴露到公网。`
 

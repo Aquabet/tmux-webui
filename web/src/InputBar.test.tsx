@@ -5,6 +5,12 @@ import { uploadImage } from './api'
 
 vi.mock('./api', () => ({ uploadImage: vi.fn() }))
 
+function closestForm(element: Element): HTMLFormElement {
+  const form = element.closest('form')
+  if (!(form instanceof HTMLFormElement)) throw new Error('input bar form not found')
+  return form
+}
+
 afterEach(() => {
   vi.useRealTimers()
 })
@@ -15,7 +21,7 @@ describe('InputBar', () => {
     render(<InputBar onSend={onSend} />)
     const input = screen.getByPlaceholderText<HTMLTextAreaElement>('输入文字，回车送入终端')
     fireEvent.change(input, { target: { value: 'echo hello world' } })
-    fireEvent.submit(input.closest('form')!)
+    fireEvent.submit(closestForm(input))
     expect(onSend.mock.calls).toEqual([['echo hello world']])
     expect(input.value).toBe('')
   })
@@ -35,7 +41,7 @@ describe('InputBar', () => {
   it('空内容提交时发送回车（等价给终端按一下回车）', () => {
     const onSend = vi.fn()
     render(<InputBar onSend={onSend} />)
-    fireEvent.submit(screen.getByPlaceholderText('输入文字，回车送入终端').closest('form')!)
+    fireEvent.submit(closestForm(screen.getByPlaceholderText('输入文字，回车送入终端')))
     expect(onSend).toHaveBeenCalledWith('\r')
   })
 
@@ -120,7 +126,8 @@ describe('InputBar', () => {
   it('选图上传后把路径插入输入框', async () => {
     vi.mocked(uploadImage).mockResolvedValue('/home/u/.tmux-webui/uploads/img-1.png')
     render(<InputBar onSend={vi.fn()} />)
-    const picker = document.querySelector<HTMLInputElement>('input[type=file]')!
+    const picker = document.querySelector<HTMLInputElement>('input[type=file]')
+    if (!picker) throw new Error('file picker not found')
     const file = new File(['x'], 'a.png', { type: 'image/png' })
     fireEvent.change(picker, { target: { files: [file] } })
     await waitFor(() => {

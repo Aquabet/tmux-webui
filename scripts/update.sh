@@ -69,8 +69,9 @@ ensure_node_tools() {
   command -v npm >/dev/null ||
     fail "找到了 node，但同目录没有 npm。请安装完整的 Node.js/npm 后重试。"
   node_major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || true)"
-  [[ "$node_major" =~ ^[0-9]+$ ]] && [ "$node_major" -ge "$NODE_MIN" ] ||
+  if ! [[ "$node_major" =~ ^[0-9]+$ ]] || [ "$node_major" -lt "$NODE_MIN" ]; then
     fail "Node.js 版本过低或无法识别，需要 >= ${NODE_MIN}。"
+  fi
 }
 
 ensure_node_tools

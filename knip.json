@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignoreBinaries": ["shellcheck"],
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/install-agent-status.mjs", "integrations/*.js"],
+      "project": [
+        "src/**/*.ts",
+        "scripts/**/*.{ts,mjs}",
+        "tests/**/*.ts",
+        "e2e/**/*.ts",
+        "*.config.ts"
+      ]
+    },
+    "web": {
+      "project": ["src/**/*.{ts,tsx}"]
+    }
+  }
+}

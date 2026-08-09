@@ -17,9 +17,10 @@ afterEach(() => {
 
 describe('parseConfigJson', () => {
   it('标量值统一转成字符串', () => {
-    expect(
-      parseConfigJson('{"TMUX_WEBUI_PORT": 9000, "TMUX_WEBUI_COOKIE_SECURE": true}'),
-    ).toEqual({ TMUX_WEBUI_PORT: '9000', TMUX_WEBUI_COOKIE_SECURE: 'true' })
+    expect(parseConfigJson('{"TMUX_WEBUI_PORT": 9000, "TMUX_WEBUI_COOKIE_SECURE": true}')).toEqual({
+      TMUX_WEBUI_PORT: '9000',
+      TMUX_WEBUI_COOKIE_SECURE: 'true',
+    })
   })
 
   it('JSON 语法错误时抛错而不是静默忽略', () => {

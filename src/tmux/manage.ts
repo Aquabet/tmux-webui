@@ -26,11 +26,7 @@ export async function killSession(exec: TmuxExec, name: string): Promise<void> {
   await exec(['kill-session', '-t', `=${name}`])
 }
 
-export async function renameSession(
-  exec: TmuxExec,
-  name: string,
-  newName: string,
-): Promise<void> {
+export async function renameSession(exec: TmuxExec, name: string, newName: string): Promise<void> {
   assertValidName(name)
   assertValidName(newName)
   await exec(['rename-session', '-t', `=${name}`, newName])

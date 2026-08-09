@@ -252,7 +252,8 @@ Optimized for phones (shown on touch devices / narrow screens):
 - **Image upload**: the `Img` button opens the photo picker, uploads the
   image to the server (`TMUX_WEBUI_UPLOAD_DIR`) and inserts its file path
   into the input box — mention it in a message and Claude Code will read
-  the image from that path.
+  the image from that path. Managed uploads are private to the service user,
+  expire after 7 days by default, and share a configurable 512 MiB quota.
 - The layout shrinks when the soft keyboard opens, keeping the session
   sidebar toggle and window tabs reachable.
 
@@ -279,6 +280,8 @@ quotes is recommended.
 | `TMUX_WEBUI_COOKIE_SECURE` | `false` | set to `true` behind an HTTPS reverse proxy |
 | `TMUX_WEBUI_SESSION_FILE` | `~/.tmux-webui/sessions.json` | session token persistence path (survives restarts); empty string disables |
 | `TMUX_WEBUI_UPLOAD_DIR` | `~/.tmux-webui/uploads` | where uploaded images are saved |
+| `TMUX_WEBUI_UPLOAD_RETENTION_MS` | 7 days | remove managed uploads older than this before accepting a new image |
+| `TMUX_WEBUI_UPLOAD_MAX_BYTES` | 512 MiB | total managed-upload quota; a full store rejects new uploads with HTTP 507 |
 | `TMUX_WEBUI_UPDATE_CHECK` | `true` | set to `false` to never contact GitHub for release info |
 
 ### Update notification
@@ -297,6 +300,14 @@ directly to the public internet:
 - Keep the default `127.0.0.1` listen address; access it via Tailscale or a
   reverse proxy with HTTPS
 - Set `TMUX_WEBUI_COOKIE_SECURE=true` behind a TLS-terminating proxy
+- The app sends a restrictive CSP plus clickjacking, MIME-sniffing, and
+  referrer-policy headers. HSTS belongs on the TLS reverse proxy, because the
+  app's default listener is plain loopback HTTP
+- WebSocket message size, pre-terminal buffering, and slow-client output are
+  bounded. Oversized or backpressured connections are closed instead of
+  consuming memory without limit
+- The upload directory and managed files are forced to modes `0700` and
+  `0600`. Expiry cleanup ignores symlinks and unrelated files
 - The Update button runs `scripts/update.sh` from the directory the server was
   started from. The command is fixed and takes nothing from the request — no
   branch, ref, or path — so an authenticated client cannot make it run anything
@@ -325,15 +336,23 @@ directly to the public internet:
 ## Testing
 
 ```bash
-npm test                  # backend unit + integration (isolated tmux socket)
-npm --prefix web test     # frontend unit
-npm run test:e2e          # Playwright end-to-end
+npm run typecheck              # backend + test TypeScript projects
+npm run lint                   # Biome lint
+npm run format:check           # formatting gate
+npm run check:deadcode         # unused files, exports, and dependencies
+npm run check:shell            # ShellCheck (requires shellcheck installed)
+npm run build                  # required before backend tests
+npm run test:coverage          # backend unit/integration + coverage gate
+npm --prefix web run test:coverage # frontend unit + coverage gate
+npm run test:e2e               # Playwright end-to-end
 ```
 
 ## Contributing
 
 See the [Development Guide](docs/development.md) for the branch workflow and
-code conventions.
+code conventions. Maintainers can also use the
+[Project status and roadmap](docs/project-roadmap.md) to understand the current
+engineering baseline, product position, and recommended execution order.
 
 ## License
 

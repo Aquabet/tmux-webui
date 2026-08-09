@@ -50,16 +50,25 @@ releases as minor bumps. That is intentional.
 ## Local Checks
 
 ```bash
-npm run typecheck          # backend + test project
-npm run build              # must run BEFORE npm test, see below
-npm test                   # backend; spawns a real tmux on an isolated socket
-npm --prefix web test      # frontend
-npm run test:e2e           # Playwright (installs browsers separately)
+npm run typecheck               # backend + test TypeScript projects
+npm run lint                    # Biome lint
+npm run format:check            # formatting gate
+npm run check:deadcode          # unused files, exports, and dependencies
+npm run check:shell             # ShellCheck; requires the shellcheck binary
+npm run build                   # must run BEFORE backend tests, see below
+npm run test:coverage           # backend tests + coverage floor
+npm --prefix web run test:coverage # frontend tests + coverage floor
+npm run test:e2e                # Playwright (installs browsers separately)
 ```
 
 `npm run build` has to come before `npm test`: static assets are only mounted
 when `web/dist` exists, and the cache-header test in `tests/server.test.ts`
-depends on the build output. Both CI workflows use this order.
+depends on the build output. CI uses this order and also runs the static,
+coverage, dependency-audit, and browser E2E gates in clean jobs.
+
+Biome intentionally skips generated npm lockfiles, archived design notes under
+`docs/superpowers`, and local `.remember` agent state. Those files are either
+machine-generated or outside the maintained source/documentation surface.
 
 ## Documentation
 

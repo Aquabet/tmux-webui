@@ -3,13 +3,13 @@ import { listSessions, parseSessions } from '../../src/tmux/list.js'
 import type { TmuxExec } from '../../src/tmux/exec.js'
 
 const SESSIONS = 'admin\t0\tadmin\ncds\t1\tcds\nwebui-abc123\t1\tadmin\n'
-const WINDOWS = [
+const WINDOWS = `${[
   'admin\t0\tclaude\t1',
   'cds\t0\tclaude\t1',
   'cds\t1\tlogs\t0',
   'webui-abc123\t0\tclaude\t1',
-].join('\n') + '\n'
-const PANES = [
+].join('\n')}\n`
+const PANES = `${[
   'admin\t%0\tcodex\tcodex\trunning\t100',
   'cds\t%1\tclaude\tclaude\tidle\t101',
   'cds\t%2\tcodex\tcodex\trunning\t102',
@@ -18,7 +18,7 @@ const PANES = [
   // hook 能识别由 wrapper 启动、仅靠进程名看不出来的 agent
   'admin\t%4\tnode\tclaude\tidle\t104',
   'webui-abc123\t%0\tcodex\tcodex\trunning\t105',
-].join('\n') + '\n'
+].join('\n')}\n`
 
 describe('parseSessions', () => {
   it('解析 session→windows 树并过滤 webui- 前缀', () => {
@@ -60,10 +60,7 @@ describe('parseSessions', () => {
         name: 'admin',
         attached: true,
         windows: [{ index: 0, name: 'claude', active: true }],
-        agents: [
-          { kind: 'codex', status: 'running' },
-          { kind: 'claude' },
-        ],
+        agents: [{ kind: 'codex', status: 'running' }, { kind: 'claude' }],
       },
       {
         name: 'cds',
@@ -72,10 +69,7 @@ describe('parseSessions', () => {
           { index: 0, name: 'claude', active: true },
           { index: 1, name: 'logs', active: false },
         ],
-        agents: [
-          { kind: 'codex', status: 'running' },
-          { kind: 'claude' },
-        ],
+        agents: [{ kind: 'codex', status: 'running' }, { kind: 'claude' }],
       },
     ])
   })
@@ -204,13 +198,8 @@ describe('parseSessions', () => {
     const sessions = 'codex\t0\n'
 
     expect(
-      parseSessions(
-        sessions,
-        '',
-        'codex\t%7\tcodex\t\t\t307\t⠦ project',
-        '',
-        activitySeen,
-      )[0]?.agents,
+      parseSessions(sessions, '', 'codex\t%7\tcodex\t\t\t307\t⠦ project', '', activitySeen)[0]
+        ?.agents,
     ).toEqual([{ kind: 'codex', status: 'running' }])
     expect(
       parseSessions(sessions, '', 'codex\t%7\tcodex\t\t\t307\tproject', '', activitySeen)[0]
@@ -219,13 +208,8 @@ describe('parseSessions', () => {
 
     // 服务重启时可能首次看到的就是静态 project title；没有明确交互提示时不能冒充等待回应。
     expect(
-      parseSessions(
-        sessions,
-        '',
-        'codex\t%8\tcodex\t\t\t308\tcustom title',
-        '',
-        new Set(),
-      )[0]?.agents,
+      parseSessions(sessions, '', 'codex\t%8\tcodex\t\t\t308\tcustom title', '', new Set())[0]
+        ?.agents,
     ).toEqual([{ kind: 'codex' }])
   })
 

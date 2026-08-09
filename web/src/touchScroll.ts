@@ -2,7 +2,7 @@
 // 这里把滑动手势累积成 wheel 增量交给调用方合成 WheelEvent，
 // 复用桌面滚轮的同一条处理路径（视口滚动或 mouse 上报，xterm 自行分派）。
 // end() 返回抬手时的速度（px/ms，正 = 内容向下滚），供调用方做惯性滚动。
-export interface TouchScroll {
+interface TouchScroll {
   start(y: number, t?: number): void
   move(y: number, t?: number): void
   end(t?: number): number

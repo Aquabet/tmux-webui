@@ -7,9 +7,7 @@ import {
 
 describe('system resources', () => {
   it('从 /proc/meminfo 读取可用内存并换算成字节', () => {
-    expect(parseAvailableMemory('MemTotal: 8192 kB\nMemAvailable: 2048 kB\n')).toBe(
-      2 * 1024 * 1024,
-    )
+    expect(parseAvailableMemory('MemTotal: 8192 kB\nMemAvailable: 2048 kB\n')).toBe(2 * 1024 * 1024)
     expect(parseAvailableMemory('MemTotal: 8192 kB\n')).toBeUndefined()
   })
 

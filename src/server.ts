@@ -13,9 +13,22 @@ import { spawnNodePty } from './pty.js'
 import { createTmuxExec } from './tmux/exec.js'
 import { createUpdateChecker } from './update.js'
 import { createSystemResourceSampler } from './systemResources.js'
-import { handleTerminalConnection, type SpawnPty } from './ws/terminal.js'
+import { handleTerminalConnection, MAX_WS_MESSAGE_BYTES, type SpawnPty } from './ws/terminal.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "connect-src 'self' ws: wss:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+].join('; ')
 
 function packageVersion(): string {
   try {
@@ -34,6 +47,13 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
   // 本服务设计为跑在本机反代/Tailscale 之后：只信任来自回环地址的 X-Forwarded-For，
   // 这样限速器拿到的 req.ip 是真实客户端 IP，远程直连伪造的 XFF 不会被信任。
   app.set('trust proxy', 'loopback')
+  app.use((_req, res, next) => {
+    res.setHeader('content-security-policy', CONTENT_SECURITY_POLICY)
+    res.setHeader('x-frame-options', 'DENY')
+    res.setHeader('x-content-type-options', 'nosniff')
+    res.setHeader('referrer-policy', 'no-referrer')
+    next()
+  })
   app.use(cookieParser())
   const checkUpdate = createUpdateChecker({
     current: packageVersion(),
@@ -70,7 +90,7 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
   }
 
   const server = http.createServer(app)
-  const wss = new WebSocketServer({ noServer: true })
+  const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_WS_MESSAGE_BYTES })
   wss.on('error', (error) => console.error('WebSocketServer 错误:', error))
   server.on('upgrade', (req, socket, head) => {
     if (!req.url?.startsWith('/ws/terminal')) {
