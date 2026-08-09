@@ -40,6 +40,7 @@ describe('parseArgs', () => {
 
   it('帮助文本列出所有子命令', () => {
     expect(HELP_TEXT).toMatch(/init/)
-    expect(HELP_TEXT).toMatch(/TMUX_WEBUI_/)
+    expect(HELP_TEXT).toContain('TMUX_WEBUI_UPLOAD_RETENTION_MS')
+    expect(HELP_TEXT).toContain('TMUX_WEBUI_UPLOAD_MAX_BYTES')
   })
 })

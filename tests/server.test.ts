@@ -6,6 +6,8 @@ import type { Server } from 'node:http'
 import { hashPassword } from '../src/auth/password.js'
 import type { Config } from '../src/config.js'
 import { createAppServer } from '../src/server.js'
+import { createTmuxExec } from '../src/tmux/exec.js'
+import { MAX_WS_MESSAGE_BYTES, type SpawnPty } from '../src/ws/terminal.js'
 
 let server: Server | undefined
 
@@ -25,10 +27,13 @@ describe('createAppServer', () => {
       cookieSecure: false,
       sessionFile: '',
       uploadDir: '/tmp/webui-test-uploads',
+      uploadRetentionMs: 60_000,
+      uploadMaxBytes: 20 * 1024 * 1024,
       updateCheck: false,
     }
     server = createAppServer(config)
-    await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))
+    const activeServer = server
+    await new Promise<void>((resolve) => activeServer.listen(0, '127.0.0.1', resolve))
     const port = (server.address() as AddressInfo).port
     const res = await fetch(`http://127.0.0.1:${port}/api/login`, {
       method: 'POST',
@@ -49,6 +54,8 @@ describe('createAppServer', () => {
       cookieSecure: false,
       sessionFile: '',
       uploadDir: '/tmp/webui-test-uploads',
+      uploadRetentionMs: 60_000,
+      uploadMaxBytes: 20 * 1024 * 1024,
       updateCheck: false,
     }
     // 静态资源只在 web/dist 存在时才挂载，缺了这里会以「cache-control 是 null」
@@ -59,10 +66,17 @@ describe('createAppServer', () => {
     ).toBe(true)
 
     server = createAppServer(config)
-    await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))
+    const activeServer = server
+    await new Promise<void>((resolve) => activeServer.listen(0, '127.0.0.1', resolve))
     const port = (server.address() as AddressInfo).port
     const html = await fetch(`http://127.0.0.1:${port}/`)
     expect(html.headers.get('cache-control')).toBe('no-cache')
+    expect(html.headers.get('content-security-policy')).toContain("default-src 'self'")
+    expect(html.headers.get('content-security-policy')).toContain("frame-ancestors 'none'")
+    expect(html.headers.get('x-frame-options')).toBe('DENY')
+    expect(html.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(html.headers.get('referrer-policy')).toBe('no-referrer')
+    expect(html.headers.get('strict-transport-security')).toBeNull()
     const htmlDeep = await fetch(`http://127.0.0.1:${port}/some/spa/route`)
     expect(htmlDeep.headers.get('cache-control')).toBe('no-cache')
     // 构建产物存在时校验 assets 的长缓存头
@@ -83,10 +97,13 @@ describe('createAppServer', () => {
       cookieSecure: false,
       sessionFile: '',
       uploadDir: '/tmp/webui-test-uploads',
+      uploadRetentionMs: 60_000,
+      uploadMaxBytes: 20 * 1024 * 1024,
       updateCheck: false,
     }
     server = createAppServer(config)
-    await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve))
+    const activeServer = server
+    await new Promise<void>((resolve) => activeServer.listen(0, '127.0.0.1', resolve))
     const port = (server.address() as AddressInfo).port
     const { WebSocket } = await import('ws')
     const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/other`)
@@ -95,5 +112,61 @@ describe('createAppServer', () => {
       ws.on('open', () => resolve(false))
     })
     expect(failed).toBe(true)
+  })
+
+  it('超过 1 MiB 的 WebSocket 消息由真实服务以 1009 拒绝', async () => {
+    const socketName = `webui-server-max-payload-${process.pid}`
+    const exec = createTmuxExec(socketName)
+    await exec(['new-session', '-d', '-s', 'demo'])
+    const config: Config = {
+      host: '127.0.0.1',
+      port: 0,
+      passwordHash: await hashPassword('pw'),
+      socketName,
+      sessionTtlMs: 60_000,
+      cookieSecure: false,
+      sessionFile: '',
+      uploadDir: '/tmp/webui-test-uploads',
+      uploadRetentionMs: 60_000,
+      uploadMaxBytes: 20 * 1024 * 1024,
+      updateCheck: false,
+    }
+    const spawnPty: SpawnPty = () => ({
+      onData: () => undefined,
+      onExit: () => undefined,
+      write: () => undefined,
+      resize: () => undefined,
+      kill: () => undefined,
+    })
+
+    try {
+      server = createAppServer(config, spawnPty)
+      const activeServer = server
+      await new Promise<void>((resolve) => activeServer.listen(0, '127.0.0.1', resolve))
+      const port = (server.address() as AddressInfo).port
+      const login = await fetch(`http://127.0.0.1:${port}/api/login`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'pw' }),
+      })
+      const cookie = login.headers.get('set-cookie')?.split(';', 1)[0]
+      expect(cookie).toContain('webui_token=')
+
+      const { WebSocket } = await import('ws')
+      const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/terminal?session=demo`, {
+        headers: { cookie: cookie ?? '' },
+      })
+      ws.on('error', () => undefined)
+      const closed = new Promise<number>((resolve) => ws.on('close', resolve))
+      await new Promise<void>((resolve, reject) => {
+        ws.on('open', resolve)
+        ws.on('error', reject)
+      })
+      ws.send(Buffer.alloc(MAX_WS_MESSAGE_BYTES + 1))
+
+      expect(await closed).toBe(1009)
+    } finally {
+      await exec(['kill-server']).catch(() => undefined)
+    }
   })
 })

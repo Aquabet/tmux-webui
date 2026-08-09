@@ -1,6 +1,3 @@
-import { randomBytes } from 'node:crypto'
-import { mkdir, writeFile } from 'node:fs/promises'
-import path from 'node:path'
 import { Router, json, raw, type Response } from 'express'
 import { z } from 'zod'
 import { verifyPassword } from '../auth/password.js'
@@ -9,18 +6,14 @@ import type { SessionStore } from '../auth/sessions.js'
 import type { Config } from '../config.js'
 import { TmuxError, type TmuxExec } from '../tmux/exec.js'
 import { listSessions } from '../tmux/list.js'
-import {
-  createSession,
-  killSession,
-  renameSession,
-  sessionNameError,
-} from '../tmux/manage.js'
+import { createSession, killSession, renameSession, sessionNameError } from '../tmux/manage.js'
 import { canSelfUpdate, startUpdateSession } from '../selfUpdate.js'
 import type { SystemResources } from '../systemResources.js'
 import type { UpdateInfo } from '../update.js'
+import { createImageUploadStore, type ImageExtension, UploadQuotaError } from '../uploads.js'
 import { COOKIE_NAME, requireAuth } from './middleware.js'
 
-export interface ApiDeps {
+interface ApiDeps {
   config: Config
   store: SessionStore
   limiter: RateLimiter
@@ -34,7 +27,7 @@ const loginSchema = z.object({ password: z.string().min(1).max(200) })
 const sessionNameSchema = z.object({ name: z.string().min(1).max(64) })
 
 // 白名单 mime → 扩展名；文件名完全由服务端生成，客户端无法影响路径
-const IMAGE_EXT: Record<string, string> = {
+const IMAGE_EXT: Record<string, ImageExtension> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/webp': 'webp',
@@ -66,6 +59,11 @@ function sendTmuxError(res: Response, error: unknown, fallback: string): void {
 
 export function createApiRouter(deps: ApiDeps): Router {
   const router = Router()
+  const uploadStore = createImageUploadStore({
+    dir: deps.config.uploadDir,
+    retentionMs: deps.config.uploadRetentionMs,
+    maxBytes: deps.config.uploadMaxBytes,
+  })
   router.use(json())
 
   router.post('/login', async (req, res) => {
@@ -113,14 +111,13 @@ export function createApiRouter(deps: ApiDeps): Router {
         return
       }
       try {
-        await mkdir(deps.config.uploadDir, { recursive: true })
-        const file = path.join(
-          deps.config.uploadDir,
-          `img-${Date.now()}-${randomBytes(4).toString('hex')}.${ext}`,
-        )
-        await writeFile(file, req.body)
+        const file = await uploadStore.save(req.body, ext)
         res.json({ success: true, data: { path: file } })
       } catch (error) {
+        if (error instanceof UploadQuotaError) {
+          res.status(507).json({ success: false, error: error.message })
+          return
+        }
         console.error('保存上传图片失败:', error)
         res.status(500).json({ success: false, error: '保存图片失败' })
       }
