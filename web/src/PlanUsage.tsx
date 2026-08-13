@@ -54,13 +54,7 @@ function TokenRow({ window: win }: { window: PlanUsageTokenWindow }) {
   )
 }
 
-function ProviderBlock({
-  provider,
-  onHide,
-}: {
-  provider: PlanUsageProvider
-  onHide: () => void
-}) {
+function ProviderBlock({ provider, onHide }: { provider: PlanUsageProvider; onHide: () => void }) {
   return (
     <div className="usage-provider">
       <button
