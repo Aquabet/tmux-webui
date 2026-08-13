@@ -133,6 +133,23 @@ session 侧栏最下边缘固定显示两枚主机级仪表：CPU 活跃度和 R
 `MemAvailable`，不会把可回收的文件缓存误报成已占用内存，其它平台回退到
 Node 提供的可用内存值。`/api/resources` 与 session 列表使用相同的登录鉴权。
 
+### Coding plan 用量（可选）
+
+设 `TMUX_WEBUI_USAGE_PROVIDERS=codex,claude` 后，侧栏会多一块类似 OpenUsage
+的计划用量组件。全部数据来自服务器本地文件解析——不发任何网络请求，也绝不
+读取 OAuth 凭据：
+
+- **Codex** 读取 `~/.codex/sessions/**/rollout-*.jsonl` 里最新的
+  `rate_limits` 快照：真实配额百分比、重置倒计时和计划类型。reset 已过的
+  快照会标注「已过期」，不会当成实时数据展示。
+- **Claude Code** 本地没有配额数据，组件如实展示 token 统计：最近 5 小时
+  滑动窗口与今日累计，来自 `~/.claude/projects` transcript 中的数字
+  `usage` 字段。transcript 文本内容不会被采集——解析器只输出 token 数。
+
+该功能默认关闭；不在 allowlist 里的 provider 完全不会被读取。点组件里的
+provider 名可以隐藏/显示对应数字（仅影响展示，存在浏览器里）。
+`/api/usage` 与其它接口使用相同的登录鉴权。
+
 ### 想自己写 service 的话
 
 `--systemd` 做的事是：写 `~/.config/systemd/user/tmux-webui.service`、
@@ -247,6 +264,7 @@ release tag**、重装依赖、重新构建，并重启指向本目录的 system
 | `TMUX_WEBUI_UPLOAD_RETENTION_MS` | 7 天 | 接收新图片前，清理超过该时长的受管理上传文件 |
 | `TMUX_WEBUI_UPLOAD_MAX_BYTES` | 512 MiB | 受管理上传文件的总配额；配额已满时新上传返回 HTTP 507 |
 | `TMUX_WEBUI_UPDATE_CHECK` | `true` | 设为 `false` 则完全不访问 GitHub 查版本 |
+| `TMUX_WEBUI_USAGE_PROVIDERS` | （空 = 关闭） | 逗号分隔的 coding plan 用量 provider，侧栏展示（`codex`、`claude`） |
 
 ### 更新提示
 

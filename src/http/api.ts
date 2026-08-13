@@ -8,6 +8,7 @@ import { TmuxError, type TmuxExec } from '../tmux/exec.js'
 import { listSessions } from '../tmux/list.js'
 import { createSession, killSession, renameSession, sessionNameError } from '../tmux/manage.js'
 import { canSelfUpdate, startUpdateSession } from '../selfUpdate.js'
+import type { PlanUsageReport } from '../planUsage/types.js'
 import type { SystemResources } from '../systemResources.js'
 import type { UpdateInfo } from '../update.js'
 import { createImageUploadStore, type ImageExtension, UploadQuotaError } from '../uploads.js'
@@ -20,6 +21,7 @@ interface ApiDeps {
   exec: TmuxExec
   checkUpdate: () => Promise<UpdateInfo>
   getSystemResources: () => SystemResources
+  collectPlanUsage: () => Promise<PlanUsageReport>
   repoRoot: string
 }
 
@@ -133,6 +135,18 @@ export function createApiRouter(deps: ApiDeps): Router {
   // 主机资源同样放在鉴权后：它虽不含 shell 内容，仍属于不该公开的运行状态。
   router.get('/resources', requireAuth(deps.store), (_req, res) => {
     res.json({ success: true, data: deps.getSystemResources() })
+  })
+
+  // 计划用量同样放在鉴权后。报告是快照数据，禁止任何中间层缓存
+  router.get('/usage', requireAuth(deps.store), async (_req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store')
+    try {
+      res.json({ success: true, data: await deps.collectPlanUsage() })
+    } catch (error) {
+      // 采集失败细节只进服务端日志，响应不带路径或原始错误
+      console.error('采集计划用量失败:', error)
+      res.status(500).json({ success: false, error: '获取计划用量失败' })
+    }
   })
 
   // 一键更新：在独立 tmux session 里跑仓库自带的 update.sh。命令固定，

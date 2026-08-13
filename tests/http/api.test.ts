@@ -10,8 +10,34 @@ import { createRateLimiter } from '../../src/auth/rateLimit.js'
 import { createSessionStore } from '../../src/auth/sessions.js'
 import type { Config } from '../../src/config.js'
 import { createApiRouter } from '../../src/http/api.js'
+import type { PlanUsageReport } from '../../src/planUsage/types.js'
 import type { SystemResources } from '../../src/systemResources.js'
 import { TmuxError, type TmuxExec } from '../../src/tmux/exec.js'
+
+const USAGE_REPORT: PlanUsageReport = {
+  schemaVersion: 1,
+  collectedAt: 1000,
+  providers: [
+    {
+      providerId: 'codex',
+      displayName: 'Codex',
+      status: 'ok',
+      planType: 'pro',
+      windows: [
+        {
+          kind: 'quota',
+          label: 'weekly',
+          usedPercent: 12,
+          windowMinutes: 10080,
+          resetsAt: 2000,
+          observedAt: 900,
+          state: 'observed',
+        },
+      ],
+      lastActivityAt: 900,
+    },
+  ],
+}
 
 const SESSIONS_OUT = 'demo\t1\n'
 const WINDOWS_OUT = 'demo\t0\tclaude\t1\n'
@@ -28,6 +54,7 @@ async function makeApp(
     limiterMax?: number
     repoRoot?: string
     getSystemResources?: () => SystemResources
+    collectPlanUsage?: () => Promise<PlanUsageReport>
     config?: Partial<Config>
   } = {},
 ) {
@@ -43,6 +70,7 @@ async function makeApp(
     uploadRetentionMs: 60_000,
     uploadMaxBytes: 20 * 1024 * 1024,
     updateCheck: false,
+    usageProviders: [],
     ...overrides.config,
   }
   const exec: TmuxExec =
@@ -76,6 +104,7 @@ async function makeApp(
           memoryTotalBytes: 8_000,
           memoryPercent: 37.5,
         })),
+      collectPlanUsage: overrides.collectPlanUsage ?? (async () => USAGE_REPORT),
       // 默认指向一个没有 update.sh 的目录：一键更新按不可用处理
       repoRoot: overrides.repoRoot ?? UPLOAD_DIR,
     }),
@@ -145,6 +174,28 @@ describe('GET /api/sessions', () => {
         canUpdate: false,
       },
     })
+  })
+
+  it('/usage 需要登录，认证后返回计划用量报告且禁止缓存', async () => {
+    const app = await makeApp()
+    expect((await request(app).get('/api/usage')).status).toBe(401)
+    const agent = await loginAgent(app)
+    const res = await agent.get('/api/usage')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ success: true, data: USAGE_REPORT })
+    expect(res.headers['cache-control']).toBe('private, no-store')
+  })
+
+  it('/usage 采集抛错时返回 500 且不泄露细节', async () => {
+    const app = await makeApp({
+      collectPlanUsage: async () => {
+        throw new Error('secret /home/user path')
+      },
+    })
+    const agent = await loginAgent(app)
+    const res = await agent.get('/api/usage')
+    expect(res.status).toBe(500)
+    expect(JSON.stringify(res.body)).not.toContain('secret')
   })
 
   it('/resources 需要登录，认证后返回系统 CPU 与 RAM 占用', async () => {

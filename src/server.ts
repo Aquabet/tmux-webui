@@ -12,6 +12,9 @@ import { createApiRouter } from './http/api.js'
 import { spawnNodePty } from './pty.js'
 import { createTmuxExec } from './tmux/exec.js'
 import { createUpdateChecker } from './update.js'
+import { createClaudeProvider } from './planUsage/claude.js'
+import { createCodexProvider } from './planUsage/codex.js'
+import { createPlanUsageService } from './planUsage/service.js'
 import { createSystemResourceSampler } from './systemResources.js'
 import { handleTerminalConnection, MAX_WS_MESSAGE_BYTES, type SpawnPty } from './ws/terminal.js'
 
@@ -60,11 +63,24 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
     enabled: config.updateCheck,
   })
   const getSystemResources = createSystemResourceSampler()
+  const planUsage = createPlanUsageService({
+    providers: [createCodexProvider(), createClaudeProvider()],
+    enabled: config.usageProviders,
+  })
   // dist/ 的上一级即仓库根，update.sh 和 package.json 都在那里
   const repoRoot = path.resolve(__dirname, '..')
   app.use(
     '/api',
-    createApiRouter({ config, store, limiter, exec, checkUpdate, getSystemResources, repoRoot }),
+    createApiRouter({
+      config,
+      store,
+      limiter,
+      exec,
+      checkUpdate,
+      getSystemResources,
+      collectPlanUsage: () => planUsage.collect(),
+      repoRoot,
+    }),
   )
 
   const staticDir = path.resolve(__dirname, '../web/dist')

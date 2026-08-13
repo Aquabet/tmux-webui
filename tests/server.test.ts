@@ -30,6 +30,7 @@ describe('createAppServer', () => {
       uploadRetentionMs: 60_000,
       uploadMaxBytes: 20 * 1024 * 1024,
       updateCheck: false,
+      usageProviders: [],
     }
     server = createAppServer(config)
     const activeServer = server
@@ -57,6 +58,7 @@ describe('createAppServer', () => {
       uploadRetentionMs: 60_000,
       uploadMaxBytes: 20 * 1024 * 1024,
       updateCheck: false,
+      usageProviders: [],
     }
     // 静态资源只在 web/dist 存在时才挂载，缺了这里会以「cache-control 是 null」
     // 的形式失败，看不出真正原因，所以先显式检查
@@ -100,6 +102,7 @@ describe('createAppServer', () => {
       uploadRetentionMs: 60_000,
       uploadMaxBytes: 20 * 1024 * 1024,
       updateCheck: false,
+      usageProviders: [],
     }
     server = createAppServer(config)
     const activeServer = server
@@ -130,6 +133,7 @@ describe('createAppServer', () => {
       uploadRetentionMs: 60_000,
       uploadMaxBytes: 20 * 1024 * 1024,
       updateCheck: false,
+      usageProviders: [],
     }
     const spawnPty: SpawnPty = () => ({
       onData: () => undefined,

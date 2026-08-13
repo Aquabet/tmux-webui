@@ -22,7 +22,21 @@ describe('loadConfig', () => {
       uploadRetentionMs: 7 * 24 * 3600 * 1000,
       uploadMaxBytes: 512 * 1024 * 1024,
       updateCheck: true,
+      usageProviders: [],
     })
+  })
+
+  it('USAGE_PROVIDERS 逗号分隔解析，默认空（功能关闭）', () => {
+    const at = (v?: string) =>
+      loadConfig({
+        TMUX_WEBUI_PASSWORD_HASH: 'h',
+        ...(v === undefined ? {} : { TMUX_WEBUI_USAGE_PROVIDERS: v }),
+      }).usageProviders
+    expect(at()).toEqual([])
+    expect(at('')).toEqual([])
+    expect(at('codex')).toEqual(['codex'])
+    expect(at('codex, claude')).toEqual(['codex', 'claude'])
+    expect(at(' Claude ,,')).toEqual(['claude'])
   })
 
   it('UPDATE_CHECK=false 关闭更新检查（其它值一律视为开启）', () => {

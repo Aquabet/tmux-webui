@@ -4,6 +4,7 @@ import { SessionSidebar } from './SessionSidebar'
 import { MIN_SIDEBAR_WIDTH } from './sidebarSize'
 
 vi.mock('./VersionBadge', () => ({ VersionBadge: () => null }))
+vi.mock('./PlanUsage', () => ({ PlanUsage: () => null }))
 vi.mock('./ResourceUsage', () => ({
   ResourceUsage: () => <div data-testid="resource-usage" />,
 }))
