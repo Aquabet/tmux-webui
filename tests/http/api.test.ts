@@ -305,7 +305,8 @@ describe('POST /api/sessions', () => {
     const res = await agent.post('/api/sessions').send({ name: 'dev' })
     expect(res.status).toBe(201)
     expect(res.body).toEqual({ success: true })
-    expect(calls).toContainEqual(['new-session', '-d', '-s', 'dev'])
+    // -c 起始目录由 createSession 决定，这里只断言路由确实建了这个 session
+    expect(calls.some((args) => args.slice(0, 4).join(' ') === 'new-session -d -s dev')).toBe(true)
   })
 
   it('名称含冒号或 webui- 前缀返回 400', async () => {

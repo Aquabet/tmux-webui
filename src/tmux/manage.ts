@@ -1,3 +1,4 @@
+import { homedir } from 'node:os'
 import type { TmuxExec } from './exec.js'
 import { VIEW_PREFIX } from './list.js'
 
@@ -15,9 +16,16 @@ function assertValidName(name: string): void {
   if (err) throw new Error(err)
 }
 
-export async function createSession(exec: TmuxExec, name: string): Promise<void> {
+// 必须显式给 -c：不给的话新 session 继承 tmux server 的 cwd，而 server 常常
+// 是从界面新建 session 时由本服务拉起的，于是安装目录会变成用户所有新终端
+// 的默认工作目录，并且一直延续到 server 退出为止
+export async function createSession(
+  exec: TmuxExec,
+  name: string,
+  startDir: string = homedir(),
+): Promise<void> {
   assertValidName(name)
-  await exec(['new-session', '-d', '-s', name])
+  await exec(['new-session', '-d', '-s', name, '-c', startDir])
 }
 
 // -t 默认前缀匹配，= 前缀强制精确匹配，避免误操作同前缀会话
