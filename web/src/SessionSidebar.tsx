@@ -2,6 +2,7 @@ import { useEffect, useRef, type CSSProperties, type KeyboardEvent, type Pointer
 import { VersionBadge } from './VersionBadge'
 import { AgentBadge, TerminalBadge } from './AgentBadge'
 import type { ApiSession } from './api'
+import { PlanUsage } from './PlanUsage'
 import { ResourceUsage } from './ResourceUsage'
 import {
   COMPACT_SIDEBAR_MAX_WIDTH,
@@ -158,6 +159,7 @@ export function SessionSidebar({
       </div>
       <div className="sidebar-footer">
         <VersionBadge onUpdateStarted={onUpdateStarted} onAuthLost={onAuthLost} />
+        <PlanUsage onAuthLost={onAuthLost} />
         <ResourceUsage onAuthLost={onAuthLost} />
       </div>
       {/* 可调 separator 需要 aria-valuenow 和键盘交互，原生 hr 无法表达该控件状态。 */}

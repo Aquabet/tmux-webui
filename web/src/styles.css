@@ -463,6 +463,68 @@ body.sidebar-resizing {
   cursor: col-resize;
   user-select: none;
 }
+.plan-usage {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.usage-provider {
+  margin-bottom: 6px;
+}
+.usage-provider-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+  font:
+    700 10px / 1.4 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  letter-spacing: 0.06em;
+}
+.usage-provider-toggle em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--muted);
+}
+.usage-provider-toggle.hidden {
+  opacity: 0.45;
+}
+.usage-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 0;
+  font:
+    500 10px / 1.4 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+}
+.usage-label {
+  flex-shrink: 0;
+  min-width: 34px;
+  color: var(--muted);
+}
+.usage-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--accent) var(--usage), var(--meter-track) 0);
+}
+.usage-value {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--fg);
+}
+.usage-value.muted {
+  color: var(--muted);
+}
 .resource-usage {
   display: grid;
   grid-template-columns: 1fr 1fr;

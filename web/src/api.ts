@@ -89,6 +89,49 @@ export interface SystemResources {
   memoryPercent: number
 }
 
+// 与后端 src/planUsage/types.ts 对应；数据全部来自服务器本地文件解析
+export interface PlanUsageQuotaWindow {
+  kind: 'quota'
+  label: string
+  usedPercent: number
+  windowMinutes?: number
+  resetsAt?: number
+  observedAt: number
+  state: 'observed' | 'expired'
+}
+
+export interface PlanUsageTokenWindow {
+  kind: 'tokens'
+  label: string
+  tokens: number
+  windowMinutes: number
+  observedAt: number
+  state: 'observed'
+}
+
+export interface PlanUsageProvider {
+  providerId: string
+  displayName: string
+  status: 'ok' | 'unavailable' | 'error'
+  planType?: string
+  windows: Array<PlanUsageQuotaWindow | PlanUsageTokenWindow>
+  lastActivityAt?: number
+}
+
+export interface PlanUsageReport {
+  schemaVersion: number
+  collectedAt: number
+  providers: PlanUsageProvider[]
+}
+
+export async function fetchPlanUsage(): Promise<PlanUsageReport> {
+  const res = await fetch('/api/usage')
+  if (res.status === 401) throw new AuthError()
+  const body = await parseBody<PlanUsageReport>(res)
+  if (!res.ok || !body.success || !body.data) throw new Error(body.error ?? '获取计划用量失败')
+  return body.data
+}
+
 export async function fetchSystemResources(): Promise<SystemResources> {
   const res = await fetch('/api/resources')
   if (res.status === 401) throw new AuthError()

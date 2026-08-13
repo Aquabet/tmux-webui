@@ -13,6 +13,7 @@ export interface Config {
   uploadRetentionMs: number
   uploadMaxBytes: number
   updateCheck: boolean
+  usageProviders: string[]
 }
 
 function isLoopback(host: string): boolean {
@@ -83,5 +84,11 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     ),
     // 唯一的对外网络请求（查 GitHub 最新 release），设 false 可完全关掉
     updateCheck: env.TMUX_WEBUI_UPDATE_CHECK !== 'false',
+    // 计划用量 provider allowlist：默认空 = 功能关闭。这是文件系统层面的
+    // 同意机制——未列出的 provider，服务不会读取它的数据目录
+    usageProviders: (env.TMUX_WEBUI_USAGE_PROVIDERS ?? '')
+      .split(',')
+      .map((entry) => entry.trim().toLowerCase())
+      .filter((entry) => entry.length > 0),
   }
 }
