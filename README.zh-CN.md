@@ -150,9 +150,10 @@ OpenUsage 的计划用量组件：
   只有百分比和重置时间；token 过期时直接报错——本 provider 绝不自行刷新
   token。
 
-该功能默认关闭；不在 allowlist 里的 provider 完全不会被读取。点组件里的
-provider 名可以隐藏/显示对应数字（仅影响展示，存在浏览器里）。
-`/api/usage` 与其它接口使用相同的登录鉴权。
+该功能默认关闭；不在 allowlist 里的 provider 完全不会被读取。设置面板的
+「用量显示」控制每个 provider 是否出现在侧栏；点侧栏里的 provider 名则是
+折叠/展开数字（两者都只影响展示，存在浏览器里）。`/api/usage` 与其它接口
+使用相同的登录鉴权。
 
 ### 想自己写 service 的话
 

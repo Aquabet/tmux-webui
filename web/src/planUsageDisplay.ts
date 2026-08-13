@@ -23,15 +23,34 @@ export function saveHiddenProviders(ids: string[]): void {
 // 靠这个自定义事件同步
 export const USAGE_DISPLAY_EVENT = 'tmux-webui:usage-display-changed'
 
+function toggleEntry(list: string[], id: string, present: boolean): string[] {
+  if (present) return list.includes(id) ? list : [...list, id]
+  return list.filter((entry) => entry !== id)
+}
+
 export function setProviderHidden(id: string, hidden: boolean): void {
-  const current = loadHiddenProviders()
-  const next = hidden
-    ? current.includes(id)
-      ? current
-      : [...current, id]
-    : current.filter((entry) => entry !== id)
-  saveHiddenProviders(next)
+  saveHiddenProviders(toggleEntry(loadHiddenProviders(), id, hidden))
   window.dispatchEvent(new Event(USAGE_DISPLAY_EVENT))
+}
+
+// 折叠只是侧栏内的展开状态，与设置面板的显示开关互相独立
+const COLLAPSED_STORAGE_KEY = 'tmux-webui.usage-collapsed.v1'
+
+export function loadCollapsedProviders(): string[] {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(COLLAPSED_STORAGE_KEY) ?? '[]')
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((entry): entry is string => typeof entry === 'string')
+  } catch {
+    return []
+  }
+}
+
+export function setProviderCollapsed(id: string, collapsed: boolean): void {
+  localStorage.setItem(
+    COLLAPSED_STORAGE_KEY,
+    JSON.stringify(toggleEntry(loadCollapsedProviders(), id, collapsed)),
+  )
 }
 
 export function formatTokens(count: number): string {
