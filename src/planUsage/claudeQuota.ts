@@ -15,7 +15,8 @@ import type { ProviderUsage, QuotaWindow, UsageProvider } from './types.js'
 const USAGE_URL = 'https://api.anthropic.com/api/oauth/usage'
 const REQUEST_TIMEOUT_MS = 10_000
 
-// 已知窗口键 → 短标签；未知键原样透传，前端照常显示
+// 只展示已知窗口；接口会夹带内部实验性限额桶（如 nimbus_quill），
+// 对用户没有意义，直接丢弃
 const WINDOW_LABELS: Record<string, string> = {
   five_hour: '5h',
   seven_day: 'weekly',
@@ -70,13 +71,14 @@ function extractWindows(body: unknown, observedAt: number, now: number): QuotaWi
   if (typeof body !== 'object' || body === null) return []
   const windows: QuotaWindow[] = []
   for (const [key, value] of Object.entries(body)) {
+    if (!(key in WINDOW_LABELS)) continue
     if (typeof value !== 'object' || value === null) continue
     const fields = value as Record<string, unknown>
     if (typeof fields.utilization !== 'number' || !Number.isFinite(fields.utilization)) continue
     const resetsAt = parseResetsAt(fields.resets_at)
     windows.push({
       kind: 'quota',
-      label: WINDOW_LABELS[key] ?? key,
+      label: WINDOW_LABELS[key],
       usedPercent: fields.utilization,
       resetsAt,
       observedAt,

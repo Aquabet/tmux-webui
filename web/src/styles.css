@@ -492,9 +492,6 @@ body.sidebar-resizing {
   font-weight: 500;
   color: var(--muted);
 }
-.usage-provider-toggle.hidden {
-  opacity: 0.45;
-}
 .usage-row {
   display: flex;
   align-items: center;

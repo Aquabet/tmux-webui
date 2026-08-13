@@ -84,9 +84,10 @@ describe('createClaudeQuotaProvider', () => {
     expect(weekly.usedPercent).toBe(11)
   })
 
-  it('未知窗口键与数字秒时间戳也能解析', async () => {
+  it('未知窗口键被丢弃，数字秒时间戳可解析', async () => {
     const fetchImpl = usageResponse({
-      seven_day_opus: { utilization: 5, resets_at: Math.floor(NOW / 1000) + 3600 },
+      five_hour: { utilization: 5, resets_at: Math.floor(NOW / 1000) + 3600 },
+      nimbus_quill: { utilization: 0 },
       not_a_window: 'ignore me',
     })
     const file = await credentialsFile(validCredentials())
@@ -95,7 +96,7 @@ describe('createClaudeQuotaProvider', () => {
     expect(usage.windows).toHaveLength(1)
     const win = usage.windows[0]
     if (win.kind !== 'quota') throw new Error('expected quota window')
-    expect(win.label).toBe('seven_day_opus')
+    expect(win.label).toBe('5h')
     expect(win.resetsAt).toBe((Math.floor(NOW / 1000) + 3600) * 1000)
   })
 
