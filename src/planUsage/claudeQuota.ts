@@ -96,9 +96,9 @@ export function createClaudeQuotaProvider(options: ClaudeQuotaOptions = {}): Usa
 
   return {
     id: 'claude-quota',
-    displayName: 'Claude 配额',
+    displayName: 'Claude Code',
     async collect(): Promise<ProviderUsage> {
-      const base = { providerId: 'claude-quota', displayName: 'Claude 配额' }
+      const base = { providerId: 'claude-quota', displayName: 'Claude Code' }
       let content: string
       try {
         content = await readFile(credentialsFile, 'utf8')

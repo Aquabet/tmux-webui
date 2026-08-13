@@ -1,10 +1,10 @@
-// 计划用量数据只来自本地文件解析：不出网、不读任何 OAuth 凭据。
-// 这是安全边界的一部分，新 provider 必须遵守（见 registry.ts）。
+// 默认的安全边界：provider 只做本地文件解析，不出网、不读凭据（如 codex）。
+// 唯一例外是 claude-quota——读 OAuth 凭据并请求 Anthropic 接口，其边界与
+// 同意机制见 claudeQuota.ts 头注释。新 provider 若要越过默认边界，必须
+// 采用同样的「独立 id + allowlist 显式启用」模式。
 
 export const PLAN_USAGE_SCHEMA_VERSION = 1
 
-// quota：provider 本地留有真实配额百分比（如 Codex rate_limits 快照）。
-// tokens：本地只有 token 计数、没有配额上限，只能如实展示用量而非剩余。
 export interface QuotaWindow {
   kind: 'quota'
   label: string
@@ -18,16 +18,9 @@ export interface QuotaWindow {
   state: 'observed' | 'expired'
 }
 
-export interface TokenWindow {
-  kind: 'tokens'
-  label: string
-  tokens: number
-  windowMinutes: number
-  observedAt: number
-  state: 'observed'
-}
-
-export type UsageWindow = QuotaWindow | TokenWindow
+// 前端 schema 仍支持 kind: 'tokens' 窗口（见 web/src/api.ts），当前后端
+// 没有产出 token 统计的 provider；再需要时在这里补回 TokenWindow 并入联合
+export type UsageWindow = QuotaWindow
 
 export interface ProviderUsage {
   providerId: string
