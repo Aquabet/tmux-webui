@@ -132,6 +132,19 @@ describe('createCodexProvider', () => {
     expect(win.state).toBe('expired')
   })
 
+  it('plan_type 下划线转空格显示（pro_5x → pro 5x）', async () => {
+    const root = await tempRoot()
+    await writeRollout(
+      root,
+      '2026-08-13',
+      'rollout-a.jsonl',
+      rateLimitLine({ timestamp: '2026-08-13T07:00:00Z', usedPercent: 1, planType: 'pro_5x' }),
+    )
+    const provider = createCodexProvider({ sessionsDir: root, now: () => NOW })
+    const usage = await provider.collect()
+    expect(usage.planType).toBe('pro 5x')
+  })
+
   it('包含 secondary 窗口', async () => {
     const root = await tempRoot()
     await writeRollout(
