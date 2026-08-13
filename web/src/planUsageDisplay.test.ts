@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   formatResetIn,
   formatTokens,
   loadHiddenProviders,
   saveHiddenProviders,
+  setProviderHidden,
+  USAGE_DISPLAY_EVENT,
   USAGE_DISPLAY_STORAGE_KEY,
 } from './planUsageDisplay'
 
@@ -28,6 +30,26 @@ describe('hidden provider 持久化', () => {
     expect(loadHiddenProviders()).toEqual([])
     localStorage.setItem(USAGE_DISPLAY_STORAGE_KEY, 'not json')
     expect(loadHiddenProviders()).toEqual([])
+  })
+})
+
+describe('setProviderHidden', () => {
+  it('更新存储并广播事件，供组件间同步', () => {
+    const listener = vi.fn()
+    window.addEventListener(USAGE_DISPLAY_EVENT, listener)
+    setProviderHidden('codex', true)
+    expect(loadHiddenProviders()).toEqual(['codex'])
+    expect(listener).toHaveBeenCalledTimes(1)
+    setProviderHidden('codex', false)
+    expect(loadHiddenProviders()).toEqual([])
+    expect(listener).toHaveBeenCalledTimes(2)
+    window.removeEventListener(USAGE_DISPLAY_EVENT, listener)
+  })
+
+  it('重复设置同一状态不产生重复条目', () => {
+    setProviderHidden('codex', true)
+    setProviderHidden('codex', true)
+    expect(loadHiddenProviders()).toEqual(['codex'])
   })
 })
 

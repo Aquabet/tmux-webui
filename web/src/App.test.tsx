@@ -11,6 +11,7 @@ vi.mock('./api', () => ({
   deleteSession: vi.fn(),
   renameSession: vi.fn(),
   fetchVersion: vi.fn().mockRejectedValue(new Error('无关')),
+  fetchPlanUsage: vi.fn().mockResolvedValue({ schemaVersion: 1, collectedAt: 0, providers: [] }),
 }))
 // TerminalView 会拉起 xterm 与 WebSocket，本用例只关心外层布局
 vi.mock('./TerminalView', () => ({

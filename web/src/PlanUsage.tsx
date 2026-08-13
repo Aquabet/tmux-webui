@@ -10,7 +10,8 @@ import {
   formatResetIn,
   formatTokens,
   loadHiddenProviders,
-  saveHiddenProviders,
+  setProviderHidden,
+  USAGE_DISPLAY_EVENT,
 } from './planUsageDisplay'
 
 // 快照 60s 一采（服务端同样缓存 60s），轮询更快没有意义
@@ -107,19 +108,19 @@ export function PlanUsage({ onAuthLost }: { onAuthLost: () => void }) {
     }
     void poll()
     const timer = window.setInterval(() => void poll(), POLL_MS)
+    // 设置面板改动显示偏好时同步；storage 事件只跨标签页，同页靠自定义事件
+    const sync = () => setHidden(loadHiddenProviders())
+    window.addEventListener(USAGE_DISPLAY_EVENT, sync)
     return () => {
       stopped = true
       window.clearInterval(timer)
+      window.removeEventListener(USAGE_DISPLAY_EVENT, sync)
     }
   }, [onAuthLost])
 
   if (providers.length === 0) return null
 
-  const toggle = (id: string) => {
-    const next = hidden.includes(id) ? hidden.filter((h) => h !== id) : [...hidden, id]
-    setHidden(next)
-    saveHiddenProviders(next)
-  }
+  const toggle = (id: string) => setProviderHidden(id, !hidden.includes(id))
 
   return (
     <section className="plan-usage" aria-label="计划用量">

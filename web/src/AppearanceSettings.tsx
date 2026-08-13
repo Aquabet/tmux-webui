@@ -1,4 +1,5 @@
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { fetchPlanUsage, type PlanUsageProvider } from './api'
 import {
   CURSOR_OPTIONS,
   DEFAULT_APPEARANCE,
@@ -8,6 +9,51 @@ import {
   type AppearanceSettings,
   type FontId,
 } from './appearance'
+import { loadHiddenProviders, setProviderHidden, USAGE_DISPLAY_EVENT } from './planUsageDisplay'
+
+// 设置面板里的用量开关只控制展示；服务端采集哪些 provider 由
+// TMUX_WEBUI_USAGE_PROVIDERS 决定，这里看不到未启用的 provider
+function UsageDisplaySection() {
+  const [providers, setProviders] = useState<PlanUsageProvider[]>([])
+  const [hidden, setHidden] = useState<string[]>(loadHiddenProviders)
+
+  useEffect(() => {
+    let stopped = false
+    fetchPlanUsage()
+      .then((report) => {
+        if (!stopped) setProviders(report.providers)
+      })
+      .catch(() => undefined)
+    const sync = () => setHidden(loadHiddenProviders())
+    window.addEventListener(USAGE_DISPLAY_EVENT, sync)
+    return () => {
+      stopped = true
+      window.removeEventListener(USAGE_DISPLAY_EVENT, sync)
+    }
+  }, [])
+
+  if (providers.length === 0) return null
+
+  return (
+    <fieldset className="settings-field usage-display-field">
+      <legend>用量显示</legend>
+      <div className="usage-display-toggles">
+        {providers.map((provider) => (
+          <label key={provider.providerId} className="usage-display-toggle">
+            <input
+              type="checkbox"
+              checked={!hidden.includes(provider.providerId)}
+              onChange={(event) => setProviderHidden(provider.providerId, !event.target.checked)}
+              aria-label={`显示 ${provider.displayName} 用量`}
+            />
+            <span>{provider.displayName}</span>
+          </label>
+        ))}
+      </div>
+      <small>只影响侧栏展示；采集哪些 provider 由服务端配置决定。</small>
+    </fieldset>
+  )
+}
 
 interface AppearanceSettingsDialogProps {
   settings: AppearanceSettings
@@ -205,6 +251,8 @@ export function AppearanceSettingsDialog({
                 ))}
               </div>
             </fieldset>
+
+            <UsageDisplaySection />
           </div>
         </div>
 

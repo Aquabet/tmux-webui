@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthError, fetchPlanUsage, type PlanUsageReport } from './api'
 import { PlanUsage } from './PlanUsage'
-import { loadHiddenProviders } from './planUsageDisplay'
+import { loadHiddenProviders, setProviderHidden } from './planUsageDisplay'
 
 vi.mock('./api', () => ({
   AuthError: class AuthError extends Error {},
@@ -135,6 +135,17 @@ describe('PlanUsage', () => {
     fireEvent.click(toggle)
     expect(screen.getByLabelText('Codex weekly 已用 43%')).toBeDefined()
     expect(loadHiddenProviders()).toEqual([])
+  })
+
+  it('设置面板改动显示偏好后即时同步（通过广播事件）', async () => {
+    vi.mocked(fetchPlanUsage).mockResolvedValue(report([codexOk]))
+    render(<PlanUsage onAuthLost={vi.fn()} />)
+    expect(await screen.findByLabelText('Codex weekly 已用 43%')).toBeDefined()
+
+    setProviderHidden('codex', true)
+    await waitFor(() => expect(screen.queryByLabelText('Codex weekly 已用 43%')).toBeNull())
+    setProviderHidden('codex', false)
+    expect(await screen.findByLabelText('Codex weekly 已用 43%')).toBeDefined()
   })
 
   it('登录失效时交给上层返回登录页', async () => {
