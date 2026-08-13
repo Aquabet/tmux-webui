@@ -152,32 +152,27 @@ reading. The `/api/resources` data is protected by the same login as sessions.
 
 ### Coding plan usage (optional)
 
-Set `TMUX_WEBUI_USAGE_PROVIDERS=codex,claude` to add a sidebar widget showing
-your coding-plan usage, similar to OpenUsage. Everything is parsed from local
-files on the server — no network calls, no OAuth credentials are ever read:
+Set `TMUX_WEBUI_USAGE_PROVIDERS=codex,claude-quota` to add a sidebar widget
+showing your coding-plan usage, similar to OpenUsage:
 
-- **Codex** reads the newest `rate_limits` snapshot from
-  `~/.codex/sessions/**/rollout-*.jsonl`: real quota percentages with reset
+- **`codex`** reads the newest `rate_limits` snapshot from
+  `~/.codex/sessions/**/rollout-*.jsonl` on the server — local file parsing
+  only, no network, no credentials: real quota percentages with reset
   countdowns and your plan type. Snapshots whose reset window already passed
   are marked expired instead of being shown as live.
-- **Claude Code** has no quota data on disk, so the widget shows honest token
-  counts instead: a sliding last-5-hours sum and a today sum, aggregated from
-  the numeric `usage` fields of `~/.claude/projects` transcripts. Transcript
-  text is never included — only token counts leave the parser.
-
-- **`claude-quota`** (opt-in, different trust trade-off): Claude has no quota
-  data on disk, so this provider reads the OAuth token from
-  `~/.claude/.credentials.json` and asks Anthropic's usage endpoint for the
-  official window percentages. Listing it in the allowlist is explicit consent
-  to both reading that credential file and the outbound HTTPS request to
-  `api.anthropic.com`. The token never reaches the browser or the logs; only
-  percentages and reset times are returned. Expired tokens are reported as an
-  error — the provider never refreshes tokens itself.
+- **`claude-quota`** (shown as "Claude Code"; a different trust trade-off):
+  Claude keeps no quota data on disk, so this provider reads the OAuth token
+  from `~/.claude/.credentials.json` and asks Anthropic's usage endpoint for
+  the official 5-hour and weekly percentages. Listing it in the allowlist is
+  explicit consent to both reading that credential file and the outbound
+  HTTPS request to `api.anthropic.com`. The token never reaches the browser
+  or the logs; only percentages and reset times are returned. Expired tokens
+  are reported as an error — the provider never refreshes tokens itself.
 
 The feature is off by default; providers not listed in the allowlist are never
-read from disk. Click a provider's name in the widget to hide or show its
-numbers (display-only, stored in the browser). `/api/usage` sits behind the
-same login as everything else.
+read from disk. The settings dialog's display toggles (or clicking a provider's
+name in the widget) hide a provider entirely — display-only, stored in the
+browser. `/api/usage` sits behind the same login as everything else.
 
 ### The service, if you want to write it yourself
 
@@ -312,7 +307,7 @@ quotes is recommended.
 | `TMUX_WEBUI_UPLOAD_RETENTION_MS` | 7 days | remove managed uploads older than this before accepting a new image |
 | `TMUX_WEBUI_UPLOAD_MAX_BYTES` | 512 MiB | total managed-upload quota; a full store rejects new uploads with HTTP 507 |
 | `TMUX_WEBUI_UPDATE_CHECK` | `true` | set to `false` to never contact GitHub for release info |
-| `TMUX_WEBUI_USAGE_PROVIDERS` | (empty = off) | comma-separated coding-plan usage providers to show in the sidebar (`codex`, `claude`, `claude-quota`) |
+| `TMUX_WEBUI_USAGE_PROVIDERS` | (empty = off) | comma-separated coding-plan usage providers to show in the sidebar (`codex`, `claude-quota`) |
 
 ### Update notification
 
