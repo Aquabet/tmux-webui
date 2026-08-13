@@ -148,7 +148,8 @@ OpenUsage 的计划用量组件：
   把它写进 allowlist 即表示同意这两件事：读取该凭据文件、向
   `api.anthropic.com` 发起 HTTPS 请求。token 不会进入浏览器或日志，返回的
   只有百分比和重置时间；token 过期时直接报错——本 provider 绝不自行刷新
-  token。
+  token。计划名（如 `max 20x`）来自 `~/.claude.json` 里的 rate limit
+  tier——该文件只被读取这一个字符串。
 
 该功能默认关闭；不在 allowlist 里的 provider 完全不会被读取。设置面板的
 「用量显示」控制每个 provider 是否出现在侧栏；点侧栏里的 provider 名则是
