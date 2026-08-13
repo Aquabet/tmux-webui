@@ -43,9 +43,7 @@ function UsageDisplaySection() {
             <input
               type="checkbox"
               checked={!hidden.includes(provider.providerId)}
-              onChange={(event) =>
-                setProviderHidden(provider.providerId, !event.target.checked)
-              }
+              onChange={(event) => setProviderHidden(provider.providerId, !event.target.checked)}
               aria-label={`显示 ${provider.displayName} 用量`}
             />
             <span>{provider.displayName}</span>

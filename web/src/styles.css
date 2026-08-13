@@ -525,6 +525,21 @@ body.sidebar-resizing {
 .usage-value.muted {
   color: var(--muted);
 }
+.usage-display-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.usage-display-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.usage-display-toggle input {
+  accent-color: var(--accent);
+}
 .resource-usage {
   display: grid;
   grid-template-columns: 1fr 1fr;
