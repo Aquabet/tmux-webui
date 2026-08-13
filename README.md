@@ -152,7 +152,7 @@ reading. The `/api/resources` data is protected by the same login as sessions.
 
 ### Coding plan usage (optional)
 
-Set `TMUX_WEBUI_USAGE_PROVIDERS=codex,claude-quota` to add a sidebar widget
+Set `TMUX_WEBUI_USAGE_PROVIDERS=codex-quota,claude-quota` to add a sidebar widget
 showing your coding-plan usage, similar to OpenUsage:
 
 - **`codex`** reads the newest `rate_limits` snapshot from
@@ -160,6 +160,13 @@ showing your coding-plan usage, similar to OpenUsage:
   only, no network, no credentials: real quota percentages with reset
   countdowns and your plan type. Snapshots whose reset window already passed
   are marked expired instead of being shown as live.
+- **`codex-quota`** (shown as "Codex Live"; a different trust trade-off):
+  instead of local snapshots, this provider reads the OAuth token from
+  `~/.codex/auth.json` and asks ChatGPT's usage endpoint for live percentages
+  and the server-side plan tier. Listing it in the allowlist is explicit
+  consent to reading that credential file and the outbound HTTPS request to
+  `chatgpt.com`. Prefer it over `codex` when you want fresh numbers; local
+  snapshots lag until the next Codex session writes an update.
 - **`claude-quota`** (shown as "Claude Code"; a different trust trade-off):
   Claude keeps no quota data on disk, so this provider reads the OAuth token
   from `~/.claude/.credentials.json` and asks Anthropic's usage endpoint for
@@ -310,7 +317,7 @@ quotes is recommended.
 | `TMUX_WEBUI_UPLOAD_RETENTION_MS` | 7 days | remove managed uploads older than this before accepting a new image |
 | `TMUX_WEBUI_UPLOAD_MAX_BYTES` | 512 MiB | total managed-upload quota; a full store rejects new uploads with HTTP 507 |
 | `TMUX_WEBUI_UPDATE_CHECK` | `true` | set to `false` to never contact GitHub for release info |
-| `TMUX_WEBUI_USAGE_PROVIDERS` | (empty = off) | comma-separated coding-plan usage providers to show in the sidebar (`codex`, `claude-quota`) |
+| `TMUX_WEBUI_USAGE_PROVIDERS` | (empty = off) | comma-separated coding-plan usage providers to show in the sidebar (`codex`, `codex-quota`, `claude-quota`) |
 
 ### Update notification
 
