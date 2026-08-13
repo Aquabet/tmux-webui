@@ -93,6 +93,66 @@ describe('createPlanUsageService', () => {
     expect(a.calls()).toBe(1)
   })
 
+  it('provider 出错时回退到上一次成功结果（限流等瞬时故障不打断展示）', async () => {
+    let time = 0
+    let fail = false
+    const okUsage: ProviderUsage = {
+      providerId: 'a',
+      displayName: 'a',
+      status: 'ok',
+      planType: 'pro',
+      windows: [
+        {
+          kind: 'quota',
+          label: 'weekly',
+          usedPercent: 5,
+          observedAt: 100,
+          state: 'observed',
+        },
+      ],
+    }
+    const a = stubProvider('a', () =>
+      fail
+        ? Promise.resolve({ providerId: 'a', displayName: 'a', status: 'error', windows: [] })
+        : Promise.resolve(okUsage),
+    )
+    const service = createPlanUsageService({
+      providers: [a.provider],
+      enabled: ['a'],
+      cacheMs: 1000,
+      now: () => time,
+    })
+    expect((await service.collect()).providers[0].status).toBe('ok')
+
+    fail = true
+    time = 2000
+    const report = await service.collect()
+    // 拿到的是上一次成功的数据（observedAt 仍是旧值，UI 端如实显示）
+    expect(report.providers[0].status).toBe('ok')
+    expect(report.providers[0].windows[0].observedAt).toBe(100)
+
+    fail = false
+    time = 4000
+    expect((await service.collect()).providers[0].status).toBe('ok')
+  })
+
+  it('没有成功历史时错误如实上报', async () => {
+    const bad = stubProvider('bad', () =>
+      Promise.resolve({
+        providerId: 'bad',
+        displayName: 'bad',
+        status: 'error' as const,
+        windows: [],
+      }),
+    )
+    const service = createPlanUsageService({
+      providers: [bad.provider],
+      enabled: ['bad'],
+      now: () => 1000,
+    })
+    expect((await service.collect()).providers[0].status).toBe('error')
+  })
+
   it('单个 provider 抛错时其余不受影响，错误不外泄', async () => {
     const bad = stubProvider('bad', () => Promise.reject(new Error('secret path /home/x')))
     const good = stubProvider('good')
