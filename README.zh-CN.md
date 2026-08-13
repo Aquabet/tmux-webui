@@ -146,6 +146,13 @@ Node 提供的可用内存值。`/api/resources` 与 session 列表使用相同�
   滑动窗口与今日累计，来自 `~/.claude/projects` transcript 中的数字
   `usage` 字段。transcript 文本内容不会被采集——解析器只输出 token 数。
 
+- **`claude-quota`**（可选，信任代价不同）：Claude 本地没有配额数据，这个
+  provider 会读取 `~/.claude/.credentials.json` 里的 OAuth token，向
+  Anthropic 的 usage 接口查询官方窗口百分比。把它写进 allowlist 即表示
+  同意这两件事：读取该凭据文件、向 `api.anthropic.com` 发起 HTTPS 请求。
+  token 不会进入浏览器或日志，返回的只有百分比和重置时间；token 过期时
+  直接报错——本 provider 绝不自行刷新 token。
+
 该功能默认关闭；不在 allowlist 里的 provider 完全不会被读取。点组件里的
 provider 名可以隐藏/显示对应数字（仅影响展示，存在浏览器里）。
 `/api/usage` 与其它接口使用相同的登录鉴权。
@@ -264,7 +271,7 @@ release tag**、重装依赖、重新构建，并重启指向本目录的 system
 | `TMUX_WEBUI_UPLOAD_RETENTION_MS` | 7 天 | 接收新图片前，清理超过该时长的受管理上传文件 |
 | `TMUX_WEBUI_UPLOAD_MAX_BYTES` | 512 MiB | 受管理上传文件的总配额；配额已满时新上传返回 HTTP 507 |
 | `TMUX_WEBUI_UPDATE_CHECK` | `true` | 设为 `false` 则完全不访问 GitHub 查版本 |
-| `TMUX_WEBUI_USAGE_PROVIDERS` | （空 = 关闭） | 逗号分隔的 coding plan 用量 provider，侧栏展示（`codex`、`claude`） |
+| `TMUX_WEBUI_USAGE_PROVIDERS` | （空 = 关闭） | 逗号分隔的 coding plan 用量 provider，侧栏展示（`codex`、`claude`、`claude-quota`） |
 
 ### 更新提示
 

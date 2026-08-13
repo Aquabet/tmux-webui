@@ -13,6 +13,7 @@ import { spawnNodePty } from './pty.js'
 import { createTmuxExec } from './tmux/exec.js'
 import { createUpdateChecker } from './update.js'
 import { createClaudeProvider } from './planUsage/claude.js'
+import { createClaudeQuotaProvider } from './planUsage/claudeQuota.js'
 import { createCodexProvider } from './planUsage/codex.js'
 import { createPlanUsageService } from './planUsage/service.js'
 import { createSystemResourceSampler } from './systemResources.js'
@@ -64,7 +65,7 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
   })
   const getSystemResources = createSystemResourceSampler()
   const planUsage = createPlanUsageService({
-    providers: [createCodexProvider(), createClaudeProvider()],
+    providers: [createCodexProvider(), createClaudeProvider(), createClaudeQuotaProvider()],
     enabled: config.usageProviders,
   })
   // dist/ 的上一级即仓库根，update.sh 和 package.json 都在那里
