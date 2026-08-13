@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthError, fetchPlanUsage, type PlanUsageReport } from './api'
 import { PlanUsage } from './PlanUsage'
 import { loadHiddenProviders } from './planUsageDisplay'
@@ -9,12 +9,18 @@ vi.mock('./api', () => ({
   fetchPlanUsage: vi.fn(),
 }))
 
+const NOW = Date.parse('2026-08-13T08:00:00Z')
+
+// 倒计时展示用真实时钟计算剩余时长，固定系统时间才能稳定断言 "2d"
+beforeEach(() => {
+  vi.useFakeTimers({ now: NOW, toFake: ['Date'] })
+})
+
 afterEach(() => {
+  vi.useRealTimers()
   vi.restoreAllMocks()
   localStorage.clear()
 })
-
-const NOW = Date.parse('2026-08-13T08:00:00Z')
 
 function report(providers: PlanUsageReport['providers']): PlanUsageReport {
   return { schemaVersion: 1, collectedAt: NOW, providers }

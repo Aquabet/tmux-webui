@@ -34,7 +34,9 @@ function validCredentials(overrides: Record<string, unknown> = {}): unknown {
 }
 
 function usageResponse(body: unknown, status = 200): typeof fetch {
-  return vi.fn(async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch
+  return vi.fn(
+    async () => new Response(JSON.stringify(body), { status }),
+  ) as unknown as typeof fetch
 }
 
 describe('createClaudeQuotaProvider', () => {
