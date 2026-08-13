@@ -14,6 +14,7 @@ import { createTmuxExec } from './tmux/exec.js'
 import { createUpdateChecker } from './update.js'
 import { createClaudeQuotaProvider } from './planUsage/claudeQuota.js'
 import { createCodexProvider } from './planUsage/codex.js'
+import { createCodexQuotaProvider } from './planUsage/codexQuota.js'
 import { createPlanUsageService } from './planUsage/service.js'
 import { createSystemResourceSampler } from './systemResources.js'
 import { handleTerminalConnection, MAX_WS_MESSAGE_BYTES, type SpawnPty } from './ws/terminal.js'
@@ -64,7 +65,7 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
   })
   const getSystemResources = createSystemResourceSampler()
   const planUsage = createPlanUsageService({
-    providers: [createCodexProvider(), createClaudeQuotaProvider()],
+    providers: [createCodexProvider(), createCodexQuotaProvider(), createClaudeQuotaProvider()],
     enabled: config.usageProviders,
   })
   // dist/ 的上一级即仓库根，update.sh 和 package.json 都在那里
