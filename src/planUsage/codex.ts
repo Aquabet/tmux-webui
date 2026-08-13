@@ -77,7 +77,10 @@ function parseSnapshot(line: string): Snapshot | undefined {
   if (!Number.isFinite(observedAt)) return undefined
   return {
     observedAt,
-    planType: typeof limits.plan_type === 'string' ? limits.plan_type : undefined,
+    // OpenAI 2026-04 起把 Pro 拆成 5x/20x；plan_type 可能是 pro_5x 之类，
+    // 下划线转空格后原样展示
+    planType:
+      typeof limits.plan_type === 'string' ? limits.plan_type.replace(/_/g, ' ') : undefined,
     primary:
       typeof limits.primary === 'object' && limits.primary !== null
         ? (limits.primary as RawLimitWindow)
