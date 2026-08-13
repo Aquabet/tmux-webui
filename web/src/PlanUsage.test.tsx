@@ -114,38 +114,41 @@ describe('PlanUsage', () => {
     expect(await screen.findByText(/已过期/)).toBeDefined()
   })
 
-  it('启用但暂无数据的 provider 显示占位说明', async () => {
+  it('数据源缺失与获取失败分别提示', async () => {
     vi.mocked(fetchPlanUsage).mockResolvedValue(
-      report([{ providerId: 'codex', displayName: 'Codex', status: 'unavailable', windows: [] }]),
+      report([
+        { providerId: 'codex', displayName: 'Codex', status: 'unavailable', windows: [] },
+        { providerId: 'claude-quota', displayName: 'Claude 配额', status: 'error', windows: [] },
+      ]),
     )
     render(<PlanUsage onAuthLost={vi.fn()} />)
 
-    expect(await screen.findByText('暂无数据')).toBeDefined()
+    expect(await screen.findByText('未检测到数据源')).toBeDefined()
+    expect(screen.getByText('获取失败')).toBeDefined()
   })
 
-  it('点击 provider 名可隐藏其指标并持久化', async () => {
+  it('点击 provider 名后整块隐藏并持久化，设置面板事件可恢复', async () => {
     vi.mocked(fetchPlanUsage).mockResolvedValue(report([codexOk]))
     render(<PlanUsage onAuthLost={vi.fn()} />)
 
     const toggle = await screen.findByRole('button', { name: /Codex/ })
     fireEvent.click(toggle)
-    expect(screen.queryByLabelText('Codex weekly 已用 43%')).toBeNull()
+    // 整块（含名字）都消失，恢复入口在设置面板
+    expect(screen.queryByText('Codex')).toBeNull()
     expect(loadHiddenProviders()).toEqual(['codex'])
 
-    fireEvent.click(toggle)
+    setProviderHidden('codex', false)
+    expect(await screen.findByText('Codex')).toBeDefined()
     expect(screen.getByLabelText('Codex weekly 已用 43%')).toBeDefined()
-    expect(loadHiddenProviders()).toEqual([])
   })
 
-  it('设置面板改动显示偏好后即时同步（通过广播事件）', async () => {
+  it('设置面板隐藏全部 provider 后整个区块不渲染', async () => {
     vi.mocked(fetchPlanUsage).mockResolvedValue(report([codexOk]))
-    render(<PlanUsage onAuthLost={vi.fn()} />)
-    expect(await screen.findByLabelText('Codex weekly 已用 43%')).toBeDefined()
+    const { container } = render(<PlanUsage onAuthLost={vi.fn()} />)
+    expect(await screen.findByText('Codex')).toBeDefined()
 
     setProviderHidden('codex', true)
-    await waitFor(() => expect(screen.queryByLabelText('Codex weekly 已用 43%')).toBeNull())
-    setProviderHidden('codex', false)
-    expect(await screen.findByLabelText('Codex weekly 已用 43%')).toBeDefined()
+    await waitFor(() => expect(container.innerHTML).toBe(''))
   })
 
   it('登录失效时交给上层返回登录页', async () => {

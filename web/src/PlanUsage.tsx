@@ -56,26 +56,24 @@ function TokenRow({ window: win }: { window: PlanUsageTokenWindow }) {
 
 function ProviderBlock({
   provider,
-  hidden,
-  onToggle,
+  onHide,
 }: {
   provider: PlanUsageProvider
-  hidden: boolean
-  onToggle: () => void
+  onHide: () => void
 }) {
   return (
     <div className="usage-provider">
       <button
         type="button"
-        className={`usage-provider-toggle${hidden ? ' hidden' : ''}`}
-        onClick={onToggle}
-        aria-pressed={!hidden}
-        aria-label={`${provider.displayName} 用量显示开关`}
+        className="usage-provider-toggle"
+        onClick={onHide}
+        aria-label={`隐藏 ${provider.displayName} 用量（可在设置里恢复）`}
+        title="点击隐藏，可在设置里恢复"
       >
         <span>{provider.displayName}</span>
         {provider.planType ? <em>{provider.planType}</em> : null}
       </button>
-      {hidden ? null : provider.status === 'ok' ? (
+      {provider.status === 'ok' ? (
         provider.windows.map((win) =>
           win.kind === 'quota' ? (
             <QuotaRow key={win.label} window={win} provider={provider.displayName} />
@@ -85,7 +83,9 @@ function ProviderBlock({
         )
       ) : (
         <div className="usage-row">
-          <span className="usage-value muted">暂无数据</span>
+          <span className="usage-value muted">
+            {provider.status === 'unavailable' ? '未检测到数据源' : '获取失败'}
+          </span>
         </div>
       )}
     </div>
@@ -118,18 +118,17 @@ export function PlanUsage({ onAuthLost }: { onAuthLost: () => void }) {
     }
   }, [onAuthLost])
 
-  if (providers.length === 0) return null
-
-  const toggle = (id: string) => setProviderHidden(id, !hidden.includes(id))
+  // 被隐藏的 provider 整块不渲染；恢复入口在设置面板的「用量显示」
+  const visible = providers.filter((provider) => !hidden.includes(provider.providerId))
+  if (visible.length === 0) return null
 
   return (
     <section className="plan-usage" aria-label="计划用量">
-      {providers.map((provider) => (
+      {visible.map((provider) => (
         <ProviderBlock
           key={provider.providerId}
           provider={provider}
-          hidden={hidden.includes(provider.providerId)}
-          onToggle={() => toggle(provider.providerId)}
+          onHide={() => setProviderHidden(provider.providerId, true)}
         />
       ))}
     </section>
