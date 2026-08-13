@@ -13,7 +13,20 @@ export async function createView(
   windowIndex?: number,
 ): Promise<View> {
   const viewName = `${VIEW_PREFIX}${randomBytes(4).toString('hex')}`
-  await exec(['new-session', '-d', '-t', target, '-s', viewName])
+  // 不给 -c 的话视图会继承 tmux server 的 cwd（server 常常是本服务拉起的，
+  // 即安装目录），从浏览器新建 window 就会落在那里而不是原 session 的目录
+  const targetPath = (
+    await exec(['display-message', '-p', '-t', target, '#{session_path}']).catch(() => '')
+  ).trim()
+  await exec([
+    'new-session',
+    '-d',
+    '-t',
+    target,
+    '-s',
+    viewName,
+    ...(targetPath ? ['-c', targetPath] : []),
+  ])
   // 不能在创建时直接 set-option destroy-unattached on：此刻视图会话本就无客户端，
   // tmux 会立即把它判定为"未挂载"并销毁。正确做法是挂一个 client-attached 钩子，
   // 只有真正有浏览器客户端连接过之后，再打开 destroy-unattached，

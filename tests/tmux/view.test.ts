@@ -18,6 +18,18 @@ afterAll(async () => {
 })
 
 describe('view lifecycle', () => {
+  // 视图会话不带 -c 会继承 tmux server 的 cwd（常常是本服务的安装目录），
+  // 于是从浏览器里新建 window 会落在那个目录而不是原 session 的目录
+  it('createView 沿用目标会话的工作目录', async () => {
+    await exec(['new-session', '-d', '-s', 'pathdemo', '-c', '/tmp'])
+    const view = await createView(exec, 'pathdemo')
+    const out = await exec(['list-sessions', '-F', '#{session_name}\t#{session_path}'])
+    const line = out.split('\n').find((l) => l.startsWith(`${view.viewName}\t`))
+    expect(line?.split('\t')[1]).toBe('/tmp')
+    await destroyView(exec, view.viewName)
+    await exec(['kill-session', '-t', '=pathdemo'])
+  })
+
   it('createView 创建 webui- 前缀的分组会话', async () => {
     const view = await createView(exec, 'demo')
     expect(view.viewName).toMatch(/^webui-[0-9a-f]{8}$/)
