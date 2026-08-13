@@ -165,6 +165,15 @@ files on the server — no network calls, no OAuth credentials are ever read:
   the numeric `usage` fields of `~/.claude/projects` transcripts. Transcript
   text is never included — only token counts leave the parser.
 
+- **`claude-quota`** (opt-in, different trust trade-off): Claude has no quota
+  data on disk, so this provider reads the OAuth token from
+  `~/.claude/.credentials.json` and asks Anthropic's usage endpoint for the
+  official window percentages. Listing it in the allowlist is explicit consent
+  to both reading that credential file and the outbound HTTPS request to
+  `api.anthropic.com`. The token never reaches the browser or the logs; only
+  percentages and reset times are returned. Expired tokens are reported as an
+  error — the provider never refreshes tokens itself.
+
 The feature is off by default; providers not listed in the allowlist are never
 read from disk. Click a provider's name in the widget to hide or show its
 numbers (display-only, stored in the browser). `/api/usage` sits behind the
@@ -303,7 +312,7 @@ quotes is recommended.
 | `TMUX_WEBUI_UPLOAD_RETENTION_MS` | 7 days | remove managed uploads older than this before accepting a new image |
 | `TMUX_WEBUI_UPLOAD_MAX_BYTES` | 512 MiB | total managed-upload quota; a full store rejects new uploads with HTTP 507 |
 | `TMUX_WEBUI_UPDATE_CHECK` | `true` | set to `false` to never contact GitHub for release info |
-| `TMUX_WEBUI_USAGE_PROVIDERS` | (empty = off) | comma-separated coding-plan usage providers to show in the sidebar (`codex`, `claude`) |
+| `TMUX_WEBUI_USAGE_PROVIDERS` | (empty = off) | comma-separated coding-plan usage providers to show in the sidebar (`codex`, `claude`, `claude-quota`) |
 
 ### Update notification
 
