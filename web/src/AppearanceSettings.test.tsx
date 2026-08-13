@@ -1,7 +1,40 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fetchPlanUsage, type PlanUsageReport } from './api'
 import { AppearanceSettingsDialog } from './AppearanceSettings'
 import { DEFAULT_APPEARANCE } from './appearance'
+import { loadHiddenProviders, saveHiddenProviders } from './planUsageDisplay'
+
+vi.mock('./api', () => ({
+  AuthError: class AuthError extends Error {},
+  fetchPlanUsage: vi.fn(),
+}))
+
+afterEach(() => {
+  localStorage.clear()
+})
+
+// 旧用例不关心用量分区：默认让它拿到空列表从而不渲染
+beforeEach(() => {
+  vi.mocked(fetchPlanUsage).mockResolvedValue({
+    schemaVersion: 1,
+    collectedAt: 0,
+    providers: [],
+  })
+})
+
+function usageReport(ids: string[]): PlanUsageReport {
+  return {
+    schemaVersion: 1,
+    collectedAt: 0,
+    providers: ids.map((id) => ({
+      providerId: id,
+      displayName: id === 'codex' ? 'Codex' : id,
+      status: 'ok',
+      windows: [],
+    })),
+  }
+}
 
 describe('AppearanceSettingsDialog', () => {
   it('主题卡片可即时切换，并提供字体和字号控制', () => {
@@ -100,5 +133,51 @@ describe('AppearanceSettingsDialog', () => {
     expect(document.activeElement).toBe(close)
     fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
     expect(document.activeElement).toBe(done)
+  })
+
+  it('列出已启用的用量 provider 开关，取消勾选后持久化为隐藏', async () => {
+    vi.mocked(fetchPlanUsage).mockResolvedValue(usageReport(['codex', 'claude']))
+    render(
+      <AppearanceSettingsDialog
+        settings={DEFAULT_APPEARANCE}
+        onChange={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    const codexToggle = await screen.findByRole('checkbox', { name: /Codex/ })
+    expect((codexToggle as HTMLInputElement).checked).toBe(true)
+    fireEvent.click(codexToggle)
+    expect(loadHiddenProviders()).toEqual(['codex'])
+    expect((codexToggle as HTMLInputElement).checked).toBe(false)
+    fireEvent.click(codexToggle)
+    expect(loadHiddenProviders()).toEqual([])
+  })
+
+  it('已隐藏的 provider 初始为未勾选', async () => {
+    saveHiddenProviders(['codex'])
+    vi.mocked(fetchPlanUsage).mockResolvedValue(usageReport(['codex']))
+    render(
+      <AppearanceSettingsDialog
+        settings={DEFAULT_APPEARANCE}
+        onChange={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    const codexToggle = await screen.findByRole('checkbox', { name: /Codex/ })
+    expect((codexToggle as HTMLInputElement).checked).toBe(false)
+  })
+
+  it('用量功能未启用时不显示该分区', async () => {
+    vi.mocked(fetchPlanUsage).mockResolvedValue(usageReport([]))
+    render(
+      <AppearanceSettingsDialog
+        settings={DEFAULT_APPEARANCE}
+        onChange={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    await waitFor(() => expect(fetchPlanUsage).toHaveBeenCalled())
+    expect(screen.queryByText('用量显示')).toBeNull()
   })
 })

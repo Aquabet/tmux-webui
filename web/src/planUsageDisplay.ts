@@ -19,6 +19,21 @@ export function saveHiddenProviders(ids: string[]): void {
   localStorage.setItem(USAGE_DISPLAY_STORAGE_KEY, JSON.stringify(ids))
 }
 
+// storage 事件只在跨标签页时触发，同页内组件（侧栏组件与设置面板）
+// 靠这个自定义事件同步
+export const USAGE_DISPLAY_EVENT = 'tmux-webui:usage-display-changed'
+
+export function setProviderHidden(id: string, hidden: boolean): void {
+  const current = loadHiddenProviders()
+  const next = hidden
+    ? current.includes(id)
+      ? current
+      : [...current, id]
+    : current.filter((entry) => entry !== id)
+  saveHiddenProviders(next)
+  window.dispatchEvent(new Event(USAGE_DISPLAY_EVENT))
+}
+
 export function formatTokens(count: number): string {
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`
   if (count >= 1_000) return `${(count / 1_000).toFixed(1)}k`
