@@ -9,8 +9,9 @@ import {
 import {
   formatResetIn,
   formatTokens,
+  loadCollapsedProviders,
   loadHiddenProviders,
-  setProviderHidden,
+  setProviderCollapsed,
   USAGE_DISPLAY_EVENT,
 } from './planUsageDisplay'
 
@@ -54,20 +55,29 @@ function TokenRow({ window: win }: { window: PlanUsageTokenWindow }) {
   )
 }
 
-function ProviderBlock({ provider, onHide }: { provider: PlanUsageProvider; onHide: () => void }) {
+function ProviderBlock({
+  provider,
+  collapsed,
+  onToggleCollapsed,
+}: {
+  provider: PlanUsageProvider
+  collapsed: boolean
+  onToggleCollapsed: () => void
+}) {
   return (
     <div className="usage-provider">
       <button
         type="button"
         className="usage-provider-toggle"
-        onClick={onHide}
-        aria-label={`隐藏 ${provider.displayName} 用量（可在设置里恢复）`}
-        title="点击隐藏，可在设置里恢复"
+        onClick={onToggleCollapsed}
+        aria-expanded={!collapsed}
+        aria-label={`${collapsed ? '展开' : '折叠'} ${provider.displayName} 用量`}
       >
         <span>{provider.displayName}</span>
         {provider.planType ? <em>{provider.planType}</em> : null}
+        <i className={`usage-chevron${collapsed ? ' collapsed' : ''}`} aria-hidden="true" />
       </button>
-      {provider.status === 'ok' ? (
+      {collapsed ? null : provider.status === 'ok' ? (
         provider.windows.map((win) =>
           win.kind === 'quota' ? (
             <QuotaRow key={win.label} window={win} provider={provider.displayName} />
@@ -89,6 +99,7 @@ function ProviderBlock({ provider, onHide }: { provider: PlanUsageProvider; onHi
 export function PlanUsage({ onAuthLost }: { onAuthLost: () => void }) {
   const [providers, setProviders] = useState<PlanUsageProvider[]>([])
   const [hidden, setHidden] = useState<string[]>(loadHiddenProviders)
+  const [collapsed, setCollapsed] = useState<string[]>(loadCollapsedProviders)
 
   useEffect(() => {
     let stopped = false
@@ -112,9 +123,16 @@ export function PlanUsage({ onAuthLost }: { onAuthLost: () => void }) {
     }
   }, [onAuthLost])
 
-  // 被隐藏的 provider 整块不渲染；恢复入口在设置面板的「用量显示」
+  // 被隐藏的 provider 整块不渲染；开关只在设置面板的「用量显示」里。
+  // 侧栏内点名字只做折叠/展开
   const visible = providers.filter((provider) => !hidden.includes(provider.providerId))
   if (visible.length === 0) return null
+
+  const toggleCollapsed = (id: string) => {
+    const isCollapsed = collapsed.includes(id)
+    setProviderCollapsed(id, !isCollapsed)
+    setCollapsed(loadCollapsedProviders())
+  }
 
   return (
     <section className="plan-usage" aria-label="计划用量">
@@ -122,7 +140,8 @@ export function PlanUsage({ onAuthLost }: { onAuthLost: () => void }) {
         <ProviderBlock
           key={provider.providerId}
           provider={provider}
-          onHide={() => setProviderHidden(provider.providerId, true)}
+          collapsed={collapsed.includes(provider.providerId)}
+          onToggleCollapsed={() => toggleCollapsed(provider.providerId)}
         />
       ))}
     </section>

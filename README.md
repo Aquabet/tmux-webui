@@ -170,9 +170,10 @@ showing your coding-plan usage, similar to OpenUsage:
   are reported as an error — the provider never refreshes tokens itself.
 
 The feature is off by default; providers not listed in the allowlist are never
-read from disk. The settings dialog's display toggles (or clicking a provider's
-name in the widget) hide a provider entirely — display-only, stored in the
-browser. `/api/usage` sits behind the same login as everything else.
+read from disk. The settings dialog's display toggles control whether a
+provider appears in the sidebar; clicking a provider's name in the widget
+collapses or expands its numbers (both display-only, stored in the browser).
+`/api/usage` sits behind the same login as everything else.
 
 ### The service, if you want to write it yourself
 

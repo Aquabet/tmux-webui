@@ -492,6 +492,18 @@ body.sidebar-resizing {
   font-weight: 500;
   color: var(--muted);
 }
+.usage-chevron {
+  margin-left: auto;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+.usage-chevron.collapsed {
+  transform: rotate(-45deg);
+}
 .usage-row {
   display: flex;
   align-items: center;

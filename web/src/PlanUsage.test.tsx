@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthError, fetchPlanUsage, type PlanUsageReport } from './api'
 import { PlanUsage } from './PlanUsage'
-import { loadHiddenProviders, setProviderHidden } from './planUsageDisplay'
+import { loadCollapsedProviders, loadHiddenProviders, setProviderHidden } from './planUsageDisplay'
 
 vi.mock('./api', () => ({
   AuthError: class AuthError extends Error {},
@@ -127,19 +127,34 @@ describe('PlanUsage', () => {
     expect(screen.getByText('获取失败')).toBeDefined()
   })
 
-  it('点击 provider 名后整块隐藏并持久化，设置面板事件可恢复', async () => {
+  it('点击 provider 名折叠指标（名字保留），再点展开，状态持久化', async () => {
     vi.mocked(fetchPlanUsage).mockResolvedValue(report([codexOk]))
     render(<PlanUsage onAuthLost={vi.fn()} />)
 
     const toggle = await screen.findByRole('button', { name: /Codex/ })
     fireEvent.click(toggle)
-    // 整块（含名字）都消失，恢复入口在设置面板
-    expect(screen.queryByText('Codex')).toBeNull()
-    expect(loadHiddenProviders()).toEqual(['codex'])
+    // 折叠：指标行消失，名字仍在，隐藏列表不受影响
+    expect(screen.queryByLabelText('Codex weekly 已用 43%')).toBeNull()
+    expect(screen.getByText('Codex')).toBeDefined()
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(loadCollapsedProviders()).toEqual(['codex'])
+    expect(loadHiddenProviders()).toEqual([])
 
+    fireEvent.click(toggle)
+    expect(screen.getByLabelText('Codex weekly 已用 43%')).toBeDefined()
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    expect(loadCollapsedProviders()).toEqual([])
+  })
+
+  it('设置面板关掉的 provider 整块隐藏，重新打开可恢复', async () => {
+    vi.mocked(fetchPlanUsage).mockResolvedValue(report([codexOk]))
+    render(<PlanUsage onAuthLost={vi.fn()} />)
+    expect(await screen.findByText('Codex')).toBeDefined()
+
+    setProviderHidden('codex', true)
+    await waitFor(() => expect(screen.queryByText('Codex')).toBeNull())
     setProviderHidden('codex', false)
     expect(await screen.findByText('Codex')).toBeDefined()
-    expect(screen.getByLabelText('Codex weekly 已用 43%')).toBeDefined()
   })
 
   it('设置面板隐藏全部 provider 后整个区块不渲染', async () => {

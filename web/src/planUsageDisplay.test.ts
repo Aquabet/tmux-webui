@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   formatResetIn,
   formatTokens,
+  loadCollapsedProviders,
   loadHiddenProviders,
   saveHiddenProviders,
+  setProviderCollapsed,
   setProviderHidden,
   USAGE_DISPLAY_EVENT,
   USAGE_DISPLAY_STORAGE_KEY,
@@ -50,6 +52,21 @@ describe('setProviderHidden', () => {
     setProviderHidden('codex', true)
     setProviderHidden('codex', true)
     expect(loadHiddenProviders()).toEqual(['codex'])
+  })
+})
+
+describe('setProviderCollapsed', () => {
+  it('折叠状态独立持久化，不影响隐藏列表', () => {
+    setProviderCollapsed('codex', true)
+    expect(loadCollapsedProviders()).toEqual(['codex'])
+    expect(loadHiddenProviders()).toEqual([])
+    setProviderCollapsed('codex', false)
+    expect(loadCollapsedProviders()).toEqual([])
+  })
+
+  it('存储损坏时回退为空', () => {
+    localStorage.setItem('tmux-webui.usage-collapsed.v1', 'not json')
+    expect(loadCollapsedProviders()).toEqual([])
   })
 })
 
