@@ -267,7 +267,8 @@ describe('handleTerminalConnection', () => {
     await waitOpen(ws)
     ws.send('r{"cols":95,"rows":35}')
     ws.send('iecho early\r')
-    await new Promise((r) => setTimeout(r, 400))
+    // 每次 exec 被拖慢 100ms，createView 现在是 4 次调用（含查询目标工作目录）
+    await new Promise((r) => setTimeout(r, 700))
     expect(pty.resizes).toEqual([[95, 35]])
     expect(pty.written).toEqual(['echo early\r'])
     ws.close()
@@ -287,7 +288,7 @@ describe('handleTerminalConnection', () => {
     await waitOpen(ws)
     for (let i = 0; i <= MAX_PENDING_MESSAGES; i++) ws.send('ix')
     expect(await closed).toBe(4409)
-    await new Promise((r) => setTimeout(r, 300))
+    await new Promise((r) => setTimeout(r, 700))
     expect(pty.written).toEqual([])
     expect(execCalls.some((c) => c[0] === 'kill-session')).toBe(true)
   })

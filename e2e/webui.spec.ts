@@ -46,8 +46,12 @@ test('终端可向上滚动查看较早输出', async ({ page }) => {
   await expect(page.locator('.xterm-screen')).toContainText('scrollback-100')
 
   await term.hover()
-  await page.mouse.wheel(0, -10_000)
-  await expect(page.locator('.xterm-screen')).toContainText('scrollback-1')
+  // CI 的慢机器上，单次滚轮事件后 xterm 有时只重绘了部分行，断言会读到中间
+  // 位置的内容并一直重试到超时。重试滚动本身，直到首行真的出现。
+  await expect(async () => {
+    await page.mouse.wheel(0, -10_000)
+    await expect(page.locator('.xterm-screen')).toContainText('scrollback-1', { timeout: 1_000 })
+  }).toPass({ timeout: 15_000 })
 })
 
 test('侧栏底部固定显示 CPU 与 RAM 仪表', async ({ page }) => {

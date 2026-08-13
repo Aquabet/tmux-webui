@@ -1,3 +1,4 @@
+import { homedir } from 'node:os'
 import { describe, expect, it } from 'vitest'
 import type { TmuxExec } from '../../src/tmux/exec.js'
 import {
@@ -39,10 +40,20 @@ describe('sessionNameError', () => {
 })
 
 describe('createSession', () => {
-  it('以 detached 方式创建指定名称的会话', async () => {
+  it('以 detached 方式创建会话，并显式指定起始目录', async () => {
+    const { calls, exec } = makeExec()
+    await createSession(exec, 'dev', '/home/tester')
+    expect(calls).toEqual([['new-session', '-d', '-s', 'dev', '-c', '/home/tester']])
+  })
+
+  // 不带 -c 时，新 session 会继承 tmux server 的 cwd；而 server 常常是被
+  // 本服务拉起的，于是安装目录被当成用户的默认工作目录
+  it('默认使用 home 目录，不泄漏服务进程的工作目录', async () => {
     const { calls, exec } = makeExec()
     await createSession(exec, 'dev')
-    expect(calls).toEqual([['new-session', '-d', '-s', 'dev']])
+    expect(calls[0].slice(0, 4)).toEqual(['new-session', '-d', '-s', 'dev'])
+    expect(calls[0][4]).toBe('-c')
+    expect(calls[0][5]).toBe(homedir())
   })
 
   it('非法名称直接抛错且不调用 tmux', async () => {
