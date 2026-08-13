@@ -24,6 +24,8 @@ const WINDOW_LABELS: Record<string, string> = {
 
 interface ClaudeQuotaOptions {
   credentialsFile?: string
+  /** Claude Code 的账号状态文件（~/.claude.json），只用于读取 rate limit tier */
+  accountFile?: string
   fetchImpl?: typeof fetch
   now?: () => number
 }
@@ -53,6 +55,34 @@ function parseCredentials(content: string): Credentials | undefined {
     subscriptionType:
       typeof fields.subscriptionType === 'string' ? fields.subscriptionType : undefined,
   }
+}
+
+// ~/.claude.json 里 oauthAccount 的 rate limit tier 能区分 max 5x / 20x，
+// 订阅类型（"max"）没有这个粒度。文件包含大量与此无关的本地状态，
+// 这里只取 tier 字符串，其它内容不进入返回值。
+// 'default_claude_max_20x' → 'max 20x'
+function parsePlanTier(content: string): string | undefined {
+  let data: unknown
+  try {
+    data = JSON.parse(content)
+  } catch {
+    return undefined
+  }
+  if (typeof data !== 'object' || data === null) return undefined
+  const account = (data as Record<string, unknown>).oauthAccount
+  if (typeof account !== 'object' || account === null) return undefined
+  const fields = account as Record<string, unknown>
+  const tier =
+    typeof fields.userRateLimitTier === 'string'
+      ? fields.userRateLimitTier
+      : typeof fields.organizationRateLimitTier === 'string'
+        ? fields.organizationRateLimitTier
+        : undefined
+  if (!tier) return undefined
+  return tier
+    .replace(/^default_/, '')
+    .replace(/^claude_/, '')
+    .replace(/_/g, ' ')
 }
 
 function parseResetsAt(value: unknown): number | undefined {
@@ -91,6 +121,7 @@ function extractWindows(body: unknown, observedAt: number, now: number): QuotaWi
 export function createClaudeQuotaProvider(options: ClaudeQuotaOptions = {}): UsageProvider {
   const credentialsFile =
     options.credentialsFile ?? path.join(homedir(), '.claude', '.credentials.json')
+  const accountFile = options.accountFile ?? path.join(homedir(), '.claude.json')
   const fetchImpl = options.fetchImpl ?? fetch
   const now = options.now ?? Date.now
 
@@ -136,10 +167,11 @@ export function createClaudeQuotaProvider(options: ClaudeQuotaOptions = {}): Usa
       if (windows.length === 0) {
         return { ...base, status: 'unavailable', windows: [] }
       }
+      const tier = parsePlanTier(await readFile(accountFile, 'utf8').catch(() => ''))
       return {
         ...base,
         status: 'ok',
-        planType: credentials.subscriptionType,
+        planType: tier ?? credentials.subscriptionType,
         windows,
         lastActivityAt: timestamp,
       }

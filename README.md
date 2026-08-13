@@ -167,7 +167,9 @@ showing your coding-plan usage, similar to OpenUsage:
   explicit consent to both reading that credential file and the outbound
   HTTPS request to `api.anthropic.com`. The token never reaches the browser
   or the logs; only percentages and reset times are returned. Expired tokens
-  are reported as an error — the provider never refreshes tokens itself.
+  are reported as an error — the provider never refreshes tokens itself. The
+  plan label (e.g. `max 20x`) comes from the rate-limit tier stored in
+  `~/.claude.json`; only that tier string is read from the file.
 
 The feature is off by default; providers not listed in the allowlist are never
 read from disk. The settings dialog's display toggles control whether a
