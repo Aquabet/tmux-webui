@@ -11,7 +11,9 @@ import {
 // enabled 是服务端 allowlist（来自配置，默认空 = 功能关闭）。
 // 未启用的 provider 连 collect 都不会被调用，即服务不会去读它的数据目录。
 
-const DEFAULT_CACHE_MS = 60_000
+// 配额百分比变化慢，quota provider 又会打上游接口——Anthropic 的 usage
+// 端点对每分钟一次的轮询都会 429，所以采集间隔放宽到 5 分钟
+const DEFAULT_CACHE_MS = 5 * 60_000
 
 interface ServiceOptions {
   providers: UsageProvider[]
@@ -32,24 +34,36 @@ export function createPlanUsageService(options: ServiceOptions): PlanUsageServic
 
   let cached: { report: PlanUsageReport; until: number } | undefined
   let inFlight: Promise<PlanUsageReport> | undefined
+  // 上游接口的瞬时故障（限流、超时）不应该把界面打成「获取失败」：
+  // 出错时回退到该 provider 上一次成功的结果，窗口里的 observedAt
+  // 保持旧值，展示端因此仍然如实
+  const lastGood = new Map<string, ProviderUsage>()
 
   async function refresh(collectedAt: number): Promise<PlanUsageReport> {
     const usages = await Promise.all(
-      providers.map(
-        (provider): Promise<ProviderUsage> =>
-          provider.collect().catch(
-            // 失败细节只留在服务端日志；响应里不带路径或错误消息
-            (error) => {
-              console.error(`采集 ${provider.id} 用量失败:`, error)
-              return {
-                providerId: provider.id,
-                displayName: provider.displayName,
-                status: 'error',
-                windows: [],
-              }
-            },
-          ),
-      ),
+      providers.map(async (provider): Promise<ProviderUsage> => {
+        let usage: ProviderUsage
+        try {
+          usage = await provider.collect()
+        } catch (error) {
+          // 失败细节只留在服务端日志；响应里不带路径或错误消息
+          console.error(`采集 ${provider.id} 用量失败:`, error)
+          usage = {
+            providerId: provider.id,
+            displayName: provider.displayName,
+            status: 'error',
+            windows: [],
+          }
+        }
+        if (usage.status === 'ok') {
+          lastGood.set(provider.id, usage)
+          return usage
+        }
+        if (usage.status === 'error') {
+          return lastGood.get(provider.id) ?? usage
+        }
+        return usage
+      }),
     )
     return { schemaVersion: PLAN_USAGE_SCHEMA_VERSION, collectedAt, providers: usages }
   }
