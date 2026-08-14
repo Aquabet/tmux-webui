@@ -14,6 +14,10 @@ with patches incrementing the last position (`3.1.1`, `3.1.2`). See
 - Usage providers are now switched on and off in the settings dialog only. The
   state lives on the server in `~/.tmux-webui/usage-providers.json`, so every
   browser and device sees the same setting.
+- The local-snapshot Codex provider is gone; the remaining Codex provider reads
+  live numbers from ChatGPT and is simply called "Codex". The snapshot version
+  lagged until the next Codex session wrote an update and could not tell the
+  split Pro tiers apart.
 - **Breaking:** `TMUX_WEBUI_USAGE_PROVIDERS` is gone. It gated whether the
   server would read a provider's data at all, but anyone who can log into the
   web UI already has shell access on that machine, so the separate deployment

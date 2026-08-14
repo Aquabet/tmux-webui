@@ -127,9 +127,9 @@ export function createCodexQuotaProvider(options: CodexQuotaOptions = {}): Usage
 
   return {
     id: 'codex-quota',
-    displayName: 'Codex Live',
+    displayName: 'Codex',
     async collect(): Promise<ProviderUsage> {
-      const base = { providerId: 'codex-quota', displayName: 'Codex Live' }
+      const base = { providerId: 'codex-quota', displayName: 'Codex' }
       let content: string
       try {
         content = await readFile(authFile, 'utf8')

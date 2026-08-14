@@ -164,20 +164,11 @@ by default, and the switches live on the server, so every browser and device
 sees the same setting. **Turning a provider on is what allows the server to
 read its data:**
 
-- **`codex`** reads the newest `rate_limits` snapshot from
-  `~/.codex/sessions/**/rollout-*.jsonl` on the server — local file parsing
-  only, no network, no credentials: real quota percentages with reset
-  countdowns and your plan type. Snapshots whose reset window already passed
-  are marked expired instead of being shown as live.
-- **`codex-quota`** (shown as "Codex Live"; a different trust trade-off):
-  instead of local snapshots, this provider reads the OAuth token from
-  `~/.codex/auth.json` and asks ChatGPT's usage endpoint for live percentages
-  and the server-side plan tier. Listing it in the allowlist is explicit
-  consent to reading that credential file and the outbound HTTPS request to
-  `chatgpt.com`. Prefer it over `codex` when you want fresh numbers; local
-  snapshots lag until the next Codex session writes an update.
-- **`claude-quota`** (shown as "Claude Code"; a different trust trade-off):
-  Claude keeps no quota data on disk, so this provider reads the OAuth token
+- **Codex** reads the OAuth token from `~/.codex/auth.json` and asks ChatGPT's
+  usage endpoint for the current percentages, reset countdowns, and plan tier.
+  Turning it on is explicit consent to reading that credential file and the
+  outbound HTTPS request to `chatgpt.com`.
+- **Claude Code**: Claude keeps no quota data on disk, so this provider reads the OAuth token
   from `~/.claude/.credentials.json` and asks Anthropic's usage endpoint for
   the official 5-hour and weekly percentages. Listing it in the allowlist is
   explicit consent to both reading that credential file and the outbound
