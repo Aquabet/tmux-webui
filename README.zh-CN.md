@@ -139,8 +139,9 @@ Node 提供的可用内存值。`/api/resources` 与 session 列表使用相同�
 
 ### Coding plan 用量（可选）
 
-设 `TMUX_WEBUI_USAGE_PROVIDERS=codex-quota,claude-quota` 后，侧栏会多一块类似
-OpenUsage 的计划用量组件：
+在网页的**设置面板 → 计划用量**里打开对应的 provider，侧栏就会多一块类似
+OpenUsage 的计划用量组件。默认全部关闭；开关状态存在服务端，因此所有浏览器
+和设备看到的是同一份设置。**打开某个 provider 就是允许服务端去读它的数据**：
 
 - **`codex`** 读取服务器本地 `~/.codex/sessions/**/rollout-*.jsonl` 里最新的
   `rate_limits` 快照——纯本地文件解析，不出网、不碰凭据：真实配额百分比、
@@ -160,10 +161,13 @@ OpenUsage 的计划用量组件：
   token。计划名（如 `max 20x`）来自 `~/.claude.json` 里的 rate limit
   tier——该文件只被读取这一个字符串。
 
-该功能默认关闭；不在 allowlist 里的 provider 完全不会被读取。设置面板的
-「用量显示」控制每个 provider 是否出现在侧栏；点侧栏里的 provider 名则是
-折叠/展开数字（两者都只影响展示，存在浏览器里）。`/api/usage` 与其它接口
-使用相同的登录鉴权。
+关掉的 provider 服务端完全不会去读它的文件或发请求。点侧栏里的 provider 名
+是折叠/展开数字（纯展示，存在本浏览器里）。`/api/usage` 与保存开关的接口都
+与其它接口使用相同的登录鉴权。
+
+`TMUX_WEBUI_USAGE_PROVIDERS` 仍然可用，但只作为**首次启动的初始值**（无人
+值守部署用）；之后以设置面板里的开关为准，状态存在
+`~/.tmux-webui/usage-providers.json`（权限 `0600`）。
 
 ### 想自己写 service 的话
 
@@ -279,7 +283,8 @@ release tag**、重装依赖、重新构建，并重启指向本目录的 system
 | `TMUX_WEBUI_UPLOAD_RETENTION_MS` | 7 天 | 接收新图片前，清理超过该时长的受管理上传文件 |
 | `TMUX_WEBUI_UPLOAD_MAX_BYTES` | 512 MiB | 受管理上传文件的总配额；配额已满时新上传返回 HTTP 507 |
 | `TMUX_WEBUI_UPDATE_CHECK` | `true` | 设为 `false` 则完全不访问 GitHub 查版本 |
-| `TMUX_WEBUI_USAGE_PROVIDERS` | （空 = 关闭） | 逗号分隔的 coding plan 用量 provider，侧栏展示（`codex`、`codex-quota`、`claude-quota`） |
+| `TMUX_WEBUI_USAGE_PROVIDERS` | （空） | 计划用量 provider 的**首次启动初始值**，之后以设置面板为准（`codex`、`codex-quota`、`claude-quota`） |
+| `TMUX_WEBUI_USAGE_STATE_FILE` | `~/.tmux-webui/usage-providers.json` | 用量开关状态的落盘路径 |
 
 ### 更新提示
 

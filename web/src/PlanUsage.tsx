@@ -10,9 +10,7 @@ import {
   formatResetIn,
   formatTokens,
   loadCollapsedProviders,
-  loadHiddenProviders,
   setProviderCollapsed,
-  USAGE_DISPLAY_EVENT,
 } from './planUsageDisplay'
 
 // 快照 60s 一采（服务端同样缓存 60s），轮询更快没有意义
@@ -98,7 +96,6 @@ function ProviderBlock({
 
 export function PlanUsage({ onAuthLost }: { onAuthLost: () => void }) {
   const [providers, setProviders] = useState<PlanUsageProvider[]>([])
-  const [hidden, setHidden] = useState<string[]>(loadHiddenProviders)
   const [collapsed, setCollapsed] = useState<string[]>(loadCollapsedProviders)
 
   useEffect(() => {
@@ -113,19 +110,15 @@ export function PlanUsage({ onAuthLost }: { onAuthLost: () => void }) {
     }
     void poll()
     const timer = window.setInterval(() => void poll(), POLL_MS)
-    // 设置面板改动显示偏好时同步；storage 事件只跨标签页，同页靠自定义事件
-    const sync = () => setHidden(loadHiddenProviders())
-    window.addEventListener(USAGE_DISPLAY_EVENT, sync)
     return () => {
       stopped = true
       window.clearInterval(timer)
-      window.removeEventListener(USAGE_DISPLAY_EVENT, sync)
     }
   }, [onAuthLost])
 
-  // 被隐藏的 provider 整块不渲染；开关只在设置面板的「用量显示」里。
+  // 未启用的 provider 不渲染——服务端根本没去采集它。开关在设置面板里，
   // 侧栏内点名字只做折叠/展开
-  const visible = providers.filter((provider) => !hidden.includes(provider.providerId))
+  const visible = providers.filter((provider) => provider.status !== 'disabled')
   if (visible.length === 0) return null
 
   const toggleCollapsed = (id: string) => {

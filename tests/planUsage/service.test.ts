@@ -20,7 +20,7 @@ function stubProvider(
 }
 
 describe('createPlanUsageService', () => {
-  it('只采集 enabled 列表里的 provider，未启用的完全不调用', async () => {
+  it('只采集启用的 provider，未启用的完全不调用但仍在报告里（供设置面板列出）', async () => {
     const a = stubProvider('a')
     const b = stubProvider('b')
     const service = createPlanUsageService({
@@ -29,20 +29,29 @@ describe('createPlanUsageService', () => {
       now: () => 1000,
     })
     const report = await service.collect()
-    expect(report.providers.map((p) => p.providerId)).toEqual(['a'])
+    expect(report.providers.map((p) => `${p.providerId}:${p.status}`)).toEqual([
+      'a:ok',
+      'b:disabled',
+    ])
     expect(a.calls()).toBe(1)
     expect(b.calls()).toBe(0)
   })
 
-  it('enabled 里的未知 id 被忽略', async () => {
+  it('启用集合变化后立即生效，无需等缓存过期', async () => {
     const a = stubProvider('a')
+    let enabled: string[] = []
     const service = createPlanUsageService({
       providers: [a.provider],
-      enabled: ['a', 'nope'],
+      enabled: () => enabled,
+      cacheMs: 60_000,
       now: () => 1000,
     })
-    const report = await service.collect()
-    expect(report.providers.map((p) => p.providerId)).toEqual(['a'])
+    expect((await service.collect()).providers[0].status).toBe('disabled')
+    expect(a.calls()).toBe(0)
+
+    enabled = ['a']
+    expect((await service.collect()).providers[0].status).toBe('ok')
+    expect(a.calls()).toBe(1)
   })
 
   it('报告带 schemaVersion 和 collectedAt', async () => {

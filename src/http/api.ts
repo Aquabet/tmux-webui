@@ -22,10 +22,12 @@ interface ApiDeps {
   checkUpdate: () => Promise<UpdateInfo>
   getSystemResources: () => SystemResources
   collectPlanUsage: () => Promise<PlanUsageReport>
+  setUsageProviders: (ids: string[]) => Promise<void>
   repoRoot: string
 }
 
 const loginSchema = z.object({ password: z.string().min(1).max(200) })
+const usageProvidersSchema = z.object({ enabled: z.array(z.string().max(64)).max(20) })
 const sessionNameSchema = z.object({ name: z.string().min(1).max(64) })
 
 // 白名单 mime → 扩展名；文件名完全由服务端生成，客户端无法影响路径
@@ -146,6 +148,25 @@ export function createApiRouter(deps: ApiDeps): Router {
       // 采集失败细节只进服务端日志，响应不带路径或原始错误
       console.error('采集计划用量失败:', error)
       res.status(500).json({ success: false, error: '获取计划用量失败' })
+    }
+  })
+
+  // 启用某个 provider 就是同意服务去读对应的本地数据或凭据，因此写在
+  // 服务端并落盘；provider id 由注册表校验，未知 id 一律 400
+  router.put('/usage/providers', requireAuth(deps.store), async (req, res) => {
+    const parsed = usageProvidersSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ success: false, error: '请求格式错误' })
+      return
+    }
+    try {
+      await deps.setUsageProviders(parsed.data.enabled)
+      res.json({ success: true })
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '保存用量 provider 失败',
+      })
     }
   })
 

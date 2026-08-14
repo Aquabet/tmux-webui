@@ -15,6 +15,7 @@ import { createUpdateChecker } from './update.js'
 import { createClaudeQuotaProvider } from './planUsage/claudeQuota.js'
 import { createCodexProvider } from './planUsage/codex.js'
 import { createCodexQuotaProvider } from './planUsage/codexQuota.js'
+import { createEnabledStore } from './planUsage/enabledStore.js'
 import { createPlanUsageService } from './planUsage/service.js'
 import { createSystemResourceSampler } from './systemResources.js'
 import { handleTerminalConnection, MAX_WS_MESSAGE_BYTES, type SpawnPty } from './ws/terminal.js'
@@ -64,9 +65,21 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
     enabled: config.updateCheck,
   })
   const getSystemResources = createSystemResourceSampler()
+  const usageProviders = [
+    createCodexProvider(),
+    createCodexQuotaProvider(),
+    createClaudeQuotaProvider(),
+  ]
+  // 开关状态落盘在配置目录；TMUX_WEBUI_USAGE_PROVIDERS 只作为首次启动的
+  // 初始值（无人值守部署用），之后以界面里的开关为准
+  const usageEnabled = createEnabledStore({
+    file: config.usageStateFile,
+    known: usageProviders.map((provider) => provider.id),
+    seed: config.usageProviders,
+  })
   const planUsage = createPlanUsageService({
-    providers: [createCodexProvider(), createCodexQuotaProvider(), createClaudeQuotaProvider()],
-    enabled: config.usageProviders,
+    providers: usageProviders,
+    enabled: () => usageEnabled.list(),
   })
   // dist/ 的上一级即仓库根，update.sh 和 package.json 都在那里
   const repoRoot = path.resolve(__dirname, '..')
@@ -80,6 +93,7 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
       checkUpdate,
       getSystemResources,
       collectPlanUsage: () => planUsage.collect(),
+      setUsageProviders: (ids) => usageEnabled.save(ids),
       repoRoot,
     }),
   )

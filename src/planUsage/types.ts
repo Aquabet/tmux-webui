@@ -26,7 +26,7 @@ export interface ProviderUsage {
   providerId: string
   displayName: string
   /** unavailable = 数据源不存在或无数据；error = 解析失败（不向客户端泄露原因） */
-  status: 'ok' | 'unavailable' | 'error'
+  status: 'ok' | 'unavailable' | 'error' | 'disabled'
   planType?: string
   windows: UsageWindow[]
   /** 该 provider 最近一次本地活动时刻，epoch 毫秒 */
