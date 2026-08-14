@@ -30,7 +30,6 @@ describe('createAppServer', () => {
       uploadRetentionMs: 60_000,
       uploadMaxBytes: 20 * 1024 * 1024,
       updateCheck: false,
-      usageProviders: [],
       usageStateFile: '/tmp/webui-test-usage-providers.json',
     }
     server = createAppServer(config)
@@ -59,7 +58,6 @@ describe('createAppServer', () => {
       uploadRetentionMs: 60_000,
       uploadMaxBytes: 20 * 1024 * 1024,
       updateCheck: false,
-      usageProviders: [],
       usageStateFile: '/tmp/webui-test-usage-providers.json',
     }
     // 静态资源只在 web/dist 存在时才挂载，缺了这里会以「cache-control 是 null」
@@ -104,7 +102,6 @@ describe('createAppServer', () => {
       uploadRetentionMs: 60_000,
       uploadMaxBytes: 20 * 1024 * 1024,
       updateCheck: false,
-      usageProviders: [],
       usageStateFile: '/tmp/webui-test-usage-providers.json',
     }
     server = createAppServer(config)
@@ -136,7 +133,6 @@ describe('createAppServer', () => {
       uploadRetentionMs: 60_000,
       uploadMaxBytes: 20 * 1024 * 1024,
       updateCheck: false,
-      usageProviders: [],
       usageStateFile: '/tmp/webui-test-usage-providers.json',
     }
     const spawnPty: SpawnPty = () => ({

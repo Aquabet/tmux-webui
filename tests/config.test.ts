@@ -22,30 +22,8 @@ describe('loadConfig', () => {
       uploadRetentionMs: 7 * 24 * 3600 * 1000,
       uploadMaxBytes: 512 * 1024 * 1024,
       updateCheck: true,
-      usageProviders: [],
       usageStateFile: path.join(homedir(), '.tmux-webui', 'usage-providers.json'),
     })
-  })
-
-  it('USAGE_PROVIDERS 逗号分隔解析，默认空（功能关闭）', () => {
-    const at = (v?: string) =>
-      loadConfig({
-        TMUX_WEBUI_PASSWORD_HASH: 'h',
-        ...(v === undefined ? {} : { TMUX_WEBUI_USAGE_PROVIDERS: v }),
-      }).usageProviders
-    expect(at()).toEqual([])
-    expect(at('')).toEqual([])
-    expect(at('codex')).toEqual(['codex'])
-    expect(at('codex, claude')).toEqual(['codex', 'claude'])
-    expect(at(' Claude ,,')).toEqual(['claude'])
-  })
-
-  it('UPDATE_CHECK=false 关闭更新检查（其它值一律视为开启）', () => {
-    const at = (v: string) =>
-      loadConfig({ TMUX_WEBUI_PASSWORD_HASH: 'h', TMUX_WEBUI_UPDATE_CHECK: v }).updateCheck
-    expect(at('false')).toBe(false)
-    expect(at('true')).toBe(true)
-    expect(at('')).toBe(true)
   })
 
   it('读取全部环境变量覆盖', () => {

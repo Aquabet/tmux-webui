@@ -70,12 +70,10 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
     createCodexQuotaProvider(),
     createClaudeQuotaProvider(),
   ]
-  // 开关状态落盘在配置目录；TMUX_WEBUI_USAGE_PROVIDERS 只作为首次启动的
-  // 初始值（无人值守部署用），之后以界面里的开关为准
+  // 开关状态落盘在配置目录，由设置面板里的开关写入
   const usageEnabled = createEnabledStore({
     file: config.usageStateFile,
     known: usageProviders.map((provider) => provider.id),
-    seed: config.usageProviders,
   })
   const planUsage = createPlanUsageService({
     providers: usageProviders,

@@ -8,7 +8,7 @@ import type { ProviderUsage, QuotaWindow, UsageProvider } from './types.js'
 // 相比本地 rollout 快照（codex provider），数据不滞后，且服务器端的
 // plan_type 是细分档位（pro_5x/pro_20x 拆分后自动生效）。
 //
-// 必须在 TMUX_WEBUI_USAGE_PROVIDERS 显式列出才启用——启用即同意
+// 必须在设置面板里显式打开才启用——打开即同意
 // 「读 auth.json」+「HTTPS 请求 chatgpt.com」。token 只在单次请求
 // 内存中使用，不落日志、不进返回值；API 原始响应不透传。
 

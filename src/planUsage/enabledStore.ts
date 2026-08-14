@@ -9,8 +9,6 @@ interface EnabledStoreOptions {
   file: string
   /** 注册表里全部 provider id，未知 id 一律拒绝 */
   known: string[]
-  /** 状态文件不存在时的初始值（来自配置，便于无人值守部署） */
-  seed?: string[]
 }
 
 interface EnabledStore {
@@ -36,7 +34,8 @@ export function createEnabledStore(options: EnabledStoreOptions): EnabledStore {
     }
   }
 
-  let current = readFile() ?? sanitize(options.seed ?? [])
+  // 没有状态文件 = 全部关闭：功能只在用户主动打开后才碰任何数据
+  let current = readFile() ?? []
 
   return {
     list: () => [...current],

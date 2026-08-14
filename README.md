@@ -192,9 +192,9 @@ Clicking a provider's name in the widget collapses or expands its numbers
 (display-only, stored in the browser). `/api/usage` and the endpoint that saves
 the switches sit behind the same login as everything else.
 
-`TMUX_WEBUI_USAGE_PROVIDERS` still works, but only as the **initial value on
-first start** (for unattended deployments); after that the settings dialog wins
-and the state lives in `~/.tmux-webui/usage-providers.json` (mode `0600`).
+The switches live in `~/.tmux-webui/usage-providers.json` (mode `0600`). There
+is no environment variable for this feature — turn a provider on in the
+settings dialog when you want it.
 
 ### The service, if you want to write it yourself
 
@@ -329,8 +329,6 @@ quotes is recommended.
 | `TMUX_WEBUI_UPLOAD_RETENTION_MS` | 7 days | remove managed uploads older than this before accepting a new image |
 | `TMUX_WEBUI_UPLOAD_MAX_BYTES` | 512 MiB | total managed-upload quota; a full store rejects new uploads with HTTP 507 |
 | `TMUX_WEBUI_UPDATE_CHECK` | `true` | set to `false` to never contact GitHub for release info |
-| `TMUX_WEBUI_USAGE_PROVIDERS` | (empty) | **initial value on first start** for the usage providers; the settings dialog wins afterwards (`codex`, `codex-quota`, `claude-quota`) |
-| `TMUX_WEBUI_USAGE_STATE_FILE` | `~/.tmux-webui/usage-providers.json` | where the usage switches are stored |
 
 ### Update notification
 

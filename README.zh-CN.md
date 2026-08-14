@@ -165,9 +165,8 @@ OpenUsage 的计划用量组件。默认全部关闭；开关状态存在服务�
 是折叠/展开数字（纯展示，存在本浏览器里）。`/api/usage` 与保存开关的接口都
 与其它接口使用相同的登录鉴权。
 
-`TMUX_WEBUI_USAGE_PROVIDERS` 仍然可用，但只作为**首次启动的初始值**（无人
-值守部署用）；之后以设置面板里的开关为准，状态存在
-`~/.tmux-webui/usage-providers.json`（权限 `0600`）。
+开关状态存在 `~/.tmux-webui/usage-providers.json`（权限 `0600`）。这个功能
+没有对应的环境变量——要用的时候进设置打开一下就行。
 
 ### 想自己写 service 的话
 
@@ -283,8 +282,6 @@ release tag**、重装依赖、重新构建，并重启指向本目录的 system
 | `TMUX_WEBUI_UPLOAD_RETENTION_MS` | 7 天 | 接收新图片前，清理超过该时长的受管理上传文件 |
 | `TMUX_WEBUI_UPLOAD_MAX_BYTES` | 512 MiB | 受管理上传文件的总配额；配额已满时新上传返回 HTTP 507 |
 | `TMUX_WEBUI_UPDATE_CHECK` | `true` | 设为 `false` 则完全不访问 GitHub 查版本 |
-| `TMUX_WEBUI_USAGE_PROVIDERS` | （空） | 计划用量 provider 的**首次启动初始值**，之后以设置面板为准（`codex`、`codex-quota`、`claude-quota`） |
-| `TMUX_WEBUI_USAGE_STATE_FILE` | `~/.tmux-webui/usage-providers.json` | 用量开关状态的落盘路径 |
 
 ### 更新提示
 
