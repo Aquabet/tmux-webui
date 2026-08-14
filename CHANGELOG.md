@@ -9,6 +9,35 @@ with patches incrementing the last position (`3.1.1`, `3.1.2`). See
 
 ## [Unreleased]
 
+## [3.1.9] - 2026-08-14
+
+### Added
+
+- An optional coding-plan usage widget in the session sidebar, enabled per
+  provider through `TMUX_WEBUI_USAGE_PROVIDERS` (empty by default). `codex`
+  parses local `~/.codex/sessions` snapshots without network access or
+  credentials; the opt-in `codex-quota` and `claude-quota` providers read the
+  respective CLI's OAuth token and query the vendor usage endpoint for live
+  percentages, which is why they must be listed explicitly. Tokens never reach
+  the browser or the logs.
+- A home view after login that lists the sessions you can attach to, replacing
+  the previous empty state.
+- Per-provider usage display toggles in the settings dialog; clicking a
+  provider's name in the sidebar collapses or expands its numbers.
+
+### Fixed
+
+- Sessions created from the browser no longer inherit the service's working
+  directory. Previously the tmux server was often started by this service, so
+  its install directory became the default working directory of every new
+  terminal.
+- Browser windows no longer jump to a session created elsewhere. The current
+  session is now located by name instead of falling back to the first entry of
+  a list that is sorted by name.
+- Usage collection survives upstream rate limits: the poll interval is now five
+  minutes, and a failed refresh keeps showing the last successful snapshot
+  instead of an error.
+
 ## [3.1.8] - 2026-08-09
 
 ### Added
@@ -176,7 +205,8 @@ First public release.
   once every 6 hours, behind auth) and links to it from the sidebar. It never
   installs anything; `TMUX_WEBUI_UPDATE_CHECK=false` disables the check.
 
-[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.8...HEAD
+[Unreleased]: https://github.com/Aquabet/tmux-webui/compare/v3.1.9...HEAD
+[3.1.9]: https://github.com/Aquabet/tmux-webui/compare/v3.1.8...v3.1.9
 [3.1.8]: https://github.com/Aquabet/tmux-webui/compare/v3.1.7...v3.1.8
 [3.1.7]: https://github.com/Aquabet/tmux-webui/compare/v3.1.6...v3.1.7
 [3.1.6]: https://github.com/Aquabet/tmux-webui/compare/v3.1.5...v3.1.6
