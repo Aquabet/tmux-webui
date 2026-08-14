@@ -1,14 +1,21 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
-test('登录 → 看到 session → 切 window → 输入并看到回显', async ({ page }) => {
+// 登录后停在主页：不自动挂进某个 session，进哪个由用户点
+async function loginAndEnter(page: Page, session: string) {
   await page.goto('/')
-
-  // 登录
   await page.getByPlaceholder('密码').fill('secret')
   await page.getByRole('button', { name: '登录' }).click()
+  await expect(page.getByRole('heading', { name: 'tmux webui' })).toBeVisible()
+  await page.locator('.sidebar').getByRole('button', { name: session, exact: true }).click()
+}
+
+test('登录 → 看到 session → 切 window → 输入并看到回显', async ({ page }) => {
+  await loginAndEnter(page, 'demo')
 
   // 侧边栏出现 demo session
-  await expect(page.getByRole('button', { name: /demo/ })).toBeVisible()
+  await expect(
+    page.locator('.sidebar').getByRole('button', { name: 'demo', exact: true }),
+  ).toBeVisible()
 
   // 两个 window tab
   await expect(page.getByRole('button', { name: '0: first' })).toBeVisible()
@@ -35,9 +42,7 @@ test('密码错误显示错误信息', async ({ page }) => {
 })
 
 test('终端可向上滚动查看较早输出', async ({ page }) => {
-  await page.goto('/')
-  await page.getByPlaceholder('密码').fill('secret')
-  await page.getByRole('button', { name: '登录' }).click()
+  await loginAndEnter(page, 'demo')
 
   const term = page.locator('.terminal')
   await term.click()
