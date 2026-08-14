@@ -62,7 +62,7 @@
     "test:e2e": "bash e2e/setup-tmux.sh && playwright test"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
+    "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.6",
     "express": "^4.22.2",
     "node-pty": "^1.0.0",
@@ -72,7 +72,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.8",
     "@playwright/test": "^1.62.1",
-    "@types/bcryptjs": "^2.4.6",
+    "@types/bcryptjs": "^3.0.0",
     "@types/cookie-parser": "^1.4.7",
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.0",
