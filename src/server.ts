@@ -13,7 +13,6 @@ import { spawnNodePty } from './pty.js'
 import { createTmuxExec } from './tmux/exec.js'
 import { createUpdateChecker } from './update.js'
 import { createClaudeQuotaProvider } from './planUsage/claudeQuota.js'
-import { createCodexProvider } from './planUsage/codex.js'
 import { createCodexQuotaProvider } from './planUsage/codexQuota.js'
 import { createEnabledStore } from './planUsage/enabledStore.js'
 import { createPlanUsageService } from './planUsage/service.js'
@@ -65,11 +64,7 @@ export function createAppServer(config: Config, spawnPty: SpawnPty = spawnNodePt
     enabled: config.updateCheck,
   })
   const getSystemResources = createSystemResourceSampler()
-  const usageProviders = [
-    createCodexProvider(),
-    createCodexQuotaProvider(),
-    createClaudeQuotaProvider(),
-  ]
+  const usageProviders = [createCodexQuotaProvider(), createClaudeQuotaProvider()]
   // 开关状态落盘在配置目录，由设置面板里的开关写入
   const usageEnabled = createEnabledStore({
     file: config.usageStateFile,

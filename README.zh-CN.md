@@ -143,16 +143,10 @@ Node 提供的可用内存值。`/api/resources` 与 session 列表使用相同�
 OpenUsage 的计划用量组件。默认全部关闭；开关状态存在服务端，因此所有浏览器
 和设备看到的是同一份设置。**打开某个 provider 就是允许服务端去读它的数据**：
 
-- **`codex`** 读取服务器本地 `~/.codex/sessions/**/rollout-*.jsonl` 里最新的
-  `rate_limits` 快照——纯本地文件解析，不出网、不碰凭据：真实配额百分比、
-  重置倒计时和计划类型。reset 已过的快照会标注「已过期」，不会当成实时
-  数据展示。
-- **`codex-quota`**（界面显示为「Codex Live」；信任代价不同）：不读本地
-  快照，而是用 `~/.codex/auth.json` 里的 OAuth token 调 ChatGPT 的 usage
-  接口，拿实时百分比和服务器端计划档位。写进 allowlist 即表示同意读取该
-  凭据文件并向 `chatgpt.com` 发起 HTTPS 请求。想要不滞后的数字就用它——
-  本地快照要等下一次 Codex 会话才更新。
-- **`claude-quota`**（界面显示为「Claude Code」；信任代价不同）：Claude
+- **Codex**：用 `~/.codex/auth.json` 里的 OAuth token 调 ChatGPT 的 usage
+  接口，拿当前百分比、重置倒计时和计划档位。打开它即表示同意读取该凭据
+  文件并向 `chatgpt.com` 发起 HTTPS 请求。
+- **Claude Code**：Claude
   本地没有配额数据，这个 provider 会读取 `~/.claude/.credentials.json` 里的
   OAuth token，向 Anthropic 的 usage 接口查询官方 5 小时与周窗口百分比。
   把它写进 allowlist 即表示同意这两件事：读取该凭据文件、向
