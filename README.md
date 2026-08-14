@@ -158,8 +158,11 @@ reading. The `/api/resources` data is protected by the same login as sessions.
 
 ### Coding plan usage (optional)
 
-Set `TMUX_WEBUI_USAGE_PROVIDERS=codex-quota,claude-quota` to add a sidebar widget
-showing your coding-plan usage, similar to OpenUsage:
+Turn a provider on under **Settings → 计划用量** in the web UI to add a sidebar
+widget showing your coding-plan usage, similar to OpenUsage. Everything is off
+by default, and the switches live on the server, so every browser and device
+sees the same setting. **Turning a provider on is what allows the server to
+read its data:**
 
 - **`codex`** reads the newest `rate_limits` snapshot from
   `~/.codex/sessions/**/rollout-*.jsonl` on the server — local file parsing
@@ -184,11 +187,14 @@ showing your coding-plan usage, similar to OpenUsage:
   plan label (e.g. `max 20x`) comes from the rate-limit tier stored in
   `~/.claude.json`; only that tier string is read from the file.
 
-The feature is off by default; providers not listed in the allowlist are never
-read from disk. The settings dialog's display toggles control whether a
-provider appears in the sidebar; clicking a provider's name in the widget
-collapses or expands its numbers (both display-only, stored in the browser).
-`/api/usage` sits behind the same login as everything else.
+A provider that is switched off is never read from disk and never contacted.
+Clicking a provider's name in the widget collapses or expands its numbers
+(display-only, stored in the browser). `/api/usage` and the endpoint that saves
+the switches sit behind the same login as everything else.
+
+`TMUX_WEBUI_USAGE_PROVIDERS` still works, but only as the **initial value on
+first start** (for unattended deployments); after that the settings dialog wins
+and the state lives in `~/.tmux-webui/usage-providers.json` (mode `0600`).
 
 ### The service, if you want to write it yourself
 
@@ -323,7 +329,8 @@ quotes is recommended.
 | `TMUX_WEBUI_UPLOAD_RETENTION_MS` | 7 days | remove managed uploads older than this before accepting a new image |
 | `TMUX_WEBUI_UPLOAD_MAX_BYTES` | 512 MiB | total managed-upload quota; a full store rejects new uploads with HTTP 507 |
 | `TMUX_WEBUI_UPDATE_CHECK` | `true` | set to `false` to never contact GitHub for release info |
-| `TMUX_WEBUI_USAGE_PROVIDERS` | (empty = off) | comma-separated coding-plan usage providers to show in the sidebar (`codex`, `codex-quota`, `claude-quota`) |
+| `TMUX_WEBUI_USAGE_PROVIDERS` | (empty) | **initial value on first start** for the usage providers; the settings dialog wins afterwards (`codex`, `codex-quota`, `claude-quota`) |
+| `TMUX_WEBUI_USAGE_STATE_FILE` | `~/.tmux-webui/usage-providers.json` | where the usage switches are stored |
 
 ### Update notification
 

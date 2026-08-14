@@ -23,6 +23,7 @@ describe('loadConfig', () => {
       uploadMaxBytes: 512 * 1024 * 1024,
       updateCheck: true,
       usageProviders: [],
+      usageStateFile: path.join(homedir(), '.tmux-webui', 'usage-providers.json'),
     })
   })
 

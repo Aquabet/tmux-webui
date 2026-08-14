@@ -1,65 +1,21 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import {
   formatResetIn,
   formatTokens,
   loadCollapsedProviders,
-  loadHiddenProviders,
-  saveHiddenProviders,
   setProviderCollapsed,
-  setProviderHidden,
-  USAGE_DISPLAY_EVENT,
-  USAGE_DISPLAY_STORAGE_KEY,
 } from './planUsageDisplay'
 
 afterEach(() => {
   localStorage.clear()
 })
 
-describe('hidden provider 持久化', () => {
-  it('默认没有隐藏任何 provider', () => {
-    expect(loadHiddenProviders()).toEqual([])
-  })
-
-  it('保存后可读回', () => {
-    saveHiddenProviders(['codex'])
-    expect(loadHiddenProviders()).toEqual(['codex'])
-  })
-
-  it('存储内容损坏时回退为空', () => {
-    localStorage.setItem(USAGE_DISPLAY_STORAGE_KEY, '{"not":"array"}')
-    expect(loadHiddenProviders()).toEqual([])
-    localStorage.setItem(USAGE_DISPLAY_STORAGE_KEY, '[1,2]')
-    expect(loadHiddenProviders()).toEqual([])
-    localStorage.setItem(USAGE_DISPLAY_STORAGE_KEY, 'not json')
-    expect(loadHiddenProviders()).toEqual([])
-  })
-})
-
-describe('setProviderHidden', () => {
-  it('更新存储并广播事件，供组件间同步', () => {
-    const listener = vi.fn()
-    window.addEventListener(USAGE_DISPLAY_EVENT, listener)
-    setProviderHidden('codex', true)
-    expect(loadHiddenProviders()).toEqual(['codex'])
-    expect(listener).toHaveBeenCalledTimes(1)
-    setProviderHidden('codex', false)
-    expect(loadHiddenProviders()).toEqual([])
-    expect(listener).toHaveBeenCalledTimes(2)
-    window.removeEventListener(USAGE_DISPLAY_EVENT, listener)
-  })
-
-  it('重复设置同一状态不产生重复条目', () => {
-    setProviderHidden('codex', true)
-    setProviderHidden('codex', true)
-    expect(loadHiddenProviders()).toEqual(['codex'])
-  })
-})
-
 describe('setProviderCollapsed', () => {
-  it('折叠状态独立持久化，不影响隐藏列表', () => {
+  it('折叠状态持久化在本浏览器', () => {
     setProviderCollapsed('codex', true)
     expect(loadCollapsedProviders()).toEqual(['codex'])
-    expect(loadHiddenProviders()).toEqual([])
+    setProviderCollapsed('codex', true)
+    expect(loadCollapsedProviders()).toEqual(['codex'])
     setProviderCollapsed('codex', false)
     expect(loadCollapsedProviders()).toEqual([])
   })

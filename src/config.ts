@@ -14,6 +14,7 @@ export interface Config {
   uploadMaxBytes: number
   updateCheck: boolean
   usageProviders: string[]
+  usageStateFile: string
 }
 
 function isLoopback(host: string): boolean {
@@ -86,6 +87,9 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     updateCheck: env.TMUX_WEBUI_UPDATE_CHECK !== 'false',
     // 计划用量 provider allowlist：默认空 = 功能关闭。这是文件系统层面的
     // 同意机制——未列出的 provider，服务不会读取它的数据目录
+    usageStateFile:
+      env.TMUX_WEBUI_USAGE_STATE_FILE ??
+      path.join(homedir(), '.tmux-webui', 'usage-providers.json'),
     usageProviders: (env.TMUX_WEBUI_USAGE_PROVIDERS ?? '')
       .split(',')
       .map((entry) => entry.trim().toLowerCase())

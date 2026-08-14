@@ -1,13 +1,13 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchPlanUsage, type PlanUsageReport } from './api'
+import { fetchPlanUsage, savePlanUsageProviders, type PlanUsageReport } from './api'
 import { AppearanceSettingsDialog } from './AppearanceSettings'
 import { DEFAULT_APPEARANCE } from './appearance'
-import { loadHiddenProviders, saveHiddenProviders } from './planUsageDisplay'
 
 vi.mock('./api', () => ({
   AuthError: class AuthError extends Error {},
   fetchPlanUsage: vi.fn(),
+  savePlanUsageProviders: vi.fn().mockResolvedValue(undefined),
 }))
 
 afterEach(() => {
@@ -21,16 +21,17 @@ beforeEach(() => {
     collectedAt: 0,
     providers: [],
   })
+  vi.mocked(savePlanUsageProviders).mockResolvedValue(undefined)
 })
 
-function usageReport(ids: string[]): PlanUsageReport {
+function usageReport(entries: Array<[string, 'ok' | 'disabled']>): PlanUsageReport {
   return {
     schemaVersion: 1,
     collectedAt: 0,
-    providers: ids.map((id) => ({
+    providers: entries.map(([id, status]) => ({
       providerId: id,
       displayName: id === 'codex' ? 'Codex' : id,
-      status: 'ok',
+      status,
       windows: [],
     })),
   }
@@ -135,8 +136,13 @@ describe('AppearanceSettingsDialog', () => {
     expect(document.activeElement).toBe(done)
   })
 
-  it('列出已启用的用量 provider 开关，取消勾选后持久化为隐藏', async () => {
-    vi.mocked(fetchPlanUsage).mockResolvedValue(usageReport(['codex', 'claude']))
+  it('列出全部 provider，勾选状态跟随服务端的启用情况', async () => {
+    vi.mocked(fetchPlanUsage).mockResolvedValue(
+      usageReport([
+        ['codex', 'ok'],
+        ['claude-quota', 'disabled'],
+      ]),
+    )
     render(
       <AppearanceSettingsDialog
         settings={DEFAULT_APPEARANCE}
@@ -145,18 +151,21 @@ describe('AppearanceSettingsDialog', () => {
       />,
     )
 
-    const codexToggle = await screen.findByRole('checkbox', { name: /Codex/ })
-    expect((codexToggle as HTMLInputElement).checked).toBe(true)
-    fireEvent.click(codexToggle)
-    expect(loadHiddenProviders()).toEqual(['codex'])
-    expect((codexToggle as HTMLInputElement).checked).toBe(false)
-    fireEvent.click(codexToggle)
-    expect(loadHiddenProviders()).toEqual([])
+    expect(
+      ((await screen.findByRole('checkbox', { name: /Codex/ })) as HTMLInputElement).checked,
+    ).toBe(true)
+    expect(
+      (screen.getByRole('checkbox', { name: /claude-quota/ }) as HTMLInputElement).checked,
+    ).toBe(false)
   })
 
-  it('已隐藏的 provider 初始为未勾选', async () => {
-    saveHiddenProviders(['codex'])
-    vi.mocked(fetchPlanUsage).mockResolvedValue(usageReport(['codex']))
+  it('打开开关就让服务端启用该 provider', async () => {
+    vi.mocked(fetchPlanUsage).mockResolvedValue(
+      usageReport([
+        ['codex', 'ok'],
+        ['claude-quota', 'disabled'],
+      ]),
+    )
     render(
       <AppearanceSettingsDialog
         settings={DEFAULT_APPEARANCE}
@@ -164,11 +173,33 @@ describe('AppearanceSettingsDialog', () => {
         onClose={vi.fn()}
       />,
     )
-    const codexToggle = await screen.findByRole('checkbox', { name: /Codex/ })
-    expect((codexToggle as HTMLInputElement).checked).toBe(false)
+
+    fireEvent.click(await screen.findByRole('checkbox', { name: /claude-quota/ }))
+    await waitFor(() =>
+      expect(savePlanUsageProviders).toHaveBeenCalledWith(['codex', 'claude-quota']),
+    )
   })
 
-  it('用量功能未启用时不显示该分区', async () => {
+  it('关闭开关就把它从启用列表里去掉', async () => {
+    vi.mocked(fetchPlanUsage).mockResolvedValue(
+      usageReport([
+        ['codex', 'ok'],
+        ['claude-quota', 'ok'],
+      ]),
+    )
+    render(
+      <AppearanceSettingsDialog
+        settings={DEFAULT_APPEARANCE}
+        onChange={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(await screen.findByRole('checkbox', { name: /Codex/ }))
+    await waitFor(() => expect(savePlanUsageProviders).toHaveBeenCalledWith(['claude-quota']))
+  })
+
+  it('注册表为空时不显示该分区', async () => {
     vi.mocked(fetchPlanUsage).mockResolvedValue(usageReport([]))
     render(
       <AppearanceSettingsDialog
@@ -178,6 +209,6 @@ describe('AppearanceSettingsDialog', () => {
       />,
     )
     await waitFor(() => expect(fetchPlanUsage).toHaveBeenCalled())
-    expect(screen.queryByText('用量显示')).toBeNull()
+    expect(screen.queryByText('计划用量')).toBeNull()
   })
 })

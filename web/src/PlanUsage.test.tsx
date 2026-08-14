@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthError, fetchPlanUsage, type PlanUsageReport } from './api'
 import { PlanUsage } from './PlanUsage'
-import { loadCollapsedProviders, loadHiddenProviders, setProviderHidden } from './planUsageDisplay'
+import { loadCollapsedProviders } from './planUsageDisplay'
 
 vi.mock('./api', () => ({
   AuthError: class AuthError extends Error {},
@@ -133,37 +133,38 @@ describe('PlanUsage', () => {
 
     const toggle = await screen.findByRole('button', { name: /Codex/ })
     fireEvent.click(toggle)
-    // 折叠：指标行消失，名字仍在，隐藏列表不受影响
     expect(screen.queryByLabelText('Codex weekly 已用 43%')).toBeNull()
     expect(screen.getByText('Codex')).toBeDefined()
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     expect(loadCollapsedProviders()).toEqual(['codex'])
-    expect(loadHiddenProviders()).toEqual([])
 
     fireEvent.click(toggle)
     expect(screen.getByLabelText('Codex weekly 已用 43%')).toBeDefined()
-    expect(toggle.getAttribute('aria-expanded')).toBe('true')
     expect(loadCollapsedProviders()).toEqual([])
   })
 
-  it('设置面板关掉的 provider 整块隐藏，重新打开可恢复', async () => {
-    vi.mocked(fetchPlanUsage).mockResolvedValue(report([codexOk]))
+  // 未启用的 provider 服务端根本没采集，侧栏不该给它留位置
+  it('未启用的 provider 不渲染', async () => {
+    vi.mocked(fetchPlanUsage).mockResolvedValue(
+      report([
+        { providerId: 'codex', displayName: 'Codex', status: 'disabled', windows: [] },
+        claudeOk,
+      ]),
+    )
     render(<PlanUsage onAuthLost={vi.fn()} />)
-    expect(await screen.findByText('Codex')).toBeDefined()
 
-    setProviderHidden('codex', true)
-    await waitFor(() => expect(screen.queryByText('Codex')).toBeNull())
-    setProviderHidden('codex', false)
-    expect(await screen.findByText('Codex')).toBeDefined()
+    expect(await screen.findByText('Claude Code')).toBeDefined()
+    expect(screen.queryByText('Codex')).toBeNull()
   })
 
-  it('设置面板隐藏全部 provider 后整个区块不渲染', async () => {
-    vi.mocked(fetchPlanUsage).mockResolvedValue(report([codexOk]))
+  it('全部 provider 都未启用时整个区块不渲染', async () => {
+    vi.mocked(fetchPlanUsage).mockResolvedValue(
+      report([{ providerId: 'codex', displayName: 'Codex', status: 'disabled', windows: [] }]),
+    )
     const { container } = render(<PlanUsage onAuthLost={vi.fn()} />)
-    expect(await screen.findByText('Codex')).toBeDefined()
 
-    setProviderHidden('codex', true)
-    await waitFor(() => expect(container.innerHTML).toBe(''))
+    await waitFor(() => expect(fetchPlanUsage).toHaveBeenCalled())
+    expect(container.innerHTML).toBe('')
   })
 
   it('登录失效时交给上层返回登录页', async () => {

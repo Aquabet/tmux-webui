@@ -55,6 +55,7 @@ async function makeApp(
     repoRoot?: string
     getSystemResources?: () => SystemResources
     collectPlanUsage?: () => Promise<PlanUsageReport>
+    setUsageProviders?: (ids: string[]) => Promise<void>
     config?: Partial<Config>
   } = {},
 ) {
@@ -71,6 +72,7 @@ async function makeApp(
     uploadMaxBytes: 20 * 1024 * 1024,
     updateCheck: false,
     usageProviders: [],
+    usageStateFile: path.join(UPLOAD_DIR, 'usage-providers.json'),
     ...overrides.config,
   }
   const exec: TmuxExec =
@@ -105,6 +107,7 @@ async function makeApp(
           memoryPercent: 37.5,
         })),
       collectPlanUsage: overrides.collectPlanUsage ?? (async () => USAGE_REPORT),
+      setUsageProviders: overrides.setUsageProviders ?? (async () => undefined),
       // 默认指向一个没有 update.sh 的目录：一键更新按不可用处理
       repoRoot: overrides.repoRoot ?? UPLOAD_DIR,
     }),
@@ -184,6 +187,33 @@ describe('GET /api/sessions', () => {
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ success: true, data: USAGE_REPORT })
     expect(res.headers['cache-control']).toBe('private, no-store')
+  })
+
+  it('PUT /usage/providers 需要登录，保存启用列表', async () => {
+    const saved: string[][] = []
+    const app = await makeApp({ setUsageProviders: async (ids) => void saved.push(ids) })
+    expect(
+      (
+        await request(app)
+          .put('/api/usage/providers')
+          .send({ enabled: ['codex'] })
+      ).status,
+    ).toBe(401)
+    const agent = await loginAgent(app)
+    const res = await agent.put('/api/usage/providers').send({ enabled: ['codex'] })
+    expect(res.status).toBe(200)
+    expect(saved).toEqual([['codex']])
+  })
+
+  it('PUT /usage/providers 拒绝格式错误或未知 provider', async () => {
+    const app = await makeApp({
+      setUsageProviders: async () => {
+        throw new Error('未知的用量 provider: ghost')
+      },
+    })
+    const agent = await loginAgent(app)
+    expect((await agent.put('/api/usage/providers').send({ enabled: 'codex' })).status).toBe(400)
+    expect((await agent.put('/api/usage/providers').send({ enabled: ['ghost'] })).status).toBe(400)
   })
 
   it('/usage 采集抛错时返回 500 且不泄露细节', async () => {

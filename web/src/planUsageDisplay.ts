@@ -1,39 +1,4 @@
-// 客户端「显示/隐藏」偏好只影响展示；采集哪些 provider 由服务端
-// TMUX_WEBUI_USAGE_PROVIDERS 配置决定，这里藏起来不代表服务停止采集。
-
-export const USAGE_DISPLAY_STORAGE_KEY = 'tmux-webui.usage-display.v1'
-
-export function loadHiddenProviders(): string[] {
-  try {
-    const stored = localStorage.getItem(USAGE_DISPLAY_STORAGE_KEY)
-    if (!stored) return []
-    const parsed: unknown = JSON.parse(stored)
-    if (!Array.isArray(parsed)) return []
-    return parsed.filter((entry): entry is string => typeof entry === 'string')
-  } catch {
-    return []
-  }
-}
-
-export function saveHiddenProviders(ids: string[]): void {
-  localStorage.setItem(USAGE_DISPLAY_STORAGE_KEY, JSON.stringify(ids))
-}
-
-// storage 事件只在跨标签页时触发，同页内组件（侧栏组件与设置面板）
-// 靠这个自定义事件同步
-export const USAGE_DISPLAY_EVENT = 'tmux-webui:usage-display-changed'
-
-function toggleEntry(list: string[], id: string, present: boolean): string[] {
-  if (present) return list.includes(id) ? list : [...list, id]
-  return list.filter((entry) => entry !== id)
-}
-
-export function setProviderHidden(id: string, hidden: boolean): void {
-  saveHiddenProviders(toggleEntry(loadHiddenProviders(), id, hidden))
-  window.dispatchEvent(new Event(USAGE_DISPLAY_EVENT))
-}
-
-// 折叠只是侧栏内的展开状态，与设置面板的显示开关互相独立
+// 折叠只是侧栏内的展开状态，存在本浏览器；启用与否由服务端的开关决定
 const COLLAPSED_STORAGE_KEY = 'tmux-webui.usage-collapsed.v1'
 
 export function loadCollapsedProviders(): string[] {
@@ -47,10 +12,13 @@ export function loadCollapsedProviders(): string[] {
 }
 
 export function setProviderCollapsed(id: string, collapsed: boolean): void {
-  localStorage.setItem(
-    COLLAPSED_STORAGE_KEY,
-    JSON.stringify(toggleEntry(loadCollapsedProviders(), id, collapsed)),
-  )
+  const current = loadCollapsedProviders()
+  const next = collapsed
+    ? current.includes(id)
+      ? current
+      : [...current, id]
+    : current.filter((entry) => entry !== id)
+  localStorage.setItem(COLLAPSED_STORAGE_KEY, JSON.stringify(next))
 }
 
 export function formatTokens(count: number): string {

@@ -112,7 +112,8 @@ export interface PlanUsageTokenWindow {
 export interface PlanUsageProvider {
   providerId: string
   displayName: string
-  status: 'ok' | 'unavailable' | 'error'
+  /** disabled = 未在设置里启用，服务端完全没去读它的数据 */
+  status: 'ok' | 'unavailable' | 'error' | 'disabled'
   planType?: string
   windows: Array<PlanUsageQuotaWindow | PlanUsageTokenWindow>
   lastActivityAt?: number
@@ -130,6 +131,10 @@ export async function fetchPlanUsage(): Promise<PlanUsageReport> {
   const body = await parseBody<PlanUsageReport>(res)
   if (!res.ok || !body.success || !body.data) throw new Error(body.error ?? '获取计划用量失败')
   return body.data
+}
+
+export function savePlanUsageProviders(enabled: string[]): Promise<void> {
+  return mutate('/api/usage/providers', 'PUT', { enabled }, '保存用量 provider 失败')
 }
 
 export async function fetchSystemResources(): Promise<SystemResources> {
