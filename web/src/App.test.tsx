@@ -48,7 +48,8 @@ describe('App 无 session 时', () => {
     vi.mocked(checkAuth).mockResolvedValue(true)
     vi.mocked(fetchSessions).mockResolvedValue([])
     const { container } = render(<App />)
-    await waitFor(() => expect(fetchSessions).toHaveBeenCalled())
+    // fetchSessions 被调用不等于已经渲染完；先等界面出现再取 main
+    await screen.findByLabelText('切换 session 列表')
     const main = within(container.querySelector('main') as HTMLElement)
     expect(main.getByRole('button', { name: /新建 session/ })).toBeDefined()
   })
@@ -59,7 +60,7 @@ describe('App 无 session 时', () => {
       { name: 'demo', attached: true, windows: [{ index: 0, name: 'sh', active: true }] },
     ])
     const { container } = render(<App />)
-    await waitFor(() => expect(fetchSessions).toHaveBeenCalled())
+    await screen.findByLabelText('切换 session 列表')
     const main = within(container.querySelector('main') as HTMLElement)
     expect(main.getByRole('heading', { name: 'tmux webui' })).toBeDefined()
     expect(screen.queryByTestId('term')).toBeNull()
