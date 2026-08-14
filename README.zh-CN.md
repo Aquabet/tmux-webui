@@ -81,6 +81,10 @@ curl -sb /tmp/c localhost:8090/api/sessions                    # {"success":true
 
 开发模式：`npm run dev`（后端）+ `npm --prefix web run dev`（前端，端口 5173，自动代理）。
 
+登录后先落在主页，可以从那里选一个 session 接入或新建，**不会自动挂进某个
+session**。这是刻意的：自动进入"列表第一个"会让不同浏览器窗口的画面被别处
+新建的 session 挤走（列表按名字排序）。当前 session 被删除后也会回到主页。
+
 桌面端可拖动 session 侧栏右边缘，在 64–480 像素之间调整宽度。拖到最窄时会
 变成仅图标栏，悬停图标仍可查看 session 名称；浏览器会记住所选宽度。手机端抽屉
 保持原来的固定宽度和交互。

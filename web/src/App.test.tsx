@@ -15,8 +15,16 @@ vi.mock('./api', () => ({
 }))
 // TerminalView 会拉起 xterm 与 WebSocket，本用例只关心外层布局
 vi.mock('./TerminalView', () => ({
-  TerminalView: ({ onForegroundChange }: { onForegroundChange?: () => void }) => (
-    <button type="button" data-testid="term" onClick={onForegroundChange} />
+  TerminalView: ({
+    session,
+    onForegroundChange,
+  }: {
+    session: string
+    onForegroundChange?: () => void
+  }) => (
+    <button type="button" data-testid="term" onClick={onForegroundChange}>
+      {session}
+    </button>
   ),
 }))
 
@@ -45,14 +53,54 @@ describe('App 无 session 时', () => {
     expect(main.getByRole('button', { name: /新建 session/ })).toBeDefined()
   })
 
-  it('有 session 时照常渲染终端与开关', async () => {
+  it('有 session 但尚未选择时停在主页，不自动进入某个 session', async () => {
     vi.mocked(checkAuth).mockResolvedValue(true)
     vi.mocked(fetchSessions).mockResolvedValue([
       { name: 'demo', attached: true, windows: [{ index: 0, name: 'sh', active: true }] },
     ])
-    render(<App />)
-    expect(await screen.findByTestId('term')).toBeDefined()
+    const { container } = render(<App />)
+    await waitFor(() => expect(fetchSessions).toHaveBeenCalled())
+    const main = within(container.querySelector('main') as HTMLElement)
+    expect(main.getByRole('heading', { name: 'tmux webui' })).toBeDefined()
+    expect(screen.queryByTestId('term')).toBeNull()
     expect(screen.getByLabelText('切换 session 列表')).toBeDefined()
+  })
+
+  it('主页列出可进入的 session，点击后进入终端', async () => {
+    vi.mocked(checkAuth).mockResolvedValue(true)
+    vi.mocked(fetchSessions).mockResolvedValue([
+      { name: 'demo', attached: true, windows: [{ index: 0, name: 'sh', active: true }] },
+    ])
+    const { container } = render(<App />)
+    await screen.findByLabelText('切换 session 列表')
+    const main = within(container.querySelector('main') as HTMLElement)
+    fireEvent.click(await main.findByRole('button', { name: /demo/ }))
+    expect((await screen.findByTestId('term')).textContent).toBe('demo')
+  })
+
+  // 之前 current 用 sessions[0] 兜底：别的浏览器窗口新建了排序靠前的 session 后，
+  // 本窗口会被拽到那个新 session 上
+  it('别处新建了排序靠前的 session 也不会顶掉当前会话', async () => {
+    vi.mocked(checkAuth).mockResolvedValue(true)
+    vi.mocked(fetchSessions).mockResolvedValue([
+      { name: 'demo', attached: true, windows: [{ index: 0, name: 'sh', active: true }] },
+    ])
+    const { container } = render(<App />)
+    await screen.findByLabelText('切换 session 列表')
+    const main = within(container.querySelector('main') as HTMLElement)
+    fireEvent.click(await main.findByRole('button', { name: /demo/ }))
+    const term = await screen.findByTestId('term')
+    expect(term.textContent).toBe('demo')
+
+    vi.mocked(fetchSessions).mockResolvedValue([
+      { name: 'aaa', attached: false, windows: [{ index: 0, name: 'sh', active: true }] },
+      { name: 'demo', attached: true, windows: [{ index: 0, name: 'sh', active: true }] },
+    ])
+    // 终端上报前台变化会触发列表刷新，等价于下一次轮询
+    fireEvent.click(term)
+    // 等新列表真的到达（侧栏出现 aaa），再确认终端没有被换掉
+    await screen.findByRole('button', { name: 'aaa' })
+    expect(screen.getByTestId('term').textContent).toBe('demo')
   })
 
   it('Sessions 标题右侧可打开外观设置', async () => {
@@ -102,7 +150,11 @@ describe('App 无 session 时', () => {
     vi.mocked(fetchSessions).mockResolvedValue([
       { name: 'demo', attached: false, windows: [{ index: 0, name: 'sh', active: true }] },
     ])
-    render(<App />)
+    const { container } = render(<App />)
+    await screen.findByLabelText('切换 session 列表')
+    // 侧栏和主页都有同名入口，这里从主页进入
+    const main = within(container.querySelector('main') as HTMLElement)
+    fireEvent.click(await main.findByRole('button', { name: /demo/ }))
     const terminal = await screen.findByTestId('term')
     const callsBeforeForegroundChange = vi.mocked(fetchSessions).mock.calls.length
 

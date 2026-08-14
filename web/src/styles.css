@@ -809,18 +809,73 @@ body.sidebar-resizing {
   padding: 8px 12px;
   font-size: 13px;
 }
-.empty {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: center;
-  justify-content: center;
+/* 主页：登录后先落在这里，而不是自动挂进某个 session */
+.home {
   flex: 1;
-  opacity: 0.6;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: 32px 20px;
 }
-.empty .new-session {
+.home-inner {
+  width: 100%;
+  max-width: 560px;
+}
+.home-header h1 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+.home-header p {
+  margin: 6px 0 20px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.home-create {
   width: auto;
   padding: 8px 16px;
+  margin-bottom: 24px;
+}
+.home-empty {
+  color: var(--muted);
+  font-size: 13px;
+}
+.home-sessions {
+  display: grid;
+  gap: 8px;
+}
+.home-session {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+.home-session:hover {
+  border-color: var(--accent);
+}
+.home-session-badges {
+  display: flex;
+  gap: 4px;
+}
+.home-session-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.home-session-meta {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 /* 设置面板沿用终端本身的层次：主题预览是唯一高信息密度区域，

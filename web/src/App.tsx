@@ -11,6 +11,7 @@ import { Login } from './Login'
 import { SessionSidebar } from './SessionSidebar'
 import { loadSidebarCollapsed, toggleSidebarCollapsed } from './sidebarState'
 import { loadSidebarWidth, saveSidebarWidth } from './sidebarSize'
+import { HomeView } from './HomeView'
 import { TerminalView } from './TerminalView'
 import { VersionBadge } from './VersionBadge'
 import { WindowTabs } from './WindowTabs'
@@ -45,7 +46,10 @@ function Main({ onAuthLost, appearance, onAppearanceChange }: MainProps) {
     setSidebarWidth(saveSidebarWidth(width))
   }
 
-  const current = sessions.find((s) => s.name === selectedSession) ?? sessions[0]
+  // 只按名字定位当前 session，不用 sessions[0] 兜底：兜底等于"跟着列表第一位走"，
+  // 别的浏览器窗口新建一个排序靠前的 session 就会把本窗口拽过去。
+  // 找不到（未选择、或选中的已被删除）时落回主页。
+  const current = sessions.find((s) => s.name === selectedSession)
   const currentWindow =
     current?.windows.find((w) => w.index === selectedWindow) ?? current?.windows[0]
 
@@ -158,12 +162,7 @@ function Main({ onAuthLost, appearance, onAppearanceChange }: MainProps) {
               onForegroundChange={refresh}
             />
           ) : (
-            <div className="empty">
-              <p>没有可用的 tmux session</p>
-              <button className="new-session" type="button" onClick={handleCreate}>
-                ＋ 新建 session
-              </button>
-            </div>
+            <HomeView sessions={sessions} onSelect={handleSelectSession} onCreate={handleCreate} />
           )}
         </main>
       </div>

@@ -90,6 +90,12 @@ up Tailscale or a TLS reverse proxy if the person needs remote access.
 Development mode: `npm run dev` (backend) + `npm --prefix web run dev`
 (frontend on port 5173, with automatic proxying).
 
+Logging in lands on a home screen where you pick a session to attach to or
+create a new one — **it never attaches you to one automatically**. That is
+deliberate: defaulting to "whatever is first in the list" lets a session
+created in another browser window (the list is sorted by name) yank this
+window onto it. Deleting the session you are viewing returns you here too.
+
 On desktop, drag the session sidebar's right edge to resize it from 64 to
 480 pixels. At its narrowest it becomes an icon-only rail; hover an icon to
 see the session name. The chosen width is remembered in this browser. The
