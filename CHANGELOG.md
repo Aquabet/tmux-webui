@@ -9,6 +9,18 @@ with patches incrementing the last position (`3.1.1`, `3.1.2`). See
 
 ## [Unreleased]
 
+### Changed
+
+- Usage providers are now switched on and off in the settings dialog only. The
+  state lives on the server in `~/.tmux-webui/usage-providers.json`, so every
+  browser and device sees the same setting.
+- **Breaking:** `TMUX_WEBUI_USAGE_PROVIDERS` is gone. It gated whether the
+  server would read a provider's data at all, but anyone who can log into the
+  web UI already has shell access on that machine, so the separate deployment
+  level bought no protection and only forced an SSH session to flip a switch.
+  If you set it in 3.1.9, enable the providers you want in the settings dialog
+  after upgrading.
+
 ## [3.1.9] - 2026-08-14
 
 ### Added

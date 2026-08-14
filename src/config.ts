@@ -13,7 +13,6 @@ export interface Config {
   uploadRetentionMs: number
   uploadMaxBytes: number
   updateCheck: boolean
-  usageProviders: string[]
   usageStateFile: string
 }
 
@@ -85,14 +84,8 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     ),
     // 唯一的对外网络请求（查 GitHub 最新 release），设 false 可完全关掉
     updateCheck: env.TMUX_WEBUI_UPDATE_CHECK !== 'false',
-    // 计划用量 provider allowlist：默认空 = 功能关闭。这是文件系统层面的
-    // 同意机制——未列出的 provider，服务不会读取它的数据目录
-    usageStateFile:
-      env.TMUX_WEBUI_USAGE_STATE_FILE ??
-      path.join(homedir(), '.tmux-webui', 'usage-providers.json'),
-    usageProviders: (env.TMUX_WEBUI_USAGE_PROVIDERS ?? '')
-      .split(',')
-      .map((entry) => entry.trim().toLowerCase())
-      .filter((entry) => entry.length > 0),
+    // 用量开关的落盘位置。启用哪些 provider 由设置面板里的开关决定，
+    // 没有对应的环境变量——要用的时候进设置打开一下即可
+    usageStateFile: path.join(homedir(), '.tmux-webui', 'usage-providers.json'),
   }
 }

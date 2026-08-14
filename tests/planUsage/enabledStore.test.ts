@@ -20,24 +20,17 @@ async function tempFile(name = 'usage-providers.json'): Promise<string> {
 const KNOWN = ['codex', 'codex-quota', 'claude-quota']
 
 describe('createEnabledStore', () => {
-  it('文件不存在时用 seed 作为初始值', async () => {
-    const store = createEnabledStore({ file: await tempFile(), known: KNOWN, seed: ['codex'] })
-    expect(store.list()).toEqual(['codex'])
-  })
-
-  it('没有文件也没有 seed 时为空（功能默认关闭）', async () => {
+  it('没有状态文件时为空——功能只在用户主动打开后才碰数据', async () => {
     const store = createEnabledStore({ file: await tempFile(), known: KNOWN })
     expect(store.list()).toEqual([])
   })
 
-  it('保存后可读回，且优先于 seed', async () => {
+  it('保存后可读回，重新打开仍然有效', async () => {
     const file = await tempFile()
-    const store = createEnabledStore({ file, known: KNOWN, seed: ['codex'] })
+    const store = createEnabledStore({ file, known: KNOWN })
     await store.save(['codex-quota'])
     expect(store.list()).toEqual(['codex-quota'])
-
-    const reopened = createEnabledStore({ file, known: KNOWN, seed: ['codex'] })
-    expect(reopened.list()).toEqual(['codex-quota'])
+    expect(createEnabledStore({ file, known: KNOWN }).list()).toEqual(['codex-quota'])
   })
 
   it('只接受注册表里的 provider id', async () => {
@@ -54,12 +47,12 @@ describe('createEnabledStore', () => {
     expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ enabled: ['codex'] })
   })
 
-  it('文件损坏或含未知 id 时回退到 seed，不炸', async () => {
+  it('文件损坏时当作空，含未知 id 时只保留认识的，不炸', async () => {
     const file = await tempFile()
     const { mkdir } = await import('node:fs/promises')
     await mkdir(path.dirname(file), { recursive: true })
     await writeFile(file, 'not json')
-    expect(createEnabledStore({ file, known: KNOWN, seed: ['codex'] }).list()).toEqual(['codex'])
+    expect(createEnabledStore({ file, known: KNOWN }).list()).toEqual([])
 
     await writeFile(file, JSON.stringify({ enabled: ['codex', 'ghost'] }))
     expect(createEnabledStore({ file, known: KNOWN }).list()).toEqual(['codex'])

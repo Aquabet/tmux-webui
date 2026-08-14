@@ -71,7 +71,6 @@ async function makeApp(
     uploadRetentionMs: 60_000,
     uploadMaxBytes: 20 * 1024 * 1024,
     updateCheck: false,
-    usageProviders: [],
     usageStateFile: path.join(UPLOAD_DIR, 'usage-providers.json'),
     ...overrides.config,
   }

@@ -5,8 +5,8 @@ import type { ProviderUsage, QuotaWindow, UsageProvider } from './types.js'
 
 // 唯一一个会出网、会读凭据的 provider：拿 Claude Code 的 OAuth token 调
 // Anthropic 的 usage 接口，换取官方的窗口用量百分比。因此它单独成一个
-// provider id（claude-quota），必须在 TMUX_WEBUI_USAGE_PROVIDERS 里显式
-// 列出才会启用——启用即代表用户同意这两件事。
+// provider id（claude-quota），必须在设置面板里显式打开才会启用——
+// 打开即代表用户同意这两件事。
 //
 // 安全边界：token 只在进程内存在于单次请求；不落日志、不进返回值；
 // API 原始响应不透传，只提取数字百分比与重置时间。token 过期时不请求
