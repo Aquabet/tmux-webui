@@ -803,12 +803,12 @@ body.sidebar-resizing {
   padding: 4px 10px;
   font-size: 12px;
 }
-/* 错误提示浮层：脱离文档流，不挤压终端高度；比设置面板低一层，
-   面板打开时不该被它盖住 */
+/* 错误提示浮层：脱离文档流，不挤压终端高度；停在顶部——视线本来就在
+   表头附近，底部太容易被忽略。比设置面板低一层，面板打开时不该被它盖住 */
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 24px;
+  top: 16px;
   transform: translateX(-50%);
   z-index: 90;
   max-width: min(520px, calc(100vw - 32px));
@@ -844,7 +844,7 @@ body.sidebar-resizing {
 @keyframes toast-rise-in {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(8px);
+    transform: translateX(-50%) translateY(-8px);
   }
 }
 /* 主页：登录后先落在这里，而不是自动挂进某个 session */
