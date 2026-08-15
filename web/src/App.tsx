@@ -13,6 +13,7 @@ import { loadSidebarCollapsed, toggleSidebarCollapsed } from './sidebarState'
 import { loadSidebarWidth, saveSidebarWidth } from './sidebarSize'
 import { HomeView } from './HomeView'
 import { TerminalView } from './TerminalView'
+import { Toast } from './Toast'
 import { VersionBadge } from './VersionBadge'
 import { WindowTabs } from './WindowTabs'
 import { useSessions } from './useSessions'
@@ -130,7 +131,6 @@ function Main({ onAuthLost, appearance, onAppearanceChange }: MainProps) {
           onClick={() => setSidebarOpen(false)}
         />
         <main className="main">
-          {(error ?? actionError) && <div className="banner-error">{error ?? actionError}</div>}
           {/* 表头始终渲染：没有 session 时它也得在，否则窄屏下抽屉式侧栏
               没有任何入口可打开，用户被锁死在空状态里，连 session 都建不了 */}
           <div className="main-header">
@@ -166,6 +166,7 @@ function Main({ onAuthLost, appearance, onAppearanceChange }: MainProps) {
           )}
         </main>
       </div>
+      <Toast message={error ?? actionError} />
       {settingsOpen && (
         <AppearanceSettingsDialog
           settings={appearance}

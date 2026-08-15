@@ -803,11 +803,49 @@ body.sidebar-resizing {
   padding: 4px 10px;
   font-size: 12px;
 }
-.banner-error {
-  background: color-mix(in srgb, var(--danger) 14%, transparent);
+/* 错误提示浮层：脱离文档流，不挤压终端高度；比设置面板低一层，
+   面板打开时不该被它盖住 */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 90;
+  max-width: min(520px, calc(100vw - 32px));
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
+  border-radius: 8px;
+  background: var(--surface-raised);
   color: var(--danger);
-  padding: 8px 12px;
   font-size: 13px;
+  line-height: 1.45;
+  box-shadow: 0 8px 24px var(--shadow);
+  animation: toast-rise-in 0.16s ease-out;
+}
+.toast-message {
+  overflow-wrap: anywhere;
+}
+.toast-close {
+  flex: none;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+}
+.toast-close:hover {
+  color: var(--fg);
+}
+@keyframes toast-rise-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
 }
 /* 主页：登录后先落在这里，而不是自动挂进某个 session */
 .home {
