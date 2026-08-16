@@ -22,6 +22,12 @@ const WINDOW_LABELS: Record<string, string> = {
   seven_day: 'weekly',
 }
 
+// 接口只给 resets_at，不给窗口长度；前端要用它算"按时间该用到哪"的基准线
+const WINDOW_MINUTES: Record<string, number> = {
+  five_hour: 300,
+  seven_day: 10080,
+}
+
 interface ClaudeQuotaOptions {
   credentialsFile?: string
   /** Claude Code 的账号状态文件（~/.claude.json），只用于读取 rate limit tier */
@@ -110,6 +116,7 @@ function extractWindows(body: unknown, observedAt: number, now: number): QuotaWi
       kind: 'quota',
       label: WINDOW_LABELS[key],
       usedPercent: fields.utilization,
+      windowMinutes: WINDOW_MINUTES[key],
       resetsAt,
       observedAt,
       state: resetsAt !== undefined && resetsAt < now ? 'expired' : 'observed',

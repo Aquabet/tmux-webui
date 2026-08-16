@@ -27,6 +27,21 @@ export function formatTokens(count: number): string {
   return String(count)
 }
 
+/**
+ * 窗口已过去的比例，用作"匀速用完"的基准线：5h 窗口还剩 1.5h，就是 70%。
+ * 用量高过这条线说明烧得比时间快，窗口结束前会先耗光。
+ */
+export function elapsedPercent(
+  windowMinutes: number | undefined,
+  resetsAt: number | undefined,
+  now: number,
+): number | undefined {
+  if (windowMinutes === undefined || windowMinutes <= 0 || resetsAt === undefined) return undefined
+  const totalMs = windowMinutes * 60_000
+  const remainMs = resetsAt - now
+  return Math.min(100, Math.max(0, ((totalMs - remainMs) / totalMs) * 100))
+}
+
 export function formatResetIn(resetsAt: number, now: number): string | undefined {
   const remainMs = resetsAt - now
   if (remainMs <= 0) return undefined

@@ -520,11 +520,26 @@ body.sidebar-resizing {
   min-width: 34px;
   color: var(--muted);
 }
+/* 上层是"匀速用完"的基准线：用量条越过它就说明烧得比时间快 */
 .usage-bar {
   flex: 1;
-  height: 4px;
+  height: 6px;
   border-radius: 2px;
-  background: linear-gradient(to right, var(--accent) var(--usage), var(--meter-track) 0);
+  /* 没有基准线的窗口（本地 token 统计等）不设 --pace，画到可视区外 */
+  --pace: -1%;
+  background:
+    linear-gradient(
+      to right,
+      transparent calc(var(--pace) - 2px),
+      var(--bg-alt) calc(var(--pace) - 2px),
+      var(--bg-alt) calc(var(--pace) - 1px),
+      var(--danger) calc(var(--pace) - 1px),
+      var(--danger) calc(var(--pace) + 1px),
+      var(--bg-alt) calc(var(--pace) + 1px),
+      var(--bg-alt) calc(var(--pace) + 2px),
+      transparent calc(var(--pace) + 2px)
+    ),
+    linear-gradient(to right, var(--accent) var(--usage), var(--meter-track) 0);
 }
 .usage-value {
   flex-shrink: 0;

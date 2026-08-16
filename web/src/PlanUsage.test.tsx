@@ -77,8 +77,31 @@ describe('PlanUsage', () => {
 
     expect(await screen.findByText('Codex')).toBeDefined()
     expect(screen.getByText('pro')).toBeDefined()
-    expect(screen.getByLabelText('Codex weekly 已用 43%')).toBeDefined()
+    expect(screen.getByLabelText('Codex weekly 已用 43%，时间进度 71%')).toBeDefined()
     expect(screen.getByText(/2d/)).toBeDefined()
+  })
+
+  // 基准线 = 窗口已过去的比例：周窗口还剩 2d，就是 5/7 ≈ 71.4%
+  it('配额条上按时间进度画基准线', async () => {
+    vi.mocked(fetchPlanUsage).mockResolvedValue(report([codexOk]))
+    render(<PlanUsage onAuthLost={vi.fn()} />)
+
+    const bar = await screen.findByRole('img')
+    expect(bar.style.getPropertyValue('--pace')).toBe('71.42857142857143%')
+    expect(bar.style.getPropertyValue('--usage')).toBe('42.5%')
+  })
+
+  it('缺少窗口长度的配额没有基准线', async () => {
+    vi.mocked(fetchPlanUsage).mockResolvedValue(
+      report([
+        { ...codexOk, windows: [{ ...codexOk.windows[0], windowMinutes: undefined } as never] },
+      ]),
+    )
+    render(<PlanUsage onAuthLost={vi.fn()} />)
+
+    const bar = await screen.findByRole('img')
+    expect(bar.style.getPropertyValue('--pace')).toBe('-1%')
+    expect(bar.getAttribute('aria-label')).toBe('Codex weekly 已用 43%')
   })
 
   it('展示 Claude token 统计并标注非配额', async () => {
@@ -133,13 +156,13 @@ describe('PlanUsage', () => {
 
     const toggle = await screen.findByRole('button', { name: /Codex/ })
     fireEvent.click(toggle)
-    expect(screen.queryByLabelText('Codex weekly 已用 43%')).toBeNull()
+    expect(screen.queryByLabelText('Codex weekly 已用 43%，时间进度 71%')).toBeNull()
     expect(screen.getByText('Codex')).toBeDefined()
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     expect(loadCollapsedProviders()).toEqual(['codex'])
 
     fireEvent.click(toggle)
-    expect(screen.getByLabelText('Codex weekly 已用 43%')).toBeDefined()
+    expect(screen.getByLabelText('Codex weekly 已用 43%，时间进度 71%')).toBeDefined()
     expect(loadCollapsedProviders()).toEqual([])
   })
 

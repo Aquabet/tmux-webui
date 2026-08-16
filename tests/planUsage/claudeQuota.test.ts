@@ -94,10 +94,12 @@ describe('createClaudeQuotaProvider', () => {
     if (fiveHour?.kind !== 'quota') throw new Error('expected 5h quota window')
     expect(fiveHour.usedPercent).toBe(23.4)
     expect(fiveHour.resetsAt).toBe(Date.parse(resetsAt))
+    expect(fiveHour.windowMinutes).toBe(300)
     expect(fiveHour.state).toBe('observed')
     const weekly = usage.windows.find((w) => w.label === 'weekly')
     if (weekly?.kind !== 'quota') throw new Error('expected weekly quota window')
     expect(weekly.usedPercent).toBe(11)
+    expect(weekly.windowMinutes).toBe(10080)
   })
 
   it('未知窗口键被丢弃，数字秒时间戳可解析', async () => {

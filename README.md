@@ -178,6 +178,11 @@ read its data:**
   plan label (e.g. `max 20x`) comes from the rate-limit tier stored in
   `~/.claude.json`; only that tier string is read from the file.
 
+Each quota bar carries a red marker at the share of the window that has already
+elapsed — 1.5 hours left in a 5-hour window puts it at 70%. Usage past the
+marker means you are burning faster than the clock and will run out before the
+window resets.
+
 A provider that is switched off is never read from disk and never contacted.
 Clicking a provider's name in the widget collapses or expands its numbers
 (display-only, stored in the browser). `/api/usage` and the endpoint that saves

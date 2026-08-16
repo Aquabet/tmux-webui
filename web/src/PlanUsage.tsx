@@ -7,6 +7,7 @@ import {
   type PlanUsageTokenWindow,
 } from './api'
 import {
+  elapsedPercent,
   formatResetIn,
   formatTokens,
   loadCollapsedProviders,
@@ -26,15 +27,25 @@ function QuotaRow({ window: win, provider }: { window: PlanUsageQuotaWindow; pro
       </div>
     )
   }
-  const reset = win.resetsAt === undefined ? undefined : formatResetIn(win.resetsAt, Date.now())
-  const style = { '--usage': `${Math.min(100, Math.max(0, win.usedPercent))}%` } as CSSProperties
+  const now = Date.now()
+  const reset = win.resetsAt === undefined ? undefined : formatResetIn(win.resetsAt, now)
+  const pace = elapsedPercent(win.windowMinutes, win.resetsAt, now)
+  const style = {
+    '--usage': `${Math.min(100, Math.max(0, win.usedPercent))}%`,
+    // 没有基准线时推出可视区，省掉一层条件渲染
+    '--pace': pace === undefined ? '-1%' : `${pace}%`,
+  } as CSSProperties
   return (
     <div className="usage-row">
       <span className="usage-label">{win.label}</span>
       <span
         className="usage-bar"
         role="img"
-        aria-label={`${provider} ${win.label} 已用 ${percent}%`}
+        aria-label={
+          pace === undefined
+            ? `${provider} ${win.label} 已用 ${percent}%`
+            : `${provider} ${win.label} 已用 ${percent}%，时间进度 ${Math.round(pace)}%`
+        }
         style={style}
       />
       <span className="usage-value">

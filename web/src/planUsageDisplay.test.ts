@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import {
+  elapsedPercent,
   formatResetIn,
   formatTokens,
   loadCollapsedProviders,
@@ -48,5 +49,29 @@ describe('formatResetIn', () => {
 
   it('已过期返回 undefined', () => {
     expect(formatResetIn(now - 1, now)).toBeUndefined()
+  })
+})
+
+describe('elapsedPercent', () => {
+  const now = 1_000_000_000
+  const hour = 3600 * 1000
+
+  it('5h 窗口还剩 1.5h 时基准线在 70%', () => {
+    expect(elapsedPercent(300, now + 1.5 * hour, now)).toBeCloseTo(70)
+  })
+
+  it('周窗口按同样比例计算', () => {
+    expect(elapsedPercent(10080, now + 7 * 24 * hour, now)).toBe(0)
+    expect(elapsedPercent(10080, now + 3.5 * 24 * hour, now)).toBeCloseTo(50)
+  })
+
+  it('缺少窗口长度或重置时间时没有基准线', () => {
+    expect(elapsedPercent(undefined, now + hour, now)).toBeUndefined()
+    expect(elapsedPercent(300, undefined, now)).toBeUndefined()
+  })
+
+  it('剩余时间越界时夹到 0-100', () => {
+    expect(elapsedPercent(300, now - hour, now)).toBe(100)
+    expect(elapsedPercent(300, now + 99 * hour, now)).toBe(0)
   })
 })
