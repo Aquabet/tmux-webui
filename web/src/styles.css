@@ -541,9 +541,13 @@ body.sidebar-resizing {
     ),
     linear-gradient(to right, var(--accent) var(--usage), var(--meter-track) 0);
 }
+/* 定宽右对齐：没有重置倒计时的行（"4%"）不该把进度条撑得比别的行长，
+   68px 够放最长的 "100% · 1d2h" */
 .usage-value {
   flex-shrink: 0;
   margin-left: auto;
+  min-width: 68px;
+  text-align: right;
   color: var(--fg);
 }
 .usage-value.muted {
