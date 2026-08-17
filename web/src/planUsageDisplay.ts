@@ -51,6 +51,6 @@ export function formatResetIn(resetsAt: number, now: number): string | undefined
   if (hours < 24) return `${hours}h`
   const days = Math.floor(hours / 24)
   const restHours = hours % 24
-  if (days < 3 && restHours > 0) return `${days}d${restHours}h`
+  if (restHours > 0) return `${days}d${restHours}h`
   return `${days}d`
 }

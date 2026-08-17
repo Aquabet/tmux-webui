@@ -42,6 +42,8 @@ describe('formatResetIn', () => {
   const now = 1_000_000_000
   it('按剩余时长选择单位', () => {
     expect(formatResetIn(now + 90 * 24 * 3600 * 1000, now)).toBe('90d')
+    // 周窗口大半时间落在 3d 以上，只显示天太糙
+    expect(formatResetIn(now + (5 * 24 + 7) * 3600 * 1000, now)).toBe('5d7h')
     expect(formatResetIn(now + 26 * 3600 * 1000, now)).toBe('1d2h')
     expect(formatResetIn(now + 3 * 3600 * 1000, now)).toBe('3h')
     expect(formatResetIn(now + 45 * 60 * 1000, now)).toBe('45m')
